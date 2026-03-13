@@ -1,0 +1,332 @@
+"use client";
+
+import React, { useEffect, useState, useMemo } from 'react';
+import { SalesService } from '@/services/sales.service';
+import { UserService } from '@/services/user.service';
+import { Sale } from '@/types/sales';
+import { UserMetadata } from '@/services/user.service';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
+
+export default function ReportsScreen() {
+    const [loading, setLoading] = useState(true);
+    const [allSales, setAllSales] = useState<Sale[]>([]);
+    const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
+    const [cashiers, setCashiers] = useState<UserMetadata[]>([]);
+    const [selectedCashier, setSelectedCashier] = useState<string>('all');
+
+    // Metrics
+    const [metrics, setMetrics] = useState({ revenue: 0, pending: 0, count: 0, average: 0 });
+    const [chartData, setChartData] = useState<any[]>([]);
+    const [pieData, setPieData] = useState<any[]>([]);
+    const [cashboxMetrics, setCashboxMetrics] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            try {
+                const [salesData, cashiersData] = await Promise.all([
+                    SalesService.getAllSales(),
+                    UserService.getUsers()
+                ]);
+                setAllSales(salesData);
+                setCashiers(cashiersData);
+            } catch (error) {
+                console.error("Error loading data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchInitialData();
+    }, []);
+
+    useEffect(() => {
+        let filtered = allSales.filter(s => {
+            if (selectedCashier !== 'all') {
+                return s.cashboxId === selectedCashier || s.createdBy === selectedCashier;
+            }
+            return true;
+        });
+
+        filtered.sort((a, b) => {
+            const timeA = typeof a.createdAt === 'number' ? a.createdAt : (a.createdAt as any)?.toDate?.()?.getTime() || 0;
+            const timeB = typeof b.createdAt === 'number' ? b.createdAt : (b.createdAt as any)?.toDate?.()?.getTime() || 0;
+            return timeB - timeA;
+        });
+
+        setFilteredSales(filtered);
+        processStats(filtered);
+    }, [allSales, selectedCashier]);
+
+    const processStats = (data: Sale[]) => {
+        const rev = data.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+        const pend = data.filter(s => s.status === 'pending').reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+
+        setMetrics({
+            revenue: rev,
+            pending: pend,
+            count: data.length,
+            average: data.length > 0 ? rev / data.length : 0
+        });
+
+        // Line Chart Data
+        const last7 = data.slice(0, 7).reverse();
+        const cData = last7.map(s => {
+            const time = typeof s.createdAt === 'number' ? s.createdAt : (s.createdAt as any)?.toDate?.()?.getTime() || 0;
+            return {
+                name: time ? new Date(time).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '?',
+                total: Number(s.total) || 0
+            };
+        });
+        setChartData(cData);
+
+        // Pie Chart Data
+        const methods: Record<string, number> = {};
+        data.forEach(s => {
+            const m = s.paymentMethod === 'cash' ? 'Efectivo' :
+                s.paymentMethod === 'transfer' ? 'Transf.' :
+                    s.paymentMethod === 'credit' ? 'Crédito' : 'Otro';
+            methods[m] = (methods[m] || 0) + 1;
+        });
+
+        setPieData(Object.entries(methods).map(([name, value], idx) => ({
+            name,
+            value,
+            color: COLORS[idx % COLORS.length]
+        })));
+
+        // Cashbox Metrics
+        const boxSummary: Record<string, any> = {};
+        data.forEach(s => {
+            if (s.status === 'cancelled') return;
+
+            const bId = s.cashboxId || 'unknown';
+            const bName = s.cashboxName || 'Sin Caja';
+            const cId = s.createdBy || 'unknown';
+            const cName = s.creatorName || 'Desconocido';
+            const amount = Number(s.total) || 0;
+
+            if (!boxSummary[cId]) {
+                boxSummary[cId] = { id: cId, name: cName, real: 0, teorico: 0, salesCount: 0 };
+            }
+            boxSummary[cId].teorico += amount;
+            boxSummary[cId].salesCount += 1;
+
+            if (s.status === 'paid') {
+                const effectiveBId = bId === 'unknown' ? 'sincaja' : bId;
+                const effectiveBName = bId === 'unknown' ? 'Sin Caja Asignada' : bName;
+                if (!boxSummary[effectiveBId]) {
+                    boxSummary[effectiveBId] = { id: effectiveBId, name: effectiveBName, real: 0, teorico: 0, salesCount: 0 };
+                }
+                boxSummary[effectiveBId].real += amount;
+            }
+        });
+
+        const summaryList = Object.values(boxSummary).sort((a, b) => b.real - a.real || b.teorico - a.teorico);
+        setCashboxMetrics(summaryList);
+    };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-[80vh]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-500 font-medium tracking-wide">Calculando reportes...</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Ventas y Métricas</h1>
+                    <p className="text-foreground/60 font-medium">Análisis completo de operaciones</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 bg-ios-secondary-bg border border-ios-separator/20 rounded-ios-lg px-4 py-2 shadow-sm">
+                        <UserIcon size={18} className="text-ios-gray" />
+                        <select
+                            value={selectedCashier}
+                            onChange={(e) => setSelectedCashier(e.target.value)}
+                            className="bg-transparent border-none text-sm font-semibold text-foreground focus:ring-0 cursor-pointer outline-none"
+                        >
+                            <option value="all">Todas las cajas</option>
+                            {cashiers.map(c => (
+                                <option value={c.id} key={c.id}>{c.displayName}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="bg-ios-blue/10 border-ios-blue/20 overflow-hidden">
+                    <CardContent className="p-5 flex flex-col justify-between h-full relative">
+                        <div className="bg-ios-blue p-2.5 rounded-ios w-fit mb-3">
+                            <DollarSign className="text-white" size={24} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ios-blue uppercase tracking-wider mb-1">Ingresos Reales</p>
+                            <h3 className="text-2xl font-bold text-foreground">${metrics.revenue.toFixed(2)}</h3>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-ios-red/10 border-ios-red/20 overflow-hidden">
+                    <CardContent className="p-5 flex flex-col justify-between h-full relative">
+                        <div className="bg-ios-red p-2.5 rounded-ios w-fit mb-3">
+                            <FileText className="text-white" size={24} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ios-red uppercase tracking-wider mb-1">Cuentas por Cobrar</p>
+                            <h3 className="text-2xl font-bold text-foreground">${metrics.pending.toFixed(2)}</h3>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-ios-green/10 border-ios-green/20 overflow-hidden">
+                    <CardContent className="p-5 flex flex-col justify-between h-full relative">
+                        <div className="bg-ios-green p-2.5 rounded-ios w-fit mb-3">
+                            <ShoppingCart className="text-white" size={24} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ios-green uppercase tracking-wider mb-1">Total Ventas</p>
+                            <h3 className="text-2xl font-bold text-foreground">{metrics.count} <span className="text-sm opacity-60 font-medium">Tx</span></h3>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-orange-500/10 border-orange-500/20 overflow-hidden">
+                    <CardContent className="p-5 flex flex-col justify-between h-full relative">
+                        <div className="bg-orange-500 p-2.5 rounded-ios w-fit mb-3">
+                            <TrendingUp className="text-white" size={24} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-orange-600 uppercase tracking-wider mb-1">Ticket Promedio</p>
+                            <h3 className="text-2xl font-bold text-foreground">${metrics.average.toFixed(2)}</h3>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Charts Area */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-2 overflow-hidden border-0 shadow-sm shadow-blue-900/5">
+                    <CardContent className="p-6">
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Tendencia de Ventas (Últimas)</h2>
+                        <div className="h-72">
+                            {chartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `$${value}`} tick={{ fill: '#6B7280', fontSize: 12 }} dx={-10} />
+                                        <Tooltip
+                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                                            formatter={(value: any) => [`$${value}`, 'Ventas']}
+                                            labelStyle={{ color: '#374151', fontWeight: 'bold' }}
+                                        />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="total"
+                                            stroke="#3b82f6"
+                                            strokeWidth={4}
+                                            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 6, stroke: '#fff' }}
+                                            activeDot={{ r: 8, strokeWidth: 0 }}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-gray-400 font-medium">No hay suficientes datos</div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-0 shadow-sm shadow-blue-900/5">
+                    <CardContent className="p-6">
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Métodos de Pago</h2>
+                        <div className="h-72">
+                            {pieData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={pieData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {pieData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value) => [`${value} Ventas`, 'Cantidad']}
+                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                        />
+                                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-gray-400 font-medium">No hay datos</div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Cashbox Summary List */}
+            <Card className="overflow-hidden border-0 shadow-sm shadow-blue-900/5">
+                <CardContent className="p-0">
+                    <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Rendimiento por Cajero</h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50/50 dark:bg-gray-800/20 text-xs uppercase tracking-wider text-gray-500 font-bold">
+                                    <th className="p-4 border-b border-gray-100 dark:border-gray-800 rounded-tl-xl font-bold">Cajero / Usuario</th>
+                                    <th className="p-4 border-b border-gray-100 dark:border-gray-800 font-bold text-right">Ventas</th>
+                                    <th className="p-4 border-b border-gray-100 dark:border-gray-800 font-bold text-right text-green-600 dark:text-green-500">Ingreso Real</th>
+                                    <th className="p-4 border-b border-gray-100 dark:border-gray-800 rounded-tr-xl font-bold text-right text-blue-600 dark:text-blue-500">Teórico Generado</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                {cashboxMetrics.length === 0 ? (
+                                    <tr><td colSpan={4} className="p-8 text-center text-gray-500 font-medium">Sin datos en caja.</td></tr>
+                                ) : (
+                                    cashboxMetrics.map(box => (
+                                        <tr key={box.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+                                            <td className="p-4">
+                                                <div className="font-bold text-gray-900 dark:text-white">{box.name}</div>
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <span className="font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-sm">
+                                                    {box.salesCount} tx
+                                                </span>
+                                            </td>
+                                            <td className="p-4 text-right font-bold text-green-600 dark:text-green-500">
+                                                ${box.real.toFixed(2)}
+                                            </td>
+                                            <td className="p-4 text-right font-bold text-blue-600 dark:text-blue-500">
+                                                ${box.teorico.toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
