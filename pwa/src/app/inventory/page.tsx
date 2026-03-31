@@ -5,11 +5,12 @@ import { ProductService } from '@/services/product.service';
 import { CategoryService } from '@/services/category.service';
 import { Product } from '@/types/inventory';
 import { Category } from '@/types/category';
-import { Search, Plus, PackageOpen, AlertCircle, XCircle, Edit, Trash2, PackagePlus, ArrowRightLeft, LayoutGrid } from 'lucide-react';
+import { Search, Plus, PackageOpen, AlertCircle, XCircle, Edit, Trash2, PackagePlus, ArrowRightLeft, LayoutGrid, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useRouter } from 'next/navigation';
+import { Select } from '@/components/ui/Select';
 
 export default function InventoryScreen() {
     const router = useRouter();
@@ -180,52 +181,61 @@ export default function InventoryScreen() {
     return (
         <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
 
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Inventario</h1>
-                    <p className="text-foreground/60 font-medium tracking-wide">Catálogo de Productos y Existencias</p>
+                    <h1 className="text-[32px] font-black tracking-tight text-neo-text uppercase leading-none">Inventario</h1>
+                    <div className="flex items-center gap-2 mt-2">
+                        <div className="h-1 w-8 neo-accent-bg rounded-full" />
+                        <p className="text-neo-text-muted/80 font-black uppercase tracking-[0.2em] text-[10px]">Catálogo y Existencias</p>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <Button onClick={() => alert("Categories screen not implemented yet")} variant="outline" className="gap-2 shadow-sm bg-ios-secondary-bg border-ios-separator/20">
-                        <LayoutGrid size={18} />
-                        <span className="hidden sm:inline">Categorías</span>
-                    </Button>
-                    <Button onClick={openCreateModal} className="gap-2 shadow-md">
-                        <Plus size={18} />
-                        Nuevo Producto
-                    </Button>
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={() => alert("Categories screen not implemented yet")} 
+                        className="neo-raised hover:neo-pressed active:scale-95 transition-all duration-300 rounded-neo-lg px-6 py-4 flex flex-col items-center justify-center min-w-[120px] group"
+                    >
+                        <LayoutGrid size={22} className="text-neo-text-muted group-hover:text-neo-text transition-colors mb-1" />
+                        <span className="text-[11px] font-black uppercase tracking-widest text-neo-text-muted group-hover:text-neo-text">Categorías</span>
+                    </button>
+                    
+                    <button 
+                        onClick={openCreateModal} 
+                        className="neo-accent-bg text-white hover:scale-[1.03] active:scale-95 transition-all duration-300 rounded-neo-lg px-6 py-4 flex flex-col items-center justify-center min-w-[150px] shadow-[0_8px_24px_rgba(22,200,242,0.4)]"
+                    >
+                        <Plus size={24} strokeWidth={3} className="mb-1" />
+                        <span className="text-[11px] font-black uppercase tracking-widest">Nuevo Producto</span>
+                    </button>
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex flex-col md:flex-row gap-6 mb-8">
                 <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                     <Input
-                        placeholder="Buscar producto..."
-                        className="pl-12 h-14 text-base rounded-ios-lg shadow-sm border-ios-separator/20"
+                        placeholder="BUSCAR PRODUCTO..."
+                        leftIcon={<Search size={20} className="text-accent-cyan" />}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
 
-                <div className="flex bg-ios-gray/10 rounded-ios-lg p-1 shrink-0 h-14">
+                <div className="neo-pressed rounded-neo-lg p-1.5 flex shrink-0 gap-1.5 border border-white/5">
                     <button
                         onClick={() => setStockFilter('all')}
-                        className={`flex-1 px-4 py-2 rounded-ios text-sm font-bold transition-all ${stockFilter === 'all' ? 'bg-ios-secondary-bg text-foreground shadow-sm' : 'text-foreground/50 hover:text-foreground/70'}`}
+                        className={`px-6 py-2.5 rounded-neo text-[11px] font-black uppercase tracking-widest transition-all ${stockFilter === 'all' ? 'neo-accent-bg text-white shadow-lg shadow-accent-blue/30 scale-[1.05]' : 'text-neo-text-muted hover:text-neo-text active:neo-pressed'}`}
                     >
                         Todos
                     </button>
                     <button
                         onClick={() => setStockFilter('low')}
-                        className={`flex-1 px-4 py-2 rounded-ios text-sm font-bold transition-all flex items-center justify-center gap-1 ${stockFilter === 'low' ? 'bg-ios-secondary-bg text-orange-500 shadow-sm' : 'text-foreground/50 hover:text-orange-500'}`}
+                        className={`px-6 py-2.5 rounded-neo text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${stockFilter === 'low' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30 scale-[1.05]' : 'text-[#FF8A00] hover:bg-orange-500/10 active:neo-pressed'}`}
                     >
-                        <AlertCircle size={16} /> Bajo Stock
+                        <AlertCircle size={16} /> Bajo
                     </button>
                     <button
                         onClick={() => setStockFilter('out')}
-                        className={`flex-1 px-4 py-2 rounded-ios text-sm font-bold transition-all flex items-center justify-center gap-1 ${stockFilter === 'out' ? 'bg-ios-secondary-bg text-ios-red shadow-sm' : 'text-foreground/50 hover:text-ios-red'}`}
+                        className={`px-6 py-2.5 rounded-neo text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${stockFilter === 'out' ? 'bg-[#FF3B30] text-white shadow-lg shadow-red-500/30 scale-[1.05]' : 'text-[#FF3B30] hover:bg-red-500/10 active:neo-pressed'}`}
                     >
-                        <XCircle size={16} /> Agotados
+                        <XCircle size={16} /> Faltan
                     </button>
                 </div>
             </div>
@@ -271,7 +281,7 @@ export default function InventoryScreen() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => openStockModal(item)}
-                                            className="text-xs bg-ios-secondary-bg border-ios-separator/20 shadow-sm"
+                                            className="text-xs liquid-glass border-0"
                                         >
                                             <ArrowRightLeft size={14} className="mr-1.5 text-ios-gray" />
                                             Ajustar Stock
@@ -301,12 +311,23 @@ export default function InventoryScreen() {
 
             {/* Product Modal */}
             {productModalVisible && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <Card className="w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200 border-0 overflow-y-auto max-h-[90vh]">
-                        <CardContent className="p-6">
-                            <h2 className="text-xl font-bold text-foreground mb-6">
-                                {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
-                            </h2>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="neo-raised w-full max-w-lg rounded-neo-lg animate-in zoom-in-95 duration-300 border border-white/5 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                        <div className="p-8">
+                            <div className="flex justify-between items-center mb-8">
+                                <div>
+                                    <h2 className="text-2xl font-black text-neo-text uppercase tracking-tight">
+                                        {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+                                    </h2>
+                                    <div className="h-1 w-12 neo-accent-bg mt-1.5 rounded-full" />
+                                </div>
+                                <button 
+                                    onClick={() => setProductModalVisible(false)} 
+                                    className="w-10 h-10 flex items-center justify-center text-neo-text-muted hover:text-[#FF3B30] active:scale-90 transition-all duration-200 group"
+                                >
+                                    <X size={26} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" />
+                                </button>
+                            </div>
                             <form onSubmit={handleSaveProduct} className="space-y-4">
                                 <Input
                                     label="Nombre del Producto"
@@ -325,18 +346,16 @@ export default function InventoryScreen() {
                                         step="0.01"
                                         required
                                     />
-                                    <div className="space-y-1">
-                                        <label className="text-sm font-semibold text-foreground/70">Categoría</label>
-                                        <select
+                                    <div className="space-y-2">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-neo-text-muted">Categoría</p>
+                                        <Select
+                                            options={[
+                                                { value: '', label: 'Ninguna' },
+                                                ...categories.filter(c => !c.parentId).map(c => ({ value: c.name, label: c.name }))
+                                            ]}
                                             value={selectedCategory}
-                                            onChange={(e) => setSelectedCategory(e.target.value)}
-                                            className="w-full bg-ios-secondary-bg border border-ios-separator/20 rounded-ios px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ios-blue shadow-sm text-foreground"
-                                        >
-                                            <option value="">Ninguna</option>
-                                            {categories.filter(c => !c.parentId).map(c => (
-                                                <option key={c.id} value={c.name}>{c.name}</option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setSelectedCategory(val)}
+                                        />
                                     </div>
                                 </div>
 
@@ -357,52 +376,62 @@ export default function InventoryScreen() {
                                     />
                                 </div>
 
-                                <div className="flex gap-3 pt-6">
-                                    <Button type="button" variant="ghost" className="flex-1" onClick={() => setProductModalVisible(false)} disabled={isSaving}>
+                                <div className="flex gap-4 pt-8">
+                                    <Button type="button" variant="secondary" className="flex-1 py-6 uppercase tracking-widest text-xs" onClick={() => setProductModalVisible(false)} disabled={isSaving}>
                                         Cancelar
                                     </Button>
-                                    <Button type="submit" className="flex-1" isLoading={isSaving}>
-                                        {editingProduct ? 'Guardar Cambios' : 'Registrar'}
+                                    <Button type="submit" className="flex-1 py-6 uppercase tracking-widest text-xs shadow-lg" isLoading={isSaving}>
+                                        {editingProduct ? 'Guardar' : 'Registrar'}
                                     </Button>
                                 </div>
                             </form>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
             )}
 
             {/* Stock Adjustment Modal */}
             {stockModalVisible && stockAdjustmentProduct && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <Card className="w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200 border-0">
-                        <CardContent className="p-6">
-                            <h2 className="text-xl font-bold text-foreground mb-2">Ajustar Stock</h2>
-                            <p className="text-foreground/60 text-sm mb-6">
-                                {stockAdjustmentProduct.name} (Actual: <span className="font-bold text-foreground">{stockAdjustmentProduct.stock}</span>)
-                            </p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="neo-raised w-full max-w-md rounded-neo-lg animate-in zoom-in-95 duration-300 border border-white/5 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                        <div className="p-8">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-black text-neo-text uppercase tracking-tight">Ajustar Stock</h2>
+                                    <p className="text-accent-cyan font-black text-[10px] uppercase tracking-[0.2em] mt-1">
+                                        {stockAdjustmentProduct.name} • Actual: {stockAdjustmentProduct.stock}
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={() => setStockModalVisible(false)} 
+                                    className="w-10 h-10 flex items-center justify-center text-neo-text-muted hover:text-[#FF3B30] active:scale-90 transition-all duration-200 group"
+                                >
+                                    <X size={26} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" />
+                                </button>
+                            </div>
 
                             <form onSubmit={handleAdjustStock} className="space-y-5">
 
-                                <div className="flex gap-2">
+                                <div className="flex gap-4">
                                     <button
                                         type="button"
                                         onClick={() => setAdjustmentReason('restock')}
-                                        className={`flex-1 py-3 px-2 rounded-ios border flex flex-col items-center justify-center gap-1 transition-all
-                                            ${adjustmentReason === 'restock' ? 'border-ios-blue bg-ios-blue/10 text-ios-blue font-bold' : 'border-ios-separator/10 text-ios-gray hover:bg-ios-gray/5'}
+                                        className={`flex-1 py-5 px-2 rounded-neo-lg border-2 flex flex-col items-center justify-center gap-2 transition-all duration-300 active:scale-95
+                                            ${adjustmentReason === 'restock' ? 'border-accent-cyan bg-accent-cyan/10 text-accent-cyan neo-pressed' : 'border-white/5 text-neo-text-muted hover:bg-white/5 neo-convex'}
                                         `}
                                     >
-                                        <PackagePlus size={20} />
-                                        <span className="text-xs font-bold uppercase">Entrada</span>
+                                        <PackagePlus size={24} strokeWidth={3} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">Entrada</span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setAdjustmentReason('waste')}
-                                        className={`flex-1 py-3 px-2 rounded-ios border flex flex-col items-center justify-center gap-1 transition-all
-                                            ${adjustmentReason === 'waste' ? 'border-ios-red bg-ios-red/10 text-ios-red font-bold' : 'border-ios-separator/10 text-ios-gray hover:bg-ios-gray/5'}
+                                        className={`flex-1 py-5 px-2 rounded-neo-lg border-2 flex flex-col items-center justify-center gap-2 transition-all duration-300 active:scale-95
+                                            ${adjustmentReason === 'waste' ? 'border-[#FF3B30] bg-[#FF3B30]/10 text-[#FF3B30] neo-pressed' : 'border-white/5 text-neo-text-muted hover:bg-white/5 neo-convex'}
                                         `}
                                     >
-                                        <Trash2 size={20} />
-                                        <span className="text-xs font-bold uppercase">Merma</span>
+                                        <Trash2 size={24} strokeWidth={3} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">Merma</span>
                                     </button>
                                 </div>
 
@@ -423,17 +452,28 @@ export default function InventoryScreen() {
                                     placeholder="Razón del ajuste..."
                                 />
 
-                                <div className="flex gap-3 pt-4">
-                                    <Button type="button" variant="ghost" className="flex-1" onClick={() => setStockModalVisible(false)} disabled={isSavingStock}>
+                                <div className="flex gap-4 pt-6">
+                                    <button
+                                        type="button"
+                                        onClick={() => setStockModalVisible(false)}
+                                        className="flex-1 py-5 bg-neo-bg text-neo-text-muted font-black uppercase tracking-widest text-[11px] rounded-neo-lg neo-convex hover:neo-pressed active:scale-95 transition-all duration-300"
+                                        disabled={isSavingStock}
+                                    >
                                         Cancelar
-                                    </Button>
-                                    <Button type="submit" className={`flex-1 ${adjustmentReason === 'waste' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' : ''}`} isLoading={isSavingStock}>
-                                        Confirmar
-                                    </Button>
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className={`flex-1 py-5 font-black uppercase tracking-widest text-[11px] rounded-neo-lg shadow-lg active:scale-95 transition-all duration-300
+                                            ${adjustmentReason === 'waste' ? 'bg-[#FF3B30] shadow-red-500/20' : 'neo-accent-bg shadow-accent-cyan/20'} text-white 
+                                        `}
+                                        disabled={isSavingStock}
+                                    >
+                                        {isSavingStock ? 'Guardando...' : 'Confirmar'}
+                                    </button>
                                 </div>
                             </form>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

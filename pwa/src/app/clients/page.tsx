@@ -81,20 +81,20 @@ export default function ClientListScreen() {
                 </Button>
             </div>
 
-            <div className="relative mb-6">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <div className="relative mb-2">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/35" size={18} />
                 <Input
                     placeholder="Buscar por nombre o teléfono..."
-                    className="pl-12 h-14 text-base rounded-ios-lg shadow-sm border-ios-separator/20"
+                    className="pl-12 h-14 text-base liquid-glass border-0"
                     value={searchQuery}
                     onChange={onChangeSearch}
                 />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredClients.length === 0 ? (
-                    <div className="col-span-full text-center py-16 text-gray-400 dark:text-gray-600">
-                        <UserIcon className="mx-auto mb-4 opacity-30" size={56} />
+                    <div className="col-span-full text-center py-16 text-foreground/30">
+                        <UserIcon className="mx-auto mb-4 opacity-20" size={56} />
                         <p className="text-lg font-medium">No hay clientes registrados.</p>
                     </div>
                 ) : (
@@ -102,19 +102,19 @@ export default function ClientListScreen() {
                         <button
                             key={client.id}
                             onClick={() => router.push(`/clients/${client.id}`)}
-                            className="w-full flex items-center p-4 bg-ios-secondary-bg rounded-ios-lg border border-ios-separator/10 shadow-sm transition-all duration-200 hover:shadow-md hover:border-ios-blue/30 text-left group"
+                            className="liquid-glass w-full flex items-center gap-3 p-4 rounded-[22px] hover:scale-[1.01] active:scale-[0.99] transition-all text-left group"
                         >
-                            <div className="w-12 h-12 rounded-full bg-ios-blue/10 text-ios-blue flex items-center justify-center mr-4 transition-transform group-hover:scale-110">
-                                <UserIcon size={24} />
+                            <div className="w-11 h-11 rounded-2xl bg-ios-blue/15 text-ios-blue flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
+                                <UserIcon size={20} />
                             </div>
                             <div className="flex-1 overflow-hidden">
-                                <h3 className="text-lg font-bold text-foreground truncate group-hover:text-ios-blue transition-colors">{client.name}</h3>
-                                <div className="flex items-center text-sm text-foreground/60 mt-1">
-                                    <Phone size={14} className="mr-1.5 opacity-70" />
+                                <h3 className="text-[15px] font-bold text-foreground truncate group-hover:text-ios-blue transition-colors">{client.name}</h3>
+                                <div className="flex items-center text-[13px] text-foreground/50 mt-0.5">
+                                    <Phone size={12} className="mr-1.5 opacity-60" />
                                     <span>{client.phone}</span>
                                 </div>
                             </div>
-                            <ChevronRight className="text-ios-gray/40 group-hover:text-ios-blue transform group-hover:translate-x-1 transition-all" size={20} />
+                            <ChevronRight className="text-foreground/25 group-hover:text-ios-blue group-hover:translate-x-0.5 transition-all shrink-0" size={18} />
                         </button>
                     ))
                 )}

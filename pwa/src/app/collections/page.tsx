@@ -94,38 +94,39 @@ export default function CollectionsScreen() {
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
 
-            <div className="bg-ios-secondary-bg rounded-ios-lg p-6 md:p-8 shadow-sm border border-ios-separator/10 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+            {/* Header bento */}
+            <div className="liquid-glass rounded-[24px] p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Cobranzas</h1>
-                    <p className="text-foreground/60 font-medium tracking-wide mt-1">Gestión de créditos y cuentas por cobrar</p>
+                    <p className="text-foreground/50 font-medium tracking-wide mt-1">Gestión de créditos y cuentas por cobrar</p>
                 </div>
-                <div className="bg-ios-red/10 border border-ios-red/20 rounded-ios p-4 flex flex-col items-center min-w-[180px]">
-                    <span className="text-[12px] font-bold text-ios-red/80 tracking-widest uppercase mb-1">Total Deuda</span>
-                    <span className="text-3xl font-bold text-ios-red">${totalDebt.toFixed(2)}</span>
+                <div className="liquid-glass rounded-[18px] p-4 flex flex-col items-center min-w-[160px]" style={{ border: '1px solid rgba(255,59,48,0.20)' }}>
+                    <span className="text-[11px] font-black text-ios-red/70 tracking-widest uppercase mb-1">Total Deuda</span>
+                    <span className="text-3xl font-black text-ios-red">${totalDebt.toFixed(2)}</span>
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex flex-col md:flex-row gap-3 mb-2">
                 <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/35" size={18} />
                     <Input
                         placeholder="Buscar deudor..."
-                        className="pl-12 h-14 text-base rounded-ios-lg shadow-sm border-ios-separator/20 w-full"
+                        className="pl-12 h-14 text-base liquid-glass border-0 w-full"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
 
-                <div className="flex bg-ios-gray/10 rounded-ios-lg p-1 shrink-0 h-14">
+                <div className="liquid-glass rounded-[18px] flex p-1 shrink-0 h-14 gap-1">
                     <button
                         onClick={() => setSortBy('debt')}
-                        className={`flex-1 px-4 py-2 rounded-ios text-sm font-bold transition-all ${sortBy === 'debt' ? 'bg-ios-secondary-bg text-foreground shadow-sm' : 'text-foreground/50 hover:text-foreground/70'}`}
+                        className={`flex-1 px-5 py-2 rounded-[14px] text-sm font-bold transition-all whitespace-nowrap ${sortBy === 'debt' ? 'bg-white/25 dark:bg-white/10 text-foreground shadow-sm' : 'text-foreground/45 hover:text-foreground/70'}`}
                     >
                         Mayor Deuda
                     </button>
                     <button
                         onClick={() => setSortBy('date')}
-                        className={`flex-1 px-4 py-2 rounded-ios text-sm font-bold transition-all ${sortBy === 'date' ? 'bg-ios-secondary-bg text-foreground shadow-sm' : 'text-foreground/50 hover:text-foreground/70'}`}
+                        className={`flex-1 px-5 py-2 rounded-[14px] text-sm font-bold transition-all whitespace-nowrap ${sortBy === 'date' ? 'bg-white/25 dark:bg-white/10 text-foreground shadow-sm' : 'text-foreground/45 hover:text-foreground/70'}`}
                     >
                         Más Reciente
                     </button>

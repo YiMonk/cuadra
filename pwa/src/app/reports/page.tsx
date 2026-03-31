@@ -9,6 +9,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 
@@ -146,20 +147,16 @@ export default function ReportsScreen() {
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Ventas y Métricas</h1>
                     <p className="text-foreground/60 font-medium">Análisis completo de operaciones</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 bg-ios-secondary-bg border border-ios-separator/20 rounded-ios-lg px-4 py-2 shadow-sm">
-                        <UserIcon size={18} className="text-ios-gray" />
-                        <select
-                            value={selectedCashier}
-                            onChange={(e) => setSelectedCashier(e.target.value)}
-                            className="bg-transparent border-none text-sm font-semibold text-foreground focus:ring-0 cursor-pointer outline-none"
-                        >
-                            <option value="all">Todas las cajas</option>
-                            {cashiers.map(c => (
-                                <option value={c.id} key={c.id}>{c.displayName}</option>
-                            ))}
-                        </select>
-                    </div>
+                <div className="flex items-center gap-3 min-w-[200px]">
+                    <Select
+                        options={[
+                            { value: 'all', label: 'Todas las cajas' },
+                            ...cashiers.map(c => ({ value: c.id, label: c.displayName || c.id }))
+                        ]}
+                        value={selectedCashier}
+                        onChange={(val) => setSelectedCashier(val)}
+                        icon={<UserIcon size={16} />}
+                    />
                 </div>
             </div>
 

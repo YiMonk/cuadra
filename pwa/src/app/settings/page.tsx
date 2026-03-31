@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes';
 import { UserService } from '@/services/user.service';
 import { auth } from '@/config/firebaseConfig';
 import { updateProfile, verifyBeforeUpdateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock } from 'lucide-react';
+import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -108,112 +108,119 @@ export default function SettingsScreen() {
     if (isLoading) return null;
 
     return (
-        <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Configuración</h1>
-                <p className="text-foreground/60 font-medium tracking-wide">Preferencias y Perfil de Usuario</p>
+                <h1 className="text-4xl font-black tracking-tighter text-neo-text uppercase">Configuración</h1>
+                <div className="h-1 w-20 neo-accent-bg mt-2 rounded-full shadow-[0_0_12px_rgba(22,200,242,0.4)]" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
                 {/* Perfil Header */}
-                <Card className="md:col-span-1 shadow-sm border border-ios-separator/10">
-                    <CardContent className="p-6 flex flex-col items-center text-center">
-                        <div className="w-24 h-24 bg-ios-blue/10 text-ios-blue rounded-full flex justify-center items-center text-3xl font-bold mb-4 mx-auto border-4 border-ios-secondary-bg shadow-md">
-                            {user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : 'US'}
+                <div className="md:col-span-4 neo-raised rounded-neo-lg p-10 flex flex-col items-center text-center border border-white/5 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-linear-to-b from-accent-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    
+                    <h2 className="text-3xl font-black text-neo-text mb-2 uppercase tracking-tighter">
+                        {user?.displayName || 'Usuario'}
+                    </h2>
+                    <p className="text-sm font-bold text-accent-cyan break-all mb-4 uppercase tracking-widest opacity-80">
+                        {user?.email}
+                    </p>
+
+                    <div className="inline-block px-4 py-1.5 neo-pressed text-neo-text-muted rounded-neo-sm text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-white/5">
+                        {(user as any)?.role === 'admingod' ? '⭐ Admin Master' : `Rol: ${(user as any)?.role || 'Staff'}`}
+                    </div>
+
+                    <Button
+                        variant="secondary"
+                        className="w-full gap-2 py-6 text-sm uppercase tracking-widest"
+                        onClick={() => {
+                            setNewName(user?.displayName || '');
+                            setNewEmail(user?.email || '');
+                            setCurrentPassword('');
+                            setNewPassword('');
+                            setProfileDialogVisible(true);
+                        }}
+                    >
+                        <Edit3 size={18} /> Editar Perfil
+                    </Button>
+                </div>
+
+                <div className="md:col-span-8 space-y-8">
+                    {/* Preferencias */}
+                    <div className="neo-raised rounded-neo-lg overflow-hidden border border-white/5">
+                        <div className="px-8 py-5 flex items-center gap-3 border-b border-white/5 bg-white/2">
+                            <div className="p-2 neo-accent-bg rounded-neo-sm shadow-lg">
+                                <Settings2 className="text-white" size={20} />
+                            </div>
+                            <h3 className="font-black text-neo-text uppercase tracking-widest text-sm">Preferencias de Sistema</h3>
                         </div>
 
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                            {user?.displayName || 'Usuario Cuadra'}
-                        </h2>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 break-all mb-3">
-                            {user?.email}
-                        </p>
-
-                        <span className="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
-                            {(user as any)?.role === 'admingod' ? '⭐ AdminGod' : `Rol: ${(user as any)?.role || 'Vendedor'}`}
-                        </span>
-
-                        <Button
-                            variant="outline"
-                            className="w-full gap-2 border-dashed border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                            onClick={() => {
-                                setNewName(user?.displayName || '');
-                                setNewEmail(user?.email || '');
-                                setCurrentPassword('');
-                                setNewPassword('');
-                                setProfileDialogVisible(true);
-                            }}
-                        >
-                            <Edit3 size={16} /> Editar Perfil
-                        </Button>
-                    </CardContent>
-                </Card>
-
-                <div className="md:col-span-2 space-y-6">
-                    {/* Preferencias */}
-                    <Card className="shadow-sm border-0">
-                        <CardContent className="p-0">
-                            <div className="px-6 py-4 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800">
-                                <Settings2 className="text-blue-500" size={20} />
-                                <h3 className="font-bold text-gray-900 dark:text-white">Preferencias de Sistema</h3>
-                            </div>
-
-                            <div className="p-6 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-start gap-3">
-                                        <div className={`p-2 rounded-xl mt-0.5 ${isDark ? 'bg-indigo-900/30 text-indigo-400' : 'bg-amber-100 text-amber-600'}`}>
-                                            {isDark ? <Moon size={20} /> : <Sun size={20} />}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-gray-900 dark:text-white">Tema Visual</p>
-                                            <p className="text-sm text-gray-500 font-medium">{isDark ? 'Modo oscuro activado' : 'Modo claro activado'}</p>
-                                        </div>
+                        <div className="p-8 space-y-6">
+                            <div className="flex items-center justify-between p-6 neo-pressed rounded-neo-lg border border-white/5">
+                                <div className="flex items-start gap-4">
+                                    <div className={`p-3 rounded-neo-sm ${isDark ? 'bg-accent-purple/20 text-accent-purple shadow-[0_0_15px_rgba(167,139,250,0.2)]' : 'bg-accent-orange/20 text-accent-orange'}`}>
+                                        {isDark ? <Moon size={24} fill="currentColor" /> : <Sun size={24} fill="currentColor" />}
                                     </div>
-                                    <div className="flex items-center gap-2 bg-ios-gray/10 p-1 rounded-full border border-ios-separator/10">
-                                        <button
-                                            onClick={() => setTheme('light')}
-                                            className={`p-2 rounded-full transition-all ${!isDark ? 'bg-ios-secondary-bg text-foreground shadow-sm font-bold' : 'text-foreground/40'}`}
-                                        >
-                                            <Sun size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => setTheme('dark')}
-                                            className={`p-2 rounded-full transition-all ${isDark ? 'bg-ios-gray/40 text-white shadow-sm font-bold' : 'text-foreground/40'}`}
-                                        >
-                                            <Moon size={16} />
-                                        </button>
+                                    <div>
+                                        <p className="font-black text-neo-text uppercase tracking-tight text-lg">Tema Visual</p>
+                                        <p className="text-sm text-neo-text-muted font-bold mt-1 uppercase tracking-widest">{isDark ? 'Modo oscuro activado' : 'Modo claro activado'}</p>
                                     </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Seguridad y Sesion */}
-                    <Card className="shadow-sm border-0">
-                        <CardContent className="p-0">
-                            <div className="px-6 py-4 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800">
-                                <Shield className="text-amber-500" size={20} />
-                                <h3 className="font-bold text-gray-900 dark:text-white">Seguridad y Acceso</h3>
-                            </div>
-
-                            <div className="p-6">
+                                
+                                {/* Neumorphic Switch Large */}
                                 <button
-                                    onClick={handleLogout}
-                                    className="w-full flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl transition-colors font-bold group"
+                                    onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                                    className="relative w-20 h-10 rounded-neo-sm neo-pressed p-1.5 transition-all duration-500 focus:outline-none group shadow-inner"
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-xl group-hover:bg-red-200 dark:group-hover:bg-red-900/50 transition-colors">
-                                            <LogOut size={20} />
-                                        </div>
-                                        Cerrar Sesión Global
+                                    <div 
+                                        className={`absolute top-1.5 left-1.5 w-7 h-7 rounded-neo-xs transition-all duration-500 flex items-center justify-center shadow-xl
+                                            ${isDark 
+                                                ? 'translate-x-10 bg-slate-800 shadow-[0_4px_12px_rgba(0,0,0,0.5)]' 
+                                                : 'translate-x-0 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
+                                            }`}
+                                    >
+                                        {isDark ? (
+                                            <Moon size={16} className="text-accent-blue fill-accent-blue" />
+                                        ) : (
+                                            <Sun size={16} className="text-accent-orange fill-accent-orange" />
+                                        )}
+                                    </div>
+                                    <div className="flex justify-between px-2 items-center h-full w-full opacity-20 group-hover:opacity-40 transition-opacity">
+                                        <Sun size={14} className={isDark ? 'text-white' : 'hidden'} />
+                                        <Moon size={14} className={isDark ? 'hidden' : 'text-slate-600'} />
                                     </div>
                                 </button>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
 
-                    <p className="text-center text-xs text-gray-400 font-medium">Cuadra Admin PWA - Versión 1.1.0 (Web Build)</p>
+                    {/* Seguridad y Sesion */}
+                    <div className="neo-raised rounded-neo-lg overflow-hidden border border-white/5">
+                        <div className="px-8 py-5 flex items-center gap-3 border-b border-white/5 bg-white/2">
+                            <div className="p-2 bg-accent-orange rounded-neo-sm shadow-lg">
+                                <Shield className="text-white" size={20} />
+                            </div>
+                            <h3 className="font-black text-neo-text uppercase tracking-widest text-sm">Seguridad y Acceso</h3>
+                        </div>
+
+                        <div className="p-8">
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-between p-6 neo-convex hover:neo-pressed border border-red-500/10 text-red-500 rounded-neo-lg transition-all font-black group relative overflow-hidden"
+                            >
+                                <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="flex items-center gap-4 relative z-10">
+                                    <div className="p-3 bg-red-500/10 rounded-neo-sm group-hover:scale-110 transition-transform">
+                                        <LogOut size={22} strokeWidth={3} />
+                                    </div>
+                                    <span className="uppercase tracking-[0.1em] text-lg">Cerrar Sesión Global</span>
+                                </div>
+                                <ChevronRight size={20} className="relative z-10 opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <p className="text-center text-[10px] text-neo-text-muted font-black uppercase tracking-widest opacity-40 py-4">Cuadra Admin PWA • Build v2.0.0</p>
                 </div>
             </div>
 

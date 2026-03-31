@@ -18,6 +18,7 @@ import {
 import { Card, CardContent } from '@/components/ui/Card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sale } from '@/types/sales';
+import { Select } from '@/components/ui/Select';
 
 export default function AdminGodDashboardPage() {
     const { user } = useAuth();
@@ -134,16 +135,18 @@ export default function AdminGodDashboardPage() {
                     <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">AdminGod</h1>
                     <p className="text-gray-500 dark:text-gray-400 font-medium tracking-wide">Gestión Global del Sistema</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <select
-                        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-sm rounded-xl px-3 py-2 text-gray-700 dark:text-gray-300 font-medium focus:ring-2 focus:ring-blue-500 outline-none shadow-sm cursor-pointer"
-                        value={timeRange}
-                        onChange={(e) => setTimeRange(e.target.value as any)}
-                    >
-                        <option value="7d">Últimos 7 días</option>
-                        <option value="30d">Últimos 30 días</option>
-                        <option value="all">Todo el tiempo</option>
-                    </select>
+                <div className="flex items-center gap-3">
+                    <div className="min-w-[180px]">
+                        <Select
+                            options={[
+                                { value: '7d', label: 'Últimos 7 días' },
+                                { value: '30d', label: 'Últimos 30 días' },
+                                { value: 'all', label: 'Todo el tiempo' }
+                            ]}
+                            value={timeRange}
+                            onChange={(val) => setTimeRange(val as any)}
+                        />
+                    </div>
 
                     <button
                         onClick={loadData}

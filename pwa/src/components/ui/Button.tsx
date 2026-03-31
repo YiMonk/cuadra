@@ -9,20 +9,20 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className = '', variant = 'primary', size = 'md', isLoading, children, ...props }, ref) => {
 
-        const baseStyles = "relative inline-flex items-center justify-center font-semibold rounded-ios transition-all duration-200 focus:outline-none disabled:opacity-40 disabled:pointer-events-none active:scale-[0.97] overflow-hidden select-none";
+        const baseStyles = "relative inline-flex items-center justify-center font-bold transition-all duration-[250ms] focus:outline-none disabled:opacity-40 disabled:pointer-events-none overflow-hidden select-none tracking-wide m-[var(--btn-margin)] rounded-[var(--btn-radius)]";
 
         const variants = {
-            primary: "bg-ios-blue text-white hover:opacity-90 active:opacity-80 focus:ring-2 focus:ring-ios-blue/30 focus:ring-offset-2 dark:focus:ring-offset-black",
-            secondary: "bg-ios-gray/15 text-ios-blue dark:text-ios-blue hover:bg-ios-gray/25 active:bg-ios-gray/30",
-            outline: "border border-ios-separator text-ios-blue hover:bg-ios-gray/5 active:bg-ios-gray/10 focus:ring-2 focus:ring-ios-blue/30",
-            ghost: "text-ios-blue hover:bg-ios-blue/10 active:bg-ios-blue/15",
-            danger: "bg-ios-red text-white hover:opacity-90 active:opacity-80 focus:ring-2 focus:ring-ios-red/30",
+            primary: "neo-accent-bg text-white hover:brightness-110 active:scale-[0.98] focus:ring-2 focus:ring-accent-blue/30 focus:ring-offset-2 focus:ring-offset-neo-bg",
+            secondary: "neo-raised text-neo-text hover:text-accent-blue active:neo-pressed active:scale-[0.98]",
+            outline: "neo-convex text-neo-text-muted hover:text-neo-text active:neo-pressed active:scale-[0.98]",
+            ghost: "text-neo-text-muted hover:bg-white/5 hover:text-neo-text active:bg-white/10",
+            danger: "bg-[linear-gradient(135deg,#FF3B30,#C10015)] shadow-[0_4px_14px_rgba(255,59,48,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] text-white hover:brightness-110 active:scale-[0.98]",
         };
 
         const sizes = {
-            sm: "h-8 px-3 text-[13px]",
-            md: "h-11 px-6 text-[15px]",
-            lg: "h-14 px-8 text-[17px]",
+            sm: "px-3 py-1.5 text-[13px]",
+            md: "px-[var(--btn-padding-x)] py-[var(--btn-padding-y)] text-[15px]",
+            lg: "px-8 py-4 text-[17px]",
         };
 
         return (
