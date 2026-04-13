@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { UserService, UserMetadata } from '@/services/user.service';
 import { Plus, Users, Mail, Shield, Trash2, X, ShieldCheck, UserPlus, Key } from 'lucide-react';
@@ -13,10 +14,20 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/config/firebaseConfig';
 
 export default function TeamManagementScreen() {
-    const { user: owner } = useAuth();
+    const router = useRouter();
+    const { user: owner, isLoading: authLoading } = useAuth();
     const [team, setTeam] = useState<UserMetadata[]>([]);
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
+
+    React.useEffect(() => {
+        if (!authLoading && owner) {
+            const isGlobalAdmin = owner.role === 'admin' || owner.role === 'admingod';
+            if (isGlobalAdmin) {
+                router.replace('/admin/dashboard');
+            }
+        }
+    }, [owner, authLoading, router]);
     
     // New staff form
     const [name, setName] = useState('');
@@ -113,11 +124,13 @@ export default function TeamManagementScreen() {
         });
     };
 
-    if (loading) {
+    if (loading || authLoading || (owner?.role === 'admin' || owner?.role === 'admingod')) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary"></div>
-                <span className="ml-3 text-ui-text-muted font-black tracking-widest uppercase text-xs">Cargando Equipo...</span>
+                <span className="ml-3 text-ui-text-muted font-black tracking-widest uppercase text-xs">
+                    {loading ? 'Cargando Equipo...' : 'Redirigiendo...'}
+                </span>
             </div>
         );
     }

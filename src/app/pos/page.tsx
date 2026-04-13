@@ -41,8 +41,18 @@ const getCategoryIcon = (name: string) => {
 };
 
 export default function POSScreen() {
-    const { user: currentUser } = useAuth();
+    const router = useRouter();
+    const { user: currentUser, isLoading: authLoading } = useAuth();
     const { items, total, selectedClient, setSelectedClient, addToCart, updateQuantity, clearCart } = useCart();
+
+    useEffect(() => {
+        if (!authLoading && currentUser) {
+            const isGlobalAdmin = currentUser.role === 'admin' || currentUser.role === 'admingod';
+            if (isGlobalAdmin) {
+                router.replace('/admin/dashboard');
+            }
+        }
+    }, [currentUser, authLoading, router]);
 
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -182,11 +192,13 @@ export default function POSScreen() {
         }
     };
 
-    if (loading) {
+    if (loading || authLoading || (currentUser?.role === 'admin' || currentUser?.role === 'admingod')) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-500 font-medium tracking-wide">Iniciando Caja...</span>
+                <span className="ml-3 text-gray-500 font-medium tracking-wide">
+                    {loading ? 'Iniciando Caja...' : 'Redirigiendo...'}
+                </span>
             </div>
         );
     }

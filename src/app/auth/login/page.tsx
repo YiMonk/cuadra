@@ -113,8 +113,8 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-[#050505] relative overflow-hidden">
             {/* Ambient Background Glows */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-500/10 blur-[120px] rounded-full" />
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/20 dark:bg-blue-500/10 blur-[120px] rounded-full" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-500/20 dark:bg-teal-500/10 blur-[120px] rounded-full" />
             
             <div className="w-full max-w-md relative z-10">
                 <div className="text-center mb-8">
@@ -125,7 +125,7 @@ export default function LoginPage() {
                     <p className="text-gray-500 mt-2 font-medium">Gestiona tus ventas de forma simple</p>
                 </div>
 
-                <Card className="overflow-hidden border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] bg-slate-900/40 dark:bg-black/40 backdrop-blur-2xl rounded-[40px]">
+                <Card className="overflow-hidden border border-black/5 dark:border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] bg-white/80 dark:bg-black/40 backdrop-blur-2xl rounded-[40px] animate-in fade-in slide-in-from-bottom-8 duration-1000">
                     <CardContent className="pt-10 p-8">
                         {view === 'login' ? (
                             <form onSubmit={handleLogin} className="space-y-4 animate-in slide-in-from-left duration-300">
@@ -163,7 +163,7 @@ export default function LoginPage() {
                                     </button>
                                 </div>
 
-                                <Button type="submit" className="w-full mt-2" size="lg" isLoading={loading}>
+                                <Button type="submit" className="w-full mt-2 bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-xl shadow-blue-500/20" size="lg" isLoading={loading}>
                                     Iniciar Sesión
                                 </Button>
                             </form>
@@ -219,7 +219,7 @@ export default function LoginPage() {
                                     <div className="w-full border-t border-white/5" />
                                 </div>
                                 <div className="relative flex justify-center text-[10px] font-black tracking-widest uppercase">
-                                    <span className="px-4 bg-transparent text-gray-400/60">O continúe con</span>
+                                    <span className="px-4 bg-white dark:bg-[#0a0a0a] text-gray-400/60 rounded-full transition-colors">¿No tienes una cuenta?</span>
                                 </div>
                             </div>
 

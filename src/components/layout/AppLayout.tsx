@@ -45,7 +45,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const navItems = isGlobalAdmin ? [
         { name: 'Control', href: '/admin/dashboard', icon: ShieldAlert },
         { name: 'Usuarios', href: '/admin/users', icon: Users },
-        { name: 'Menú', href: '/admin/menu', icon: Menu },
     ] : isStaff ? [
         { name: 'Venta', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', href: '/inventory', icon: Package },
@@ -143,12 +142,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </p>
                         </div>
                         
-                        <div className="flex items-center gap-3">
-                            <div className="ui-card px-6 py-3 flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-accent-success animate-pulse" />
-                                <span className="text-xs font-black uppercase tracking-widest text-ui-text">Sistema Activo</span>
+                        {!isGlobalAdmin && (
+                            <div className="flex items-center gap-3">
+                                <div className="ui-card px-6 py-3 flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-accent-success animate-pulse" />
+                                    <span className="text-xs font-black uppercase tracking-widest text-ui-text">Sistema Activo</span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     <div className="animate-in fade-in zoom-in-95 duration-700">
@@ -159,7 +160,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Mobile Floating Bottom Pill */}
             <nav className="md:hidden fixed z-[90] left-4 right-4 bottom-6 transition-all duration-500 overflow-hidden">
-                <div className="ui-card backdrop-blur-3xl bg-black/80 dark:bg-white/80 p-1 flex justify-around items-center h-[72px] rounded-[36px] border border-white/10 shadow-float">
+                <div className="ui-card backdrop-blur-3xl bg-white/80 dark:bg-black/80 p-1 flex justify-around items-center h-[72px] rounded-[36px] border border-black/5 dark:border-white/10 shadow-float">
                     {mobileNavItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href || pathname.startsWith(item.href + '/');

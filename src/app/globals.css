@@ -12,8 +12,8 @@
   --ui-text-inverse: #FFFFFF;
   
   /* Accents - Keeping a refined version of your current blue */
-  --accent-primary: #1C1C1E; /* Default black as in the sidebar pill */
-  --accent-secondary: #4318FF;
+  --accent-primary: #1C1C1E; 
+  --accent-secondary: #007AFF; /* Refined iOS-style Blue instead of purple */
   --accent-success: #34C759;
   --accent-danger: #FF3B30;
   --accent-warning: #EA580C;
@@ -37,10 +37,10 @@
 
 .dark {
   /* Dark Palette - Glass Bento */
-  --ui-bg: #000000; /* Deepest black background */
-  --ui-surface: rgba(28, 28, 30, 0.6); /* Glass dark base */
-  --ui-surface-hover: rgba(44, 44, 46, 0.7);
-  --ui-border: rgba(255, 255, 255, 0.1);
+  --ui-bg: #0A0A0B; /* Deep Blue-Black instead of pure black */
+  --ui-surface: rgba(20, 20, 22, 0.7); /* Lighter glass dark base */
+  --ui-surface-hover: rgba(30, 30, 32, 0.8);
+  --ui-border: rgba(255, 255, 255, 0.08);
   
   --ui-text: #FFFFFF;
   --ui-text-muted: #8E8E93;
@@ -98,11 +98,17 @@ body {
 }
 
 .ui-glass-sidebar {
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
+  background: rgba(15, 15, 17, 0.85);
+  backdrop-filter: blur(40px) saturate(150%);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
   border-radius: var(--radius-2xl);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   color: white;
+}
+
+.dark body {
+  background-image: radial-gradient(circle at top right, rgba(28, 23, 107, 0.08), transparent 40%),
+                    radial-gradient(circle at bottom left, rgba(10, 40, 107, 0.05), transparent 40%);
 }
 
 /* Inputs & Containers */
@@ -116,10 +122,11 @@ body {
 .ui-input-box:focus-within {
   border-color: var(--accent-primary);
   background: var(--ui-surface);
-  box-shadow: 0 0 0 3px rgba(67, 24, 255, 0.15); /* Ring effect */
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05); /* Clean neutral ring */
 }
 .dark .ui-input-box:focus-within {
-  box-shadow: 0 0 0 3px rgba(67, 24, 255, 0.3);
+  border-color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
 }
 
 /* Buttons */
@@ -144,11 +151,11 @@ body {
 .ui-btn-primary {
   background: var(--accent-primary);
   color: var(--ui-text-inverse);
-  box-shadow: 0 4px 14px rgba(67, 24, 255, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 
 .ui-btn-primary:hover {
-  box-shadow: 0 6px 20px rgba(67, 24, 255, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   transform: translateY(-1px);
 }
 
@@ -191,7 +198,7 @@ body {
 .ui-active-pill {
   background: var(--accent-primary);
   color: white;
-  box-shadow: 0 4px 12px rgba(67, 24, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Mobile Optimizations */

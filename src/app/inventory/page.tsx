@@ -16,8 +16,17 @@ import { CategoryModal } from '@/components/inventory/CategoryModal';
 
 export default function InventoryScreen() {
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!authLoading && user) {
+            const isGlobalAdmin = user.role === 'admin' || user.role === 'admingod';
+            if (isGlobalAdmin) {
+                router.replace('/admin/dashboard');
+            }
+        }
+    }, [user, authLoading, router]);
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -194,11 +203,13 @@ export default function InventoryScreen() {
         }
     };
 
-    if (loading) {
+    if (loading || authLoading || (user?.role === 'admin' || user?.role === 'admingod')) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-500 font-medium tracking-wide">Cargando Inventario...</span>
+                <span className="ml-3 text-gray-500 font-medium tracking-wide">
+                    {loading ? 'Cargando Inventario...' : 'Redirigiendo...'}
+                </span>
             </div>
         );
     }

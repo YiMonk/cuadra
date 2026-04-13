@@ -12,7 +12,8 @@ export default function Home() {
   // Redirects handled by AppLayout for cleaner routing
   useEffect(() => {
     if (!isLoading && user) {
-      if (user.role === 'admingod') {
+      const isGlobalAdmin = user.role === 'admingod' || user.role === 'admin';
+      if (isGlobalAdmin) {
         router.push('/admin/dashboard');
       } else {
         router.push('/pos');
@@ -21,7 +22,7 @@ export default function Home() {
   }, [user, isLoading, router]);
 
   return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-850 text-gray-900 dark:text-white">
       <div className="w-20 h-20 mb-6 bg-linear-to-tr from-blue-600 to-teal-400 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/30 animate-pulse">
         <ShoppingCart size={36} color="white" />
       </div>
