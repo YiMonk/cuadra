@@ -55,7 +55,7 @@ export const UserService = {
             return null;
         } catch (error) {
             console.error("Error fetching user:", error);
-            return null;
+            throw error;
         }
     },
 

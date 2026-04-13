@@ -19,6 +19,9 @@ const PRODUCTS_COLLECTION = 'products';
 export const SalesService = {
   // Create a new sale and update inventory in a transaction
   createSale: async (sale: Omit<Sale, 'id' | 'createdAt' | 'status'>, creator?: { id: string, name: string }) => {
+    if (!sale.items || sale.items.length === 0) {
+      throw new Error("No items in sale");
+    }
     try {
       await runTransaction(db, async (transaction) => {
         // 1. PREPARE READS: Get all product references first

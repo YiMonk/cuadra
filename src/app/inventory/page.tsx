@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useRouter } from 'next/navigation';
 import { Select } from '@/components/ui/Select';
+import { CategoryModal } from '@/components/inventory/CategoryModal';
 
 export default function InventoryScreen() {
     const router = useRouter();
@@ -28,6 +29,8 @@ export default function InventoryScreen() {
 
     const [stockModalVisible, setStockModalVisible] = useState(false);
     const [stockAdjustmentProduct, setStockAdjustmentProduct] = useState<Product | null>(null);
+
+    const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
     // Form State (Product)
     const [name, setName] = useState('');
@@ -113,34 +116,44 @@ export default function InventoryScreen() {
     const handleSaveProduct = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name || (!price && price !== '0')) return;
+        
+        const stockVal = parseInt(stock) || 0;
+        const priceVal = parseFloat(price) || 0;
+        
+        if (stockVal < 0) {
+            alert("El stock no puede ser negativo.");
+            return;
+        }
+        if (priceVal < 0) {
+            alert("El precio no puede ser negativo.");
+            return;
+        }
+
         setIsSaving(true);
         try {
             if (editingProduct) {
                 await ProductService.updateProduct(editingProduct.id!, {
                     name,
-                    price: parseFloat(price),
-                    stock: parseInt(stock) || editingProduct.stock,
-                    minStockAlert: parseInt(minStock),
+                    price: priceVal,
+                    stock: stockVal,
+                    minStockAlert: parseInt(minStock) || 5,
                     category: selectedCategory || 'General'
                 });
             } else {
-                if (!stock) {
-                    alert("Debes establecer un stock inicial.");
-                    setIsSaving(false);
-                    return;
-                }
                 await ProductService.addProduct({
                     name,
-                    price: parseFloat(price),
-                    stock: parseInt(stock),
-                    minStockAlert: parseInt(minStock),
+                    price: priceVal,
+                    stock: stockVal,
+                    minStockAlert: parseInt(minStock) || 5,
                     category: selectedCategory || 'General',
                     description: '',
                 });
             }
             setProductModalVisible(false);
-        } catch (error) {
-            alert("Error al guardar el producto");
+            alert(`¡Producto ${editingProduct ? 'actualizado' : 'registrado'} con éxito!`);
+        } catch (error: any) {
+            console.error(error);
+            alert("Error al guardar el producto: " + (error.message || "Error desconocido"));
         } finally {
             setIsSaving(false);
         }
@@ -191,19 +204,19 @@ export default function InventoryScreen() {
                 </div>
                 <div className="flex items-center gap-4">
                     <button 
-                        onClick={() => alert("Categories screen not implemented yet")} 
-                        className="ui-card hover:ui-card-hover border border-ui-border active:scale-95 transition-all duration-300 px-6 py-4 flex flex-col items-center justify-center min-w-[120px] group shadow-sm bg-ui-surface"
+                        onClick={() => setCategoryModalVisible(true)} 
+                        className="ui-card hover:ui-card-hover border border-white/20 active:scale-95 transition-all duration-400 px-8 h-20 flex flex-col items-center justify-center min-w-[140px] group shadow-float bg-white/40 dark:bg-white/5"
                     >
-                        <LayoutGrid size={22} className="text-ui-text-muted group-hover:text-accent-primary transition-colors mb-1" />
-                        <span className="text-[11px] font-black uppercase tracking-widest text-ui-text-muted group-hover:text-ui-text">Categorías</span>
+                        <LayoutGrid size={24} className="text-ui-text-muted group-hover:text-accent-primary transition-colors mb-1" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted group-hover:text-ui-text">Categorías</span>
                     </button>
                     
                     <button 
                         onClick={openCreateModal} 
-                        className="ui-btn-primary hover:scale-[1.03] active:scale-95 transition-all duration-300 rounded-2xl px-6 py-4 flex flex-col items-center justify-center min-w-[150px]"
+                        className="bg-black text-white dark:bg-white dark:text-black hover:scale-[1.03] active:scale-95 transition-all duration-400 rounded-2xl px-8 h-20 flex flex-col items-center justify-center min-w-[180px] shadow-float"
                     >
-                        <Plus size={24} strokeWidth={3} className="mb-1" />
-                        <span className="text-[11px] font-black uppercase tracking-widest mt-1">Nuevo Producto</span>
+                        <Plus size={28} strokeWidth={3} />
+                        <span className="text-[10px] font-black uppercase tracking-widest mt-1">Nuevo Producto</span>
                     </button>
                 </div>
             </div>
@@ -240,11 +253,11 @@ export default function InventoryScreen() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 {filteredProducts.length === 0 ? (
-                    <div className="col-span-full text-center py-16 text-ios-gray">
-                        <PackageOpen className="mx-auto mb-4 opacity-20" size={56} />
-                        <p className="text-lg font-medium opacity-50">No se encontraron productos.</p>
+                    <div className="col-span-full text-center py-24 text-ui-text-muted">
+                        <PackageOpen className="mx-auto mb-6 opacity-20" size={80} />
+                        <p className="text-xl font-black uppercase tracking-widest opacity-50">Inventario Vacío</p>
                     </div>
                 ) : (
                     filteredProducts.map(item => {
@@ -252,58 +265,62 @@ export default function InventoryScreen() {
                         const isOutOfStock = item.stock === 0;
 
                         return (
-                            <Card key={item.id} className="ui-card ui-card-hover border-none m-0 shadow-sm overflow-hidden group">
-                                <CardContent className="p-5 flex flex-col h-full relative">
-                                    <div className="flex-1">
-                                        <h3 className="text-lg font-bold text-foreground pr-10">{item.name}</h3>
-                                        <p className="text-2xl font-black text-ios-blue mt-1 mb-3">${item.price.toFixed(2)}</p>
-
-                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-ios text-sm font-bold w-fit
-                                ${isOutOfStock ? 'bg-ios-red/10 text-ios-red'
-                                                : isLowStock ? 'bg-orange-500/10 text-orange-600'
-                                                    : 'bg-ios-green/10 text-ios-green'}`}
-                                        >
-                                            <PackageOpen size={16} />
-                                            <span>Stock: {item.stock} {isOutOfStock ? '(Agotado)' : isLowStock ? '(Bajo)' : ''}</span>
+                            <div key={item.id} className="ui-card ui-card-hover p-8 flex flex-col h-full group relative min-h-[300px]">
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className={`p-4 rounded-2xl ${isOutOfStock ? 'bg-red-500/10 text-red-500' : isLowStock ? 'bg-orange-500/10 text-orange-600' : 'bg-green-500/10 text-green-600'}`}>
+                                            <PackageOpen size={24} strokeWidth={2.5} />
                                         </div>
-
                                         {item.category && (
-                                            <div className="mt-3">
-                                                <span className="inline-block px-2 py-1 bg-ios-gray/10 text-foreground/60 rounded-ios-sm text-xs font-semibold uppercase tracking-wider">
-                                                    {item.category}
-                                                </span>
-                                            </div>
+                                            <span className="px-4 py-2 bg-black/5 dark:bg-white/10 text-ui-text-muted rounded-full text-[10px] font-black tracking-widest uppercase">
+                                                {item.category}
+                                            </span>
                                         )}
                                     </div>
-
-                                    <div className="flex justify-between items-center mt-5 pt-4 border-t border-ios-separator/10">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => openStockModal(item)}
-                                            className="text-xs liquid-glass border-0"
-                                        >
-                                            <ArrowRightLeft size={14} className="mr-1.5 text-ios-gray" />
-                                            Ajustar Stock
-                                        </Button>
-
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={() => openEditModal(item)}
-                                                className="p-2 text-ios-gray hover:text-ios-blue hover:bg-ios-blue/10 rounded-ios transition-colors"
-                                            >
-                                                <Edit size={18} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(item)}
-                                                className="p-2 text-ios-gray hover:text-ios-red hover:bg-ios-red/10 rounded-ios transition-colors"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
+                                    
+                                    <h3 className="text-2xl font-black text-ui-text tracking-tight mb-2 leading-none">{item.name}</h3>
+                                    
+                                    <div className="flex items-baseline gap-2 mb-6">
+                                        <span className="text-3xl font-black text-ui-text tracking-tighter">${item.price.toFixed(2)}</span>
+                                        <span className="text-xs font-bold text-ui-text-muted uppercase tracking-widest">USD</span>
                                     </div>
-                                </CardContent>
-                            </Card>
+
+                                    <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest
+                                        ${isOutOfStock ? 'bg-red-500 text-white shadow-[0_4px_12px_rgba(239,68,68,0.3)]'
+                                            : isLowStock ? 'bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)]'
+                                                : 'bg-black/5 dark:bg-white/10 text-ui-text'}`}
+                                    >
+                                        <span>Stock: {item.stock}</span>
+                                        {isOutOfStock && <span>(Agotado)</span>}
+                                        {isLowStock && <span>(Bajo)</span>}
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-between items-center mt-8 pt-6 border-t border-ui-border">
+                                    <button
+                                        onClick={() => openStockModal(item)}
+                                        className="text-[11px] font-black tracking-widest uppercase flex items-center gap-2 text-ui-text-muted hover:text-accent-primary transition-all active:scale-95"
+                                    >
+                                        <ArrowRightLeft size={16} strokeWidth={2.5} />
+                                        Ajustar
+                                    </button>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => openEditModal(item)}
+                                            className="w-10 h-10 flex items-center justify-center bg-black/5 dark:bg-white/5 text-ui-text-muted hover:text-ui-text hover:bg-white/10 rounded-xl transition-all active:scale-90"
+                                        >
+                                            <Edit size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(item)}
+                                            className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-[#FF3B30] hover:bg-[#FF3B30] hover:text-white rounded-xl transition-all active:scale-90"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         )
                     })
                 )}
@@ -312,8 +329,8 @@ export default function InventoryScreen() {
             {/* Product Modal */}
             {productModalVisible && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-200">
-                    <div className="ui-card w-full max-w-lg border border-ui-border overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-                        <div className="p-8">
+                    <div className="ui-card w-full max-w-lg border border-ui-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="p-8 overflow-y-auto custom-scrollbar">
                             <div className="flex justify-between items-center mb-8">
                                 <div>
                                     <h2 className="text-2xl font-black text-ui-text uppercase tracking-tight">
@@ -393,8 +410,8 @@ export default function InventoryScreen() {
             {/* Stock Adjustment Modal */}
             {stockModalVisible && stockAdjustmentProduct && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-200">
-                    <div className="ui-card w-full max-w-md border border-ui-border overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-                        <div className="p-8">
+                    <div className="ui-card w-full max-w-md border border-ui-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="p-8 overflow-y-auto custom-scrollbar">
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h2 className="text-2xl font-black text-ui-text uppercase tracking-tight">Ajustar Stock</h2>
@@ -473,6 +490,11 @@ export default function InventoryScreen() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Category Modal */}
+            {categoryModalVisible && (
+                <CategoryModal onClose={() => setCategoryModalVisible(false)} />
             )}
         </div>
     );

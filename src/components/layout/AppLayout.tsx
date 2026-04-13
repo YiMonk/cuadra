@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     Home,
     ShoppingCart,
@@ -14,17 +14,25 @@ import {
     Menu,
     ShieldAlert,
     Sun,
-    Moon
+    Moon,
+    LogOut
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const { user } = useAuth();
+    const router = useRouter();
+    const { user, isLoading, signOut } = useAuth();
     const { isDarkTheme, toggleTheme } = useAppTheme();
 
     const isAuthRoute = pathname.startsWith('/auth');
+
+    useEffect(() => {
+        if (!isLoading && !user && !isAuthRoute) {
+            router.push('/auth/login');
+        }
+    }, [isLoading, user, isAuthRoute, router]);
 
     if (isAuthRoute) {
         return <>{children}</>;
@@ -49,22 +57,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const mobileNavItems = navItems.slice(0, 4);
 
     return (
-        <div className="flex h-screen transition-colors duration-300">
+        <div className="flex h-screen bg-ui-bg transition-colors duration-500 font-sans overflow-hidden md:overflow-visible">
 
-            {/* Desktop Sidebar - Bento Liquid Glass */}
-            <aside className="hidden md:flex flex-col w-64 shrink-0 p-3 gap-2.5 overflow-y-auto">
+            {/* Desktop Floating Sidebar Pill */}
+            <aside className="hidden md:flex flex-col h-full py-8 pl-8 shrink-0 z-50">
+                <div className="ui-glass-sidebar w-20 flex flex-col h-full items-center py-6 shadow-float transition-all duration-700">
+                    
+                    {/* Logo Section */}
+                    <div className="mb-10 relative group">
+                        <div className="absolute -inset-2 bg-gradient-to-tr from-accent-primary to-accent-secondary opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-700" />
+                        <div className="relative w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-black shadow-lg">
+                            <span className="text-xl font-black italic">C</span>
+                        </div>
+                    </div>
 
-                {/* Bento 1 — Logo Section */}
-                <div className="ui-card px-6 py-6 mb-2 flex items-center justify-center relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-linear-to-br from-accent-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                    <h1 className="text-[28px] font-black tracking-[-0.05em] italic text-accent-primary">
-                        Cookie
-                    </h1>
-                </div>
-
-                {/* Bento 2 — Nav */}
-                <div className="ui-card p-2.5 flex-1 shadow-none">
-                    <nav className="space-y-2">
+                    {/* Navigation Icons Only */}
+                    <nav className="flex-1 flex flex-col items-center gap-6 w-full">
                         {navItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -72,63 +80,72 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <Link
                                     key={item.href}
                                     href={item.href}
-                                    className={`flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-300 group relative active:scale-[0.96] hover:scale-[1.01]
+                                    title={item.name}
+                                    className={`relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-400 group active:scale-90
                                         ${isActive
-                                            ? 'ui-active-pill z-10'
-                                            : 'text-ui-text-muted hover:text-ui-text hover:bg-black/5 dark:hover:bg-white/5'
+                                            ? 'bg-white text-black shadow-[0_8px_30px_rgba(255,255,255,0.3)]'
+                                            : 'text-white/40 hover:text-white hover:bg-white/10'
                                         }`}
                                 >
-                                    <div className={`flex items-center justify-center w-6 h-6 transition-all shrink-0 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
-                                        <Icon size={20} strokeWidth={isActive ? 3 : 2} className="transition-transform duration-500" />
-                                    </div>
-                                    <span className={`text-[12px] font-black tracking-widest uppercase transition-all duration-300 ${isActive ? 'opacity-100 translate-x-1' : 'opacity-70 group-hover:opacity-100 group-hover:translate-x-1'}`}>
-                                        {item.name}
-                                    </span>
+                                    <Icon size={24} strokeWidth={isActive ? 3 : 2} />
+                                    {isActive && (
+                                        <div className="absolute -right-1 w-1 h-4 bg-white rounded-full" />
+                                    )}
                                 </Link>
                             );
                         })}
                     </nav>
-                </div>
 
-                {/* Bento 3 — User card */}
-                <div className="ui-card px-4 py-5 mt-2 shadow-none cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all">
-                    <div className="flex items-center justify-between">
-                        <div className="overflow-hidden">
-                            <p className="text-[15px] font-black text-ui-text truncate leading-tight uppercase tracking-widest">{user?.displayName || 'Usuario'}</p>
-                            <p className="text-[11px] text-accent-primary truncate uppercase font-black tracking-widest mt-1.5">{user?.role || 'Staff'}</p>
-                        </div>
-                        
-                        {/* Flat Theme Switch Toggle */}
-                        <div
-                            onClick={(e) => { e.stopPropagation(); toggleTheme(); }}
-                            className="relative w-14 h-7 rounded-full bg-black/5 dark:bg-white/10 p-1 transition-all duration-500 focus:outline-none group flex items-center shadow-inner"
+                    {/* Bottom Actions - Theme Toggle */}
+                    <div className="mt-auto flex flex-col items-center gap-6">
+                        <button
+                            onClick={toggleTheme}
+                            className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90"
                         >
-                            <div 
-                                className={`absolute top-1 left-1 w-5 h-5 rounded-full transition-all duration-500 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm
-                                    ${isDarkTheme ? 'translate-x-7' : 'translate-x-0'}`}
-                            >
-                                {isDarkTheme ? (
-                                    <Moon size={12} className="text-accent-primary fill-accent-primary" />
-                                ) : (
-                                    <Sun size={12} className="text-amber-500 fill-amber-500" />
-                                )}
+                            {isDarkTheme ? <Moon size={22} /> : <Sun size={22} />}
+                        </button>
+
+                        <div className="w-10 h-10 rounded-full border-2 border-white/20 p-0.5 relative group cursor-pointer overflow-hidden" onClick={signOut}>
+                            <div className="w-full h-full bg-accent-primary rounded-full flex items-center justify-center text-[10px] font-black italic group-hover:bg-red-500 transition-colors">
+                                <LogOut size={16} className="text-white opacity-0 group-hover:opacity-100 absolute transition-opacity" />
+                                <span className="group-hover:opacity-0 transition-opacity">{user?.displayName?.[0] || 'U'}</span>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </aside>
 
-            {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto relative">
-                <div className="h-full w-full max-w-7xl mx-auto px-4 md:px-8 py-4 sm:py-6 container-mobile-fix">
-                    {children}
+            {/* Main Content Area: The Bento Canvas */}
+            <main className="flex-1 h-full overflow-y-auto relative custom-scrollbar overflow-x-hidden">
+                <div className="w-full max-w-[1400px] mx-auto px-4 md:px-12 pt-8 md:pt-12 pb-32 md:pb-12 h-auto min-h-full">
+                    {/* Page Header (Bento Style) */}
+                    <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-left-4 duration-1000">
+                        <div>
+                            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-ui-text">
+                                {navItems.find(n => pathname.startsWith(n.href))?.name || 'Dashboard'}
+                            </h2>
+                            <p className="text-ui-text-muted font-bold mt-2 uppercase tracking-[0.2em] text-xs">
+                                Gestiona tus operaciones diarias con Mermis 2025
+                            </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                            <div className="ui-card px-6 py-3 flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-accent-success animate-pulse" />
+                                <span className="text-xs font-black uppercase tracking-widest text-ui-text">Sistema Activo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="animate-in fade-in zoom-in-95 duration-700">
+                        {children}
+                    </div>
                 </div>
             </main>
 
-            {/* Floating Mobile Tab Pill */}
-            <nav className="md:hidden fixed z-[90] transition-all duration-300 mobile-nav-pill left-0 right-0">
-                <div className="flex justify-around items-center h-[56px]">
+            {/* Mobile Floating Bottom Pill (Styled to match new Bento Glass) */}
+            <nav className="md:hidden fixed z-[90] left-4 right-4 bottom-6 transition-all duration-500 overflow-hidden">
+                <div className="ui-card backdrop-blur-3xl bg-black/90 dark:bg-white/90 p-2 flex justify-around items-center h-[64px] rounded-[32px] border-white/20 border-opacity-30">
                     {mobileNavItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -137,33 +154,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 key={item.href}
                                 href={item.href}
                                 className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 relative
-                                    ${isActive ? 'mobile-tab-active' : 'opacity-40 text-ui-text'}
+                                    ${isActive ? 'text-white dark:text-black' : 'text-white/40 dark:text-black/40'}
                                 `}
                             >
-                                <div className={`p-2 rounded-xl transition-all duration-500 ${isActive ? 'bg-accent-primary/10 scale-110' : ''}`}>
-                                    <Icon size={22} strokeWidth={isActive ? 3 : 2} className="transition-transform duration-300" />
+                                <div className={`p-2 rounded-2xl transition-all duration-500 ${isActive ? 'bg-white/10 dark:bg-black/10 scale-110' : ''}`}>
+                                    <Icon size={24} strokeWidth={isActive ? 3 : 2} />
                                 </div>
                                 {isActive && (
-                                    <div className="absolute -bottom-1 w-1 h-1 bg-accent-primary rounded-full animate-bounce" />
+                                    <div className="absolute -bottom-1 w-1.5 h-1.5 bg-accent-primary rounded-full" />
                                 )}
                             </Link>
                         )
                     })}
-                    {navItems.length > 4 && (
-                        <Link
-                            href="/menu"
-                            className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 relative
-                                ${pathname === '/menu' ? 'mobile-tab-active' : 'opacity-40 text-ui-text'}
-                            `}
-                        >
-                            <div className={`p-2 rounded-xl transition-all duration-500 ${pathname === '/menu' ? 'bg-accent-primary/10 scale-110' : ''}`}>
-                                <Menu size={22} strokeWidth={pathname === '/menu' ? 3 : 2} />
-                            </div>
-                            {pathname === '/menu' && (
-                                <div className="absolute -bottom-1 w-1 h-1 bg-accent-primary rounded-full animate-bounce" />
-                            )}
-                        </Link>
-                    )}
                 </div>
             </nav>
 

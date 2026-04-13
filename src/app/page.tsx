@@ -9,16 +9,13 @@ export default function Home() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
+  // Redirects handled by AppLayout for cleaner routing
   useEffect(() => {
-    if (!isLoading) {
-      if (user) {
-        if (user.role === 'admingod') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/pos');
-        }
+    if (!isLoading && user) {
+      if (user.role === 'admingod') {
+        router.push('/admin/dashboard');
       } else {
-        router.push('/auth/login');
+        router.push('/pos');
       }
     }
   }, [user, isLoading, router]);

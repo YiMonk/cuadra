@@ -35,22 +35,22 @@ export function Select({ options, value, onChange, icon, className = '' }: Selec
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-(--btn-radius) transition-all
-                    ${isOpen ? 'neo-pressed ring-1 ring-accent-cyan/30' : 'neo-convex hover:neo-pressed'}
+                className={`ui-input-box w-full flex items-center justify-between gap-3 px-4 py-3 transition-opacity
+                    ${isOpen ? 'opacity-90' : 'hover:opacity-80'}
                 `}
             >
-                <div className="flex items-center gap-3 truncate">
-                    {icon && <span className="text-neo-text-muted">{icon}</span>}
-                    <span className="text-[14px] font-bold text-neo-text tracking-wide truncate">
+                <div className="flex items-center gap-3 truncate text-ui-text">
+                    {icon && <span className="opacity-50">{icon}</span>}
+                    <span className="text-[14px] font-bold tracking-wide truncate">
                         {selectedOption?.label || 'Seleccionar...'}
                     </span>
                 </div>
-                <ChevronDown size={16} className={`text-neo-text-muted transition-transform duration-200 ${isOpen ? 'rotate-180 text-accent-cyan' : ''}`} />
+                <ChevronDown size={16} className={`text-ui-text-muted transition-transform duration-200 ${isOpen ? 'rotate-180 text-accent-primary' : ''}`} />
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 z-50 neo-raised rounded-(--btn-radius) overflow-hidden border border-white/5 animate-in fade-in zoom-in-95 duration-200" style={{ maxHeight: '250px', overflowY: 'auto' }}>
-                    <ul className="py-1">
+                <div className="absolute top-full left-0 right-0 mt-2 z-50 ui-card border border-ui-border overflow-hidden shadow-float animate-in fade-in zoom-in-95 duration-200" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                    <ul className="py-1 bg-ui-surface">
                         {options.map((option) => {
                             const isSelected = option.value === value;
                             return (
@@ -62,12 +62,12 @@ export function Select({ options, value, onChange, icon, className = '' }: Selec
                                             setIsOpen(false);
                                         }}
                                         className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors
-                                            ${isSelected ? 'bg-white/10 text-accent-cyan' : 'text-neo-text-muted hover:bg-white/5 hover:text-white'}`}
+                                            ${isSelected ? 'bg-accent-primary/10 text-accent-primary' : 'text-ui-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-ui-text'}`}
                                     >
-                                        <span className={`text-[13px] font-bold tracking-wide truncate ${isSelected ? 'text-accent-cyan' : ''}`}>
+                                        <span className={`text-[13px] font-bold tracking-wide truncate ${isSelected ? 'text-accent-primary' : ''}`}>
                                             {option.label}
                                         </span>
-                                        {isSelected && <Check size={14} strokeWidth={3} className="text-accent-cyan shrink-0" />}
+                                        {isSelected && <Check size={14} strokeWidth={3} className="text-accent-primary shrink-0" />}
                                     </button>
                                 </li>
                             );

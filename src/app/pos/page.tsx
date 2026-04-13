@@ -157,48 +157,46 @@ export default function POSScreen() {
     }
 
     return (
-        <div className="p-4 md:p-6 h-[calc(100vh-80px)] md:h-screen flex flex-col md:flex-row gap-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+        <div className="h-full flex flex-col lg:flex-row gap-8 animate-in fade-in duration-1000">
 
-            {/* Products Area (Left) */}
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                <div className="mb-4 space-y-4 shrink-0">
-                    <div>
-                        <h1 className="text-3xl font-black tracking-widest text-ui-text uppercase">Punto de Venta</h1>
-                        <p className="text-ui-text-muted/80 font-bold uppercase tracking-wide text-xs">Caja Principal y Catálogo</p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <div className="relative flex-1">
-                            <Input
-                                placeholder="Buscar productos..."
-                                leftIcon={<Search size={18} />}
+            {/* Products Area (Left) — The Grid Canvas */}
+            <div className="flex-1 flex flex-col min-h-0">
+                <div className="mb-8 space-y-6 shrink-0">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div className="relative flex-1 max-w-xl">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-ui-text-muted">
+                                <Search size={20} />
+                            </div>
+                            <input
+                                placeholder="Buscar en el catálogo..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full h-14 pl-12 pr-6 rounded-2xl bg-white/50 dark:bg-white/5 border border-ui-border focus:bg-white dark:focus:bg-white/10 focus:ring-4 focus:ring-accent-primary/10 transition-all outline-none font-bold text-ui-text"
                             />
                         </div>
-                    </div>
 
-                    {categories.length > 0 && (
-                        <div className="flex gap-2.5 overflow-x-auto pb-4 pt-1 scrollbar-hide shrink-0 pl-1">
-                            <button
-                                onClick={() => setSelectedCategory(null)}
-                                className={`px-5 py-2.5 rounded-xl text-[13px] font-black tracking-wide whitespace-nowrap transition-all flex items-center gap-2 ${!selectedCategory ? 'ui-active-pill scale-105' : 'ui-card hover:ui-card-hover border border-ui-border text-ui-text-muted hover:text-ui-text'}`}
-                            >
-                                <LayoutGrid size={16} strokeWidth={!selectedCategory ? 3 : 2} />
-                                TODAS
-                            </button>
-                            {categories.map(cat => (
+                        {categories.length > 0 && (
+                            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar-hide shrink-0">
                                 <button
-                                    key={cat}
-                                    onClick={() => setSelectedCategory(cat)}
-                                    className={`px-5 py-2.5 rounded-xl text-[13px] font-black tracking-wide whitespace-nowrap transition-all flex items-center gap-2 ${selectedCategory === cat ? 'ui-active-pill scale-105' : 'ui-card hover:ui-card-hover border border-ui-border text-ui-text-muted hover:text-ui-text'}`}
+                                    onClick={() => setSelectedCategory(null)}
+                                    className={`px-6 h-14 rounded-2xl text-xs font-black tracking-widest uppercase transition-all flex items-center gap-2 border ${!selectedCategory ? 'bg-black text-white border-black' : 'bg-white/50 dark:bg-white/5 border-ui-border text-ui-text-muted hover:border-ui-text'}`}
                                 >
-                                    {getCategoryIcon(cat)}
-                                    {cat.toUpperCase()}
+                                    <LayoutGrid size={18} />
+                                    Todo
                                 </button>
-                            ))}
-                        </div>
-                    )}
+                                {categories.map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setSelectedCategory(cat)}
+                                        className={`px-6 h-14 rounded-2xl text-xs font-black tracking-widest uppercase transition-all flex items-center gap-2 border ${selectedCategory === cat ? 'bg-black text-white border-black' : 'bg-white/50 dark:bg-white/5 border-ui-border text-ui-text-muted hover:border-ui-text'}`}
+                                    >
+                                        {getCategoryIcon(cat)}
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto min-h-0 pb-20 md:pb-0 pr-2">
@@ -208,37 +206,36 @@ export default function POSScreen() {
                             <p>No se encontraron productos.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 auto-rows-max p-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
                             {filteredProducts.map(product => {
                                 const isOutOfStock = product.stock === 0;
                                 const cartItem = items.find(i => i.id === product.id);
                                 const qtyInCart = cartItem ? cartItem.quantity : 0;
                                 return (
-                                    <div key={product.id} className="ui-card ui-card-hover border border-ui-border p-4 flex flex-col justify-between h-[180px]">
-                                        <div>
-                                            <h3 className="font-black tracking-wide text-ui-text line-clamp-2 text-sm md:text-[15px] leading-snug">{product.name}</h3>
-                                            <div className="flex justify-between items-center mt-3">
-                                                <span className="font-black text-accent-primary text-[22px]">${product.price.toFixed(2)}</span>
-                                                <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${isOutOfStock ? 'bg-[#FF3B30]/15 text-[#FF3B30] ring-1 ring-[#FF3B30]/30' : 'bg-black/5 dark:bg-white/5 text-ui-text-muted'}`}>
+                                    <div key={product.id} onClick={() => !isOutOfStock && addToCart(product)} className="ui-card ui-card-hover p-6 flex flex-col justify-between min-h-[220px] cursor-pointer group active:scale-95">
+                                        <div className="relative">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className={`p-3 rounded-2xl ${isOutOfStock ? 'bg-red-500/10 text-red-500' : 'bg-accent-primary/5 text-accent-primary'}`}>
+                                                    {getCategoryIcon(product.category || 'General')}
+                                                </div>
+                                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${isOutOfStock ? 'bg-red-500 text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text'}`}>
                                                     {isOutOfStock ? 'Agotado' : `${product.stock} un`}
                                                 </span>
                                             </div>
+                                            <h3 className="font-black text-xl text-ui-text tracking-tight leading-[1.1] mb-2">{product.name}</h3>
+                                            <p className="text-ui-text-muted text-xs font-bold uppercase tracking-widest">{product.category}</p>
                                         </div>
-                                        <div className="mt-4">
-                                            {qtyInCart > 0 ? (
-                                                <div className="flex items-center justify-between ui-input-box p-1">
-                                                    <button onClick={() => updateQuantity(product.id!, qtyInCart - 1)} className="p-2 text-accent-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-lg active:scale-95">
-                                                        <Minus size={16} strokeWidth={3} />
-                                                    </button>
-                                                    <span className="font-bold text-ui-text w-8 text-center text-[15px]">{qtyInCart}</span>
-                                                    <button onClick={() => addToCart(product)} disabled={qtyInCart >= product.stock} className="p-2 text-accent-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-lg active:scale-95 disabled:opacity-30">
-                                                        <Plus size={16} strokeWidth={3} />
-                                                    </button>
+                                        
+                                        <div className="mt-6 flex items-end justify-between">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-ui-text-muted uppercase tracking-widest mb-1">Precio</span>
+                                                <span className="font-black text-3xl text-ui-text tracking-tighter">${product.price.toFixed(2)}</span>
+                                            </div>
+
+                                            {qtyInCart > 0 && (
+                                                <div className="w-10 h-10 rounded-full bg-accent-primary flex items-center justify-center text-white font-black text-sm animate-in zoom-in-50 duration-300">
+                                                    {qtyInCart}
                                                 </div>
-                                            ) : (
-                                                <button onClick={() => addToCart(product)} disabled={isOutOfStock} className="ui-btn ui-btn-secondary w-full text-[13px] py-2 h-10 tracking-widest uppercase disabled:opacity-50">
-                                                    Agregar
-                                                </button>
                                             )}
                                         </div>
                                     </div>
@@ -249,9 +246,11 @@ export default function POSScreen() {
                 </div>
             </div>
 
-            {/* Cart Invoice Sidebar */}
-            <div className={`fixed inset-x-0 md:inset-x-auto bottom-0 md:bottom-auto md:relative md:w-[400px] md:shrink-0 flex flex-col bg-ui-surface rounded-t-3xl md:rounded-2xl border-t md:border border-ui-border transition-all duration-500 z-40 p-2 shadow-2xl md:shadow-soft
-                ${items.length > 0 ? (isCartMinimized ? 'translate-y-[calc(100%-80px)] md:translate-y-0' : 'translate-y-0') : 'translate-y-[120%] md:translate-y-0 md:opacity-100'} h-[65vh] md:h-full overflow-hidden`}>
+            {/* Cart Invoice Sidebar (Glass Bento Widget) */}
+            <div className={`fixed inset-x-0 bottom-0 lg:relative lg:inset-x-auto lg:bottom-auto w-full lg:w-[450px] shrink-0 flex flex-col transition-all duration-700 z-50
+                ${items.length > 0 ? (isCartMinimized ? 'translate-y-[calc(100%-80px)] lg:translate-y-0' : 'translate-y-0') : 'translate-y-[120%] lg:translate-y-0 lg:opacity-50'} h-[75vh] lg:h-full`}>
+                
+                <div className="ui-card h-full flex flex-col p-4 border border-white/20 shadow-float">
 
                 <div className="p-5 relative cursor-pointer md:cursor-default" onClick={() => window.innerWidth < 768 && setIsCartMinimized(!isCartMinimized)}>
                     <div className="w-12 h-1.5 bg-ui-border rounded-full mx-auto mb-4 md:hidden" />
@@ -339,13 +338,13 @@ export default function POSScreen() {
                         Continuar
                     </button>
                 </div>
-            </div>
+            </div></div>
 
             {/* Modal de Cobro */}
             {checkoutModalVisible && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 transition-all animate-in fade-in duration-200">
-                    <div className="ui-card w-full max-w-lg border border-ui-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="p-8">
+                    <div className="ui-card w-full max-w-lg border border-ui-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+                        <div className="p-8 overflow-y-auto custom-scrollbar">
                             <div className="mb-8">
                                 <h2 className="text-2xl font-black tracking-tight text-ui-text uppercase">Confirmar Cobro</h2>
                                 <p className="text-accent-primary font-black uppercase tracking-[0.2em] text-[11px] mt-1">Completa los detalles de pago</p>
@@ -409,7 +408,7 @@ export default function POSScreen() {
             {/* Modal de Clientes */}
             {clientModalVisible && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 transition-all animate-in fade-in duration-200">
-                    <div className="ui-card w-full max-w-md border border-ui-border flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-300">
+                    <div className="ui-card w-full max-w-md border border-ui-border flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300">
                         <div className="p-8 pb-4">
                             <h2 className="text-2xl font-black tracking-tight text-ui-text uppercase mb-6">Seleccionar Cliente</h2>
                             <Input placeholder="Buscar por nombre..." value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} autoFocus leftIcon={<Search size={18} />} />

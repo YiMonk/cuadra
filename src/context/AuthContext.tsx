@@ -17,62 +17,84 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const isProcessingRef = React.useRef(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
-            if (firebaseUser) {
-                let meta = await UserService.getUserById(firebaseUser.uid);
+            if (isProcessingRef.current) return;
+            isProcessingRef.current = true;
 
-                if (!meta) {
-                    meta = {
-                        id: firebaseUser.uid,
-                        displayName: firebaseUser.displayName || 'Usuario',
-                        email: firebaseUser.email || '',
-                        active: true,
-                        role: 'admin',
-                        ownerId: firebaseUser.uid,
-                        createdAt: Date.now()
-                    };
-                    await UserService.syncUserMetadata(firebaseUser.uid, meta);
-                } else if (meta.email !== firebaseUser.email) {
-                    await UserService.updateUser(firebaseUser.uid, { email: firebaseUser.email || '' });
-                    meta.email = firebaseUser.email || '';
-                }
+            try {
+                if (firebaseUser) {
+                    console.log("Auth state: User logged in", firebaseUser.uid);
+                    try {
+                        let meta = await UserService.getUserById(firebaseUser.uid);
 
-                if (!meta.active) {
-                    console.log("User is inactive");
-                    await auth.signOut();
-                    setUser(null);
-                    setIsLoading(false);
-                    return;
-                }
+                        if (!meta) {
+                            console.log("No metadata found, initializing...");
+                            meta = {
+                                id: firebaseUser.uid,
+                                displayName: firebaseUser.displayName || 'Usuario',
+                                email: firebaseUser.email || '',
+                                active: true,
+                                role: 'admin',
+                                ownerId: firebaseUser.uid,
+                                createdAt: Date.now()
+                            };
+                            await UserService.syncUserMetadata(firebaseUser.uid, meta);
+                        } else if (meta.email !== firebaseUser.email) {
+                            await UserService.updateUser(firebaseUser.uid, { email: firebaseUser.email || '' });
+                            meta.email = firebaseUser.email || '';
+                        }
 
-                if (meta.role === 'staff' && meta.ownerId) {
-                    const owner = await UserService.getUserById(meta.ownerId);
-                    if (owner && !owner.active) {
-                        console.log("Owner is inactive, blocking staff");
+                        if (!meta.active) {
+                            console.warn("User inactive, signing out...");
+                            await auth.signOut();
+                            setUser(null);
+                            setIsLoading(false);
+                            isProcessingRef.current = false;
+                            return;
+                        }
+
+                        if (meta.role === 'staff' && meta.ownerId) {
+                            const owner = await UserService.getUserById(meta.ownerId);
+                            if (owner && !owner.active) {
+                                console.warn("Owner inactive, signing out staff...");
+                                await auth.signOut();
+                                setUser(null);
+                                setIsLoading(false);
+                                isProcessingRef.current = false;
+                                return;
+                            }
+                        }
+
+                        const userProfile: UserProfile = {
+                            uid: firebaseUser.uid,
+                            email: firebaseUser.email,
+                            displayName: firebaseUser.displayName,
+                            photoURL: firebaseUser.photoURL,
+                            role: meta.role,
+                            ownerId: meta.ownerId,
+                            createdAt: meta.createdAt || Date.now(),
+                        };
+
+                        setUser(userProfile);
+                    } catch (error) {
+                        console.error("Critical: Error fetching metadata, clearing auth session:", error);
                         await auth.signOut();
                         setUser(null);
-                        setIsLoading(false);
-                        return;
                     }
+                } else {
+                    console.log("-> Auth state: No Firebase user detected, setting profile to null");
+                    setUser(null);
                 }
-
-                const userProfile: UserProfile = {
-                    uid: firebaseUser.uid,
-                    email: firebaseUser.email,
-                    displayName: firebaseUser.displayName,
-                    photoURL: firebaseUser.photoURL,
-                    role: meta.role,
-                    ownerId: meta.ownerId,
-                    createdAt: meta.createdAt || Date.now(),
-                };
-
-                setUser(userProfile);
-            } else {
-                setUser(null);
+            } catch (globalError) {
+                console.error("-> Global error in auth listener:", globalError);
+            } finally {
+                console.log("-> Auth processing complete, setting isLoading: false");
+                setIsLoading(false);
+                isProcessingRef.current = false;
             }
-            setIsLoading(false);
         });
 
         const timeout = setTimeout(() => {
