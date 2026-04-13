@@ -16,7 +16,7 @@ export interface UserMetadata {
     id: string;
     email: string;
     displayName: string;
-    role: 'admingod' | 'admin' | 'staff';
+    role: 'admingod' | 'admin' | 'owner' | 'staff';
     active: boolean;
     ownerId?: string;
     createdAt: number;

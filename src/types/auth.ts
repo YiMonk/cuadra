@@ -3,7 +3,7 @@ export interface UserProfile {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
-  role: 'admingod' | 'admin' | 'staff'; // For future role-based access
+  role: 'admingod' | 'admin' | 'owner' | 'staff'; // For future role-based access
   ownerId?: string;
   createdAt: number;
   subscriptionEndsAt?: number;
