@@ -18,7 +18,9 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [view, setView] = useState<'login' | 'forgot'>('login');
     const [errorMsg, setErrorMsg] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
 
     React.useEffect(() => {
         if (user) {
@@ -72,17 +74,31 @@ export default function LoginPage() {
         }
     };
 
-    const handleResetPassword = async () => {
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setErrorMsg('');
+        setSuccessMsg('');
+
         if (!email) {
             setErrorMsg('Ingresa tu correo para enviarte instrucciones de recuperación.');
             return;
         }
 
+        setLoading(true);
         try {
             await sendPasswordResetEmail(auth, email.trim());
-            alert('Revisa tu bandeja de entrada para restablecer tu contraseña.');
+            setSuccessMsg(`¡Hecho! Hemos enviado un enlace de recuperación a ${email}. No olvides revisar la bandeja de SPAM si no lo visualizas en la principal.`);
+            setLoading(false);
         } catch (error: any) {
-            setErrorMsg('No se pudo enviar el correo de recuperación');
+            let message = 'No se pudo enviar el correo de recuperación';
+            if (error.code === 'auth/user-not-found') {
+                // For security, some apps don't reveal if user exists. 
+                // But the user requested "if registered", so we can be explicit or followed standard.
+                // However Firebase often returns success even if user not found to prevent user enumeration.
+                message = 'Si el correo está registrado, recibirás las instrucciones en breve.';
+            }
+            setErrorMsg(message);
+            setLoading(false);
         }
     };
 
@@ -97,47 +113,89 @@ export default function LoginPage() {
                     <p className="text-gray-500 mt-2 font-medium">Gestiona tus ventas de forma simple</p>
                 </div>
 
-                <Card>
-                    <CardContent className="pt-6">
-                        <form onSubmit={handleLogin} className="space-y-4">
-                            <Input
-                                label="Correo Electrónico"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="ejemplo@correo.com"
-                                required
-                            />
+                <Card className="overflow-hidden border-0 shadow-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
+                    <CardContent className="pt-8 p-6">
+                        {view === 'login' ? (
+                            <form onSubmit={handleLogin} className="space-y-4 animate-in slide-in-from-left duration-300">
+                                <Input
+                                    label="Correo Electrónico"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="ejemplo@correo.com"
+                                    required
+                                />
 
-                            <Input
-                                label="Contraseña"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                required
-                            />
+                                <Input
+                                    label="Contraseña"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                />
 
-                            {errorMsg && (
-                                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium border border-red-100 dark:border-red-900/50">
-                                    {errorMsg}
+                                {errorMsg && (
+                                    <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-medium border border-red-100 dark:border-red-900/50">
+                                        {errorMsg}
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setView('forgot')}
+                                        className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition"
+                                    >
+                                        ¿Olvidaste tu contraseña?
+                                    </button>
                                 </div>
-                            )}
 
-                            <div className="flex justify-end">
+                                <Button type="submit" className="w-full mt-2" size="lg" isLoading={loading}>
+                                    Iniciar Sesión
+                                </Button>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleResetPassword} className="space-y-5 animate-in slide-in-from-right duration-300">
+                                <div className="text-center mb-2">
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recuperar Acceso</h2>
+                                    <p className="text-sm text-gray-500 mt-1">Ingresa tu correo y te enviaremos instrucciones.</p>
+                                </div>
+
+                                <Input
+                                    label="Correo Electrónico"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="ejemplo@correo.com"
+                                    required
+                                />
+
+                                {errorMsg && (
+                                    <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-medium border border-red-100 dark:border-red-900/50">
+                                        {errorMsg}
+                                    </div>
+                                )}
+
+                                {successMsg && (
+                                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium border border-green-100 dark:border-green-900/50 leading-relaxed">
+                                        {successMsg}
+                                    </div>
+                                )}
+
+                                <Button type="submit" className="w-full" size="lg" isLoading={loading} disabled={!!successMsg}>
+                                    Enviar Instrucciones
+                                </Button>
+
                                 <button
                                     type="button"
-                                    onClick={handleResetPassword}
-                                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 transition"
+                                    onClick={() => { setView('login'); setSuccessMsg(''); setErrorMsg(''); }}
+                                    className="w-full text-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
                                 >
-                                    ¿Olvidaste tu contraseña?
+                                    Volver al inicio de sesión
                                 </button>
-                            </div>
-
-                            <Button type="submit" className="w-full mt-2" size="lg" isLoading={loading}>
-                                Iniciar Sesión
-                            </Button>
-                        </form>
+                            </form>
+                        )}
 
                         <div className="mt-8">
                             <div className="relative">

@@ -11,8 +11,8 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useRouter } from 'next/navigation';
 
-export default function ClientProfileScreen({ params }: { params: { clientId: string } }) {
-    const clientId = params.clientId;
+export default function ClientProfileScreen({ params }: { params: Promise<{ clientId: string }> }) {
+    const { clientId } = React.use(params);
     const router = useRouter();
     const { user: currentUser } = useAuth();
 
