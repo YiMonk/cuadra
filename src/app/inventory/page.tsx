@@ -9,12 +9,14 @@ import { Search, Plus, PackageOpen, AlertCircle, XCircle, Edit, Trash2, PackageP
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Select } from '@/components/ui/Select';
 import { CategoryModal } from '@/components/inventory/CategoryModal';
 
 export default function InventoryScreen() {
     const router = useRouter();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -104,13 +106,22 @@ export default function InventoryScreen() {
     };
 
     const handleDelete = async (product: Product) => {
-        if (confirm(`¿Estás seguro de que deseas eliminar "${product.name}"?`)) {
-            try {
-                await ProductService.deleteProduct(product.id!);
-            } catch (error) {
-                alert("Error eliminando producto");
-            }
-        }
+        if (!product.id) return;
+        
+        toast.error(`¿Eliminar "${product.name}"?`, {
+            action: {
+                label: 'Eliminar',
+                onClick: async () => {
+                    try {
+                        await ProductService.deleteProduct(product.id!);
+                        toast.success('Producto eliminado');
+                    } catch (error) {
+                        toast.error("Error eliminando producto");
+                    }
+                }
+            },
+            cancel: { label: 'Cancelar' }
+        });
     };
 
     const handleSaveProduct = async (e: React.FormEvent) => {
@@ -121,11 +132,11 @@ export default function InventoryScreen() {
         const priceVal = parseFloat(price) || 0;
         
         if (stockVal < 0) {
-            alert("El stock no puede ser negativo.");
+            toast.error("El stock no puede ser negativo.");
             return;
         }
         if (priceVal < 0) {
-            alert("El precio no puede ser negativo.");
+            toast.error("El precio no puede ser negativo.");
             return;
         }
 
@@ -150,10 +161,10 @@ export default function InventoryScreen() {
                 });
             }
             setProductModalVisible(false);
-            alert(`¡Producto ${editingProduct ? 'actualizado' : 'registrado'} con éxito!`);
+            toast.success(`¡Producto ${editingProduct ? 'actualizado' : 'registrado'} con éxito!`);
         } catch (error: any) {
             console.error(error);
-            alert("Error al guardar el producto: " + (error.message || "Error desconocido"));
+            toast.error("Error al guardar el producto: " + (error.message || "Error desconocido"));
         } finally {
             setIsSaving(false);
         }
@@ -175,8 +186,9 @@ export default function InventoryScreen() {
             const adj = adjustmentReason === 'waste' ? -parseInt(adjustmentQuantity) : parseInt(adjustmentQuantity);
             await ProductService.adjustStock(stockAdjustmentProduct.id!, adj, adjustmentReason, adjustmentNotes);
             setStockModalVisible(false);
+            toast.success('Stock actualizado');
         } catch (error) {
-            alert('Error actualizando stock');
+            toast.error('Error actualizando stock');
         } finally {
             setIsSavingStock(false);
         }
@@ -203,21 +215,25 @@ export default function InventoryScreen() {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button 
-                        onClick={() => setCategoryModalVisible(true)} 
-                        className="ui-card hover:ui-card-hover border border-white/20 active:scale-95 transition-all duration-400 px-8 h-20 flex flex-col items-center justify-center min-w-[140px] group shadow-float bg-white/40 dark:bg-white/5"
-                    >
-                        <LayoutGrid size={24} className="text-ui-text-muted group-hover:text-accent-primary transition-colors mb-1" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted group-hover:text-ui-text">Categorías</span>
-                    </button>
-                    
-                    <button 
-                        onClick={openCreateModal} 
-                        className="bg-black text-white dark:bg-white dark:text-black hover:scale-[1.03] active:scale-95 transition-all duration-400 rounded-2xl px-8 h-20 flex flex-col items-center justify-center min-w-[180px] shadow-float"
-                    >
-                        <Plus size={28} strokeWidth={3} />
-                        <span className="text-[10px] font-black uppercase tracking-widest mt-1">Nuevo Producto</span>
-                    </button>
+                    {user?.role !== 'staff' && (
+                        <>
+                            <button 
+                                onClick={() => setCategoryModalVisible(true)} 
+                                className="ui-card hover:ui-card-hover border border-white/20 active:scale-95 transition-all duration-400 px-8 h-20 flex flex-col items-center justify-center min-w-[140px] group shadow-float bg-white/40 dark:bg-white/5"
+                            >
+                                <LayoutGrid size={24} className="text-ui-text-muted group-hover:text-accent-primary transition-colors mb-1" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted group-hover:text-ui-text">Categorías</span>
+                            </button>
+                            
+                            <button 
+                                onClick={openCreateModal} 
+                                className="bg-black text-white dark:bg-white dark:text-black hover:scale-[1.03] active:scale-95 transition-all duration-400 rounded-2xl px-8 h-20 flex flex-col items-center justify-center min-w-[180px] shadow-float"
+                            >
+                                <Plus size={28} strokeWidth={3} />
+                                <span className="text-[10px] font-black uppercase tracking-widest mt-1">Nuevo Producto</span>
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -297,28 +313,36 @@ export default function InventoryScreen() {
                                 </div>
 
                                 <div className="flex justify-between items-center mt-8 pt-6 border-t border-ui-border">
-                                    <button
-                                        onClick={() => openStockModal(item)}
-                                        className="text-[11px] font-black tracking-widest uppercase flex items-center gap-2 text-ui-text-muted hover:text-accent-primary transition-all active:scale-95"
-                                    >
-                                        <ArrowRightLeft size={16} strokeWidth={2.5} />
-                                        Ajustar
-                                    </button>
+                                    {user?.role !== 'staff' ? (
+                                        <>
+                                            <button
+                                                onClick={() => openStockModal(item)}
+                                                className="text-[11px] font-black tracking-widest uppercase flex items-center gap-2 text-ui-text-muted hover:text-accent-primary transition-all active:scale-95"
+                                            >
+                                                <ArrowRightLeft size={16} strokeWidth={2.5} />
+                                                Ajustar
+                                            </button>
 
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => openEditModal(item)}
-                                            className="w-10 h-10 flex items-center justify-center bg-black/5 dark:bg-white/5 text-ui-text-muted hover:text-ui-text hover:bg-white/10 rounded-xl transition-all active:scale-90"
-                                        >
-                                            <Edit size={18} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(item)}
-                                            className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-[#FF3B30] hover:bg-[#FF3B30] hover:text-white rounded-xl transition-all active:scale-90"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => openEditModal(item)}
+                                                    className="w-10 h-10 flex items-center justify-center bg-black/5 dark:bg-white/5 text-ui-text-muted hover:text-ui-text hover:bg-white/10 rounded-xl transition-all active:scale-90"
+                                                >
+                                                    <Edit size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(item)}
+                                                    className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-[#FF3B30] hover:bg-[#FF3B30] hover:text-white rounded-xl transition-all active:scale-90"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="w-full text-center py-2 px-4 rounded-xl bg-black/5 text-ui-text-muted text-[10px] font-black uppercase tracking-widest">
+                                            Solo Lectura
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )

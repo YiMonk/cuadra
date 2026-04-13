@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                 displayName: firebaseUser.displayName || 'Usuario',
                                 email: firebaseUser.email || '',
                                 active: true,
-                                role: 'admin',
+                                role: 'owner',
                                 ownerId: firebaseUser.uid,
                                 createdAt: Date.now()
                             };
@@ -58,14 +58,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                         if (meta.role === 'staff' && meta.ownerId) {
                             const owner = await UserService.getUserById(meta.ownerId);
-                            if (owner && !owner.active) {
-                                console.warn("Owner inactive, signing out staff...");
+                            if (owner && (!owner.active || (owner.subscriptionEndsAt && owner.subscriptionEndsAt < Date.now()))) {
+                                console.warn("Owner inactive or expired, signing out staff...");
                                 await auth.signOut();
                                 setUser(null);
                                 setIsLoading(false);
                                 isProcessingRef.current = false;
                                 return;
                             }
+                        }
+
+                        // Check subscription for owners
+                        if (meta.role === 'owner' && meta.subscriptionEndsAt && meta.subscriptionEndsAt < Date.now()) {
+                            console.warn("Subscription expired, signing out...");
+                            await auth.signOut();
+                            setUser(null);
+                            setIsLoading(false);
+                            isProcessingRef.current = false;
+                            return;
                         }
 
                         const userProfile: UserProfile = {
@@ -76,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             role: meta.role,
                             ownerId: meta.ownerId,
                             createdAt: meta.createdAt || Date.now(),
+                            subscriptionEndsAt: meta.subscriptionEndsAt,
                         };
 
                         setUser(userProfile);
@@ -132,8 +143,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     email: updatedUser.email,
                     displayName: updatedUser.displayName,
                     photoURL: updatedUser.photoURL,
-                    role: user?.role || 'admin',
+                    role: user?.role || 'owner',
                     createdAt: user?.createdAt || Date.now(),
+                    subscriptionEndsAt: user?.subscriptionEndsAt,
+                    ownerId: user?.ownerId,
                 };
                 setUser(userProfile);
             }

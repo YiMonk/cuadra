@@ -10,6 +10,7 @@ import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, Chevr
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { toast } from 'sonner';
 
 export default function SettingsScreen() {
     const { user, signOut, isLoading, reloadUser } = useAuth();
@@ -25,9 +26,13 @@ export default function SettingsScreen() {
     const isDark = theme === 'dark';
 
     const handleLogout = () => {
-        if (confirm('¿Estás seguro que deseas salir?')) {
-            signOut();
-        }
+        toast.warning('¿Estás seguro que deseas salir?', {
+            action: {
+                label: 'Cerrar Sesión',
+                onClick: () => signOut()
+            },
+            cancel: { label: 'Cancelar' }
+        });
     };
 
     const validateEmail = (email: string) => {
@@ -42,7 +47,7 @@ export default function SettingsScreen() {
         if (!currentUser) return;
 
         if (newEmail.trim() !== currentUser.email && !validateEmail(newEmail.trim())) {
-            alert('Por favor, ingresa un correo electrónico válido.');
+            toast.error('Por favor, ingresa un correo electrónico válido.');
             return;
         }
 
@@ -55,7 +60,7 @@ export default function SettingsScreen() {
                 const credential = EmailAuthProvider.credential(currentUser.email!, currentPassword);
                 await reauthenticateWithCredential(currentUser, credential);
             } else if ((newEmail.trim() !== currentUser.email || newPassword.trim()) && !currentPassword) {
-                alert('Para cambiar tu correo o contraseña, debes ingresar tu contraseña actual.');
+                toast.error('Para cambiar tu correo o contraseña, debes ingresar tu contraseña actual.');
                 setUpdating(false);
                 return;
             }
@@ -85,9 +90,9 @@ export default function SettingsScreen() {
             await reloadUser();
 
             if (emailChanged) {
-                alert(`Se ha enviado un correo de verificación a ${newEmail}. Debes verificarlo para que el cambio sea efectivo.`);
+                toast.success(`Se ha enviado un correo de verificación a ${newEmail}.`);
             } else {
-                alert('Perfil actualizado correctamente');
+                toast.success('Perfil actualizado correctamente');
             }
 
             setProfileDialogVisible(false);
@@ -96,9 +101,9 @@ export default function SettingsScreen() {
         } catch (error: any) {
             console.error(error);
             if (error.code?.includes('wrong-password') || error.code?.includes('invalid-credential')) {
-                alert('La contraseña actual es incorrecta o la sesión ha expirado.');
+                toast.error('La contraseña actual es incorrecta o la sesión ha expirado.');
             } else {
-                alert(error.message || 'No se pudo actualizar el perfil');
+                toast.error(error.message || 'No se pudo actualizar el perfil');
             }
         } finally {
             setUpdating(false);
@@ -126,8 +131,14 @@ export default function SettingsScreen() {
                         {user?.email}
                     </p>
 
-                    <div className="inline-block px-4 py-1.5 bg-black/5 dark:bg-white/5 text-ui-text-muted rounded-md text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-ui-border">
-                        {(user as any)?.role === 'admingod' ? '⭐ Admin Master' : `Rol: ${(user as any)?.role || 'Staff'}`}
+                    <div className="inline-block px-4 py-1.5 bg-accent-primary/5 dark:bg-white/5 text-ui-text-muted rounded-md text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-ui-border">
+                        {user?.role === 'admingod' ? (
+                            <span className="text-accent-primary">⭐ Admin Master</span>
+                        ) : user?.role === 'admin' ? (
+                            <span className="text-accent-primary text-xs tracking-tighter">Administrador del Negocio</span>
+                        ) : (
+                            <span className="text-accent-success">Colaborador (Staff)</span>
+                        )}
                     </div>
 
                     <button

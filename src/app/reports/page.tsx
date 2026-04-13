@@ -161,51 +161,51 @@ export default function ReportsScreen() {
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="bg-ios-blue/10 border-ios-blue/20 overflow-hidden">
-                    <CardContent className="p-5 flex flex-col justify-between h-full relative">
-                        <div className="bg-ios-blue p-2.5 rounded-ios w-fit mb-3">
-                            <DollarSign className="text-white" size={24} />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="border-0 shadow-lg shadow-blue-500/10 bg-linear-to-br from-blue-500/10 to-transparent dark:from-blue-600/20">
+                    <CardContent className="p-6 h-full flex flex-col justify-between">
+                        <div className="bg-blue-600 shadow-lg shadow-blue-600/20 p-3 rounded-2xl w-fit">
+                            <DollarSign className="text-white" size={24} strokeWidth={2.5} />
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-ios-blue uppercase tracking-wider mb-1">Ingresos Reales</p>
-                            <h3 className="text-2xl font-bold text-foreground">${metrics.revenue.toFixed(2)}</h3>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-ios-red/10 border-ios-red/20 overflow-hidden">
-                    <CardContent className="p-5 flex flex-col justify-between h-full relative">
-                        <div className="bg-ios-red p-2.5 rounded-ios w-fit mb-3">
-                            <FileText className="text-white" size={24} />
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-ios-red uppercase tracking-wider mb-1">Cuentas por Cobrar</p>
-                            <h3 className="text-2xl font-bold text-foreground">${metrics.pending.toFixed(2)}</h3>
+                        <div className="mt-6">
+                            <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] mb-1">Ingresos Reales</p>
+                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">${metrics.revenue.toFixed(2)}</h3>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-ios-green/10 border-ios-green/20 overflow-hidden">
-                    <CardContent className="p-5 flex flex-col justify-between h-full relative">
-                        <div className="bg-ios-green p-2.5 rounded-ios w-fit mb-3">
-                            <ShoppingCart className="text-white" size={24} />
+                <Card className="border-0 shadow-lg shadow-red-500/10 bg-linear-to-br from-red-500/10 to-transparent dark:from-red-600/20">
+                    <CardContent className="p-6 h-full flex flex-col justify-between">
+                        <div className="bg-red-500 shadow-lg shadow-red-500/20 p-3 rounded-2xl w-fit">
+                            <FileText className="text-white" size={24} strokeWidth={2.5} />
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-ios-green uppercase tracking-wider mb-1">Total Ventas</p>
-                            <h3 className="text-2xl font-bold text-foreground">{metrics.count} <span className="text-sm opacity-60 font-medium">Tx</span></h3>
+                        <div className="mt-6">
+                            <p className="text-[10px] font-black text-red-500 dark:text-red-400 uppercase tracking-[0.2em] mb-1">Cuentas por Cobrar</p>
+                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">${metrics.pending.toFixed(2)}</h3>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-orange-500/10 border-orange-500/20 overflow-hidden">
-                    <CardContent className="p-5 flex flex-col justify-between h-full relative">
-                        <div className="bg-orange-500 p-2.5 rounded-ios w-fit mb-3">
-                            <TrendingUp className="text-white" size={24} />
+                <Card className="border-0 shadow-lg shadow-green-500/10 bg-linear-to-br from-green-500/10 to-transparent dark:from-green-600/20">
+                    <CardContent className="p-6 h-full flex flex-col justify-between">
+                        <div className="bg-green-500 shadow-lg shadow-green-500/20 p-3 rounded-2xl w-fit">
+                            <ShoppingCart className="text-white" size={24} strokeWidth={2.5} />
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-orange-600 uppercase tracking-wider mb-1">Ticket Promedio</p>
-                            <h3 className="text-2xl font-bold text-foreground">${metrics.average.toFixed(2)}</h3>
+                        <div className="mt-6">
+                            <p className="text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-[0.2em] mb-1">Total Ventas</p>
+                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">{metrics.count} <span className="text-xs font-bold opacity-60">Transacciones</span></h3>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-lg shadow-orange-500/10 bg-linear-to-br from-orange-500/10 to-transparent dark:from-orange-600/20">
+                    <CardContent className="p-6 h-full flex flex-col justify-between">
+                        <div className="bg-orange-500 shadow-lg shadow-orange-500/20 p-3 rounded-2xl w-fit">
+                            <TrendingUp className="text-white" size={24} strokeWidth={2.5} />
+                        </div>
+                        <div className="mt-6">
+                            <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-[0.2em] mb-1">Ticket Promedio</p>
+                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">${metrics.average.toFixed(2)}</h3>
                         </div>
                     </CardContent>
                 </Card>

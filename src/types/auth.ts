@@ -4,8 +4,9 @@ export interface UserProfile {
   displayName: string | null;
   photoURL: string | null;
   role: 'admingod' | 'admin' | 'staff'; // For future role-based access
-  ownerId?: string; // The ID of the primary user who owns this account/team
+  ownerId?: string;
   createdAt: number;
+  subscriptionEndsAt?: number;
 }
 
 export interface AuthState {

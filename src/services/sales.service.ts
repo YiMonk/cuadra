@@ -63,15 +63,20 @@ export const SalesService = {
         // Create Sale Record
         const newSaleRef = doc(collection(db, SALES_COLLECTION));
         
-        // Sanitize undefined fields for Firestore
+        // Sanitize undefined fields for Firestore (including deep items)
+        const sanitizedItems = sale.items.map(item => 
+          Object.fromEntries(Object.entries(item).filter(([_, v]) => v !== undefined))
+        );
+
         const saleData = Object.fromEntries(
-          Object.entries(sale).filter(([_, v]) => v !== undefined)
+          Object.entries(sale).filter(([key, v]) => v !== undefined && key !== 'items')
         );
 
         const isPaid = sale.paymentMethod !== 'credit';
         
         transaction.set(newSaleRef, {
           ...saleData,
+          items: sanitizedItems,
           createdAt: Date.now(),
           status: isPaid ? 'paid' : 'pending',
           createdBy: creator?.id || null,

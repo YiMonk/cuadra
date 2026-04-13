@@ -24,7 +24,8 @@ export default function LoginPage() {
 
     React.useEffect(() => {
         if (user) {
-            router.push(user.role === 'admingod' ? '/admin/dashboard' : '/pos');
+            const isGlobalAdmin = user.role === 'admingod' || user.role === 'admin';
+            router.push(isGlobalAdmin ? '/admin/dashboard' : '/pos');
         }
     }, [user, router]);
 
@@ -45,16 +46,23 @@ export default function LoginPage() {
             if (userMeta) {
                 if (!userMeta.active) {
                     await auth.signOut();
-                    setErrorMsg('Tu cuenta ha sido deshabilitada.');
+                    setErrorMsg('La cuenta se encuentra inactiva, por favor comuníquese con el staff.');
+                    setLoading(false);
+                    return;
+                }
+
+                if (userMeta.role === 'owner' && userMeta.subscriptionEndsAt && userMeta.subscriptionEndsAt < Date.now()) {
+                    await auth.signOut();
+                    setErrorMsg('Tu suscripción ha vencido. Por favor comunícate con el staff de soporte.');
                     setLoading(false);
                     return;
                 }
 
                 if (userMeta.role === 'staff' && userMeta.ownerId) {
                     const owner = await UserService.getUserById(userMeta.ownerId);
-                    if (owner && !owner.active) {
+                    if (owner && (!owner.active || (owner.subscriptionEndsAt && owner.subscriptionEndsAt < Date.now()))) {
                         await auth.signOut();
-                        setErrorMsg('La cuenta principal de tu negocio ha sido suspendida.');
+                        setErrorMsg('La cuenta principal de tu negocio está inactiva o vencida. Contacta a tu administrador.');
                         setLoading(false);
                         return;
                     }
@@ -103,8 +111,12 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-950">
-            <div className="w-full max-w-md">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-[#050505] relative overflow-hidden">
+            {/* Ambient Background Glows */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-500/10 blur-[120px] rounded-full" />
+            
+            <div className="w-full max-w-md relative z-10">
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-linear-to-tr from-blue-600 to-teal-400 rounded-2xl mx-auto mb-4 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-500/20">
                         C
@@ -113,8 +125,8 @@ export default function LoginPage() {
                     <p className="text-gray-500 mt-2 font-medium">Gestiona tus ventas de forma simple</p>
                 </div>
 
-                <Card className="overflow-hidden border-0 shadow-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
-                    <CardContent className="pt-8 p-6">
+                <Card className="overflow-hidden border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] bg-slate-900/40 dark:bg-black/40 backdrop-blur-2xl rounded-[40px]">
+                    <CardContent className="pt-10 p-8">
                         {view === 'login' ? (
                             <form onSubmit={handleLogin} className="space-y-4 animate-in slide-in-from-left duration-300">
                                 <Input
@@ -136,7 +148,7 @@ export default function LoginPage() {
                                 />
 
                                 {errorMsg && (
-                                    <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-medium border border-red-100 dark:border-red-900/50">
+                                    <div className="p-4 rounded-2xl bg-red-500/10 text-red-500 text-xs font-bold border border-red-500/20 animate-shake">
                                         {errorMsg}
                                     </div>
                                 )}
@@ -172,13 +184,17 @@ export default function LoginPage() {
                                 />
 
                                 {errorMsg && (
-                                    <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-medium border border-red-100 dark:border-red-900/50">
+                                    <div className="p-4 rounded-2xl bg-red-500/10 text-red-500 text-xs font-bold border border-red-500/20">
                                         {errorMsg}
                                     </div>
                                 )}
 
                                 {successMsg && (
-                                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium border border-green-100 dark:border-green-900/50 leading-relaxed">
+                                    <div className="p-5 rounded-2xl bg-emerald-500/10 text-emerald-500 text-xs font-bold border border-emerald-500/20 leading-relaxed shadow-lg shadow-emerald-500/5 transition-all">
+                                        <div className="flex items-center gap-2 mb-1 text-[10px] uppercase tracking-widest">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            Enviado correctamente
+                                        </div>
                                         {successMsg}
                                     </div>
                                 )}
@@ -197,13 +213,13 @@ export default function LoginPage() {
                             </form>
                         )}
 
-                        <div className="mt-8">
+                        <div className="mt-10">
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-200 dark:border-gray-800" />
+                                    <div className="w-full border-t border-white/5" />
                                 </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-3 bg-white dark:bg-gray-900 text-gray-500">O</span>
+                                <div className="relative flex justify-center text-[10px] font-black tracking-widest uppercase">
+                                    <span className="px-4 bg-transparent text-gray-400/60">O continúe con</span>
                                 </div>
                             </div>
 

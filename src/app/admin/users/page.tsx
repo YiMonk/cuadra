@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { UserService, UserMetadata } from '@/services/user.service';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
-import { Search, Shield, User as UserIcon, ShieldAlert, ArrowRight, UserCog } from 'lucide-react';
+import { Search, Shield, User as UserIcon, ShieldAlert, ArrowRight, UserCog, Calendar, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function AdminUserManagementPage() {
@@ -124,6 +124,27 @@ export default function AdminUserManagementPage() {
                                     )}
                                 </div>
                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">{item.email}</p>
+                                
+                                {item.role === 'admin' && (
+                                    <div className="flex items-center gap-4 mt-3">
+                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider
+                                            ${!item.subscriptionEndsAt ? 'bg-gray-100 text-gray-500' :
+                                              item.subscriptionEndsAt < Date.now() ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-600'}
+                                        `}>
+                                            <Calendar size={12} />
+                                            {!item.subscriptionEndsAt ? 'Sin Suscripción' :
+                                             item.subscriptionEndsAt < Date.now() ? 'Vencido' : 
+                                             `${Math.ceil((item.subscriptionEndsAt - Date.now()) / (1000 * 60 * 60 * 24))} días restantes`}
+                                        </div>
+                                        
+                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider
+                                            ${item.active ? 'bg-blue-500/10 text-blue-600' : 'bg-red-500/10 text-red-500'}
+                                        `}>
+                                            <Clock size={12} />
+                                            {item.active ? 'Activo' : 'Inactivo'}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="ml-4 opacity-50 group-hover:opacity-100 transition-opacity">

@@ -5,9 +5,9 @@ import { ClientService } from '@/services/client.service';
 import { Search, UserPlus, Phone, User as UserIcon, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
 import { useRouter } from 'next/navigation';
-import { Client } from '@/types/client'; // Assuming it exported from index or similar
+import { Client } from '@/types/client';
+import { toast } from 'sonner';
 
 export default function ClientListScreen() {
     const [clients, setClients] = useState<any[]>([]); // Using any[] temporarily if types are not fully resolved
@@ -52,8 +52,9 @@ export default function ClientListScreen() {
             setModalVisible(false);
             setNewName('');
             setNewPhone('');
+            toast.success('Cliente registrado con éxito');
         } catch (err) {
-            alert("Error creando cliente");
+            toast.error("Error creando cliente");
         } finally {
             setIsSaving(false);
         }

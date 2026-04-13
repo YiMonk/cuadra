@@ -13,9 +13,11 @@ import {
     Banknote,
     ShoppingCart,
     Trash2,
-    RefreshCw
+    RefreshCw,
+    Settings
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
+import { toast } from 'sonner';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sale } from '@/types/sales';
 import { Select } from '@/components/ui/Select';
@@ -50,19 +52,26 @@ export default function AdminGodDashboardPage() {
 
     const handleWipeDatabase = async () => {
         if (!user) return;
-        if (!window.confirm("⚠️ LIMPIAR BASE DE DATOS\n¿Estás seguro de que quieres eliminar TODOS los datos?\nEsta acción NO se puede deshacer.")) return;
-
-        setWiping(true);
-        try {
-            await DataManager.wipeDatabase(user.uid);
-            alert('Base de datos limpiada con éxito');
-            loadData();
-        } catch (error) {
-            console.error(error);
-            alert('Error al limpiar la base de datos');
-        } finally {
-            setWiping(false);
-        }
+        
+        toast.error('⚠️ LIMPIAR BASE DE DATOS', {
+            description: '¿Estás seguro de que quieres eliminar TODOS los datos? Esta acción NO se puede deshacer.',
+            action: {
+                label: 'Eliminar TODO',
+                onClick: async () => {
+                    setWiping(true);
+                    try {
+                        await DataManager.wipeDatabase(user.uid);
+                        toast.success('Base de datos limpiada con éxito');
+                        loadData();
+                    } catch (error) {
+                        toast.error('Error al limpiar la base de datos');
+                    } finally {
+                        setWiping(false);
+                    }
+                }
+            },
+            cancel: { label: 'Cancelar' }
+        });
     };
 
     const owners = useMemo(() => {
@@ -156,7 +165,7 @@ export default function AdminGodDashboardPage() {
                         <RefreshCw size={18} />
                     </button>
 
-                    {user?.role === 'admingod' && (
+                    {(user?.role === 'admingod' || user?.role === 'admin') && (
                         <button
                             onClick={handleWipeDatabase}
                             disabled={wiping}

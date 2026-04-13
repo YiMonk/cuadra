@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { toast } from 'sonner';
+import { PlusCircle, Loader2 } from 'lucide-react';
 
 // Icon mapping for categories
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -61,6 +63,12 @@ export default function POSScreen() {
     const [clientSearch, setClientSearch] = useState('');
 
     const [isCartMinimized, setIsCartMinimized] = useState(false);
+
+    // New client state
+    const [isCreatingClient, setIsCreatingClient] = useState(false);
+    const [newClientName, setNewClientName] = useState('');
+    const [newClientPhone, setNewClientPhone] = useState('');
+    const [isSavingClient, setIsSavingClient] = useState(false);
 
     // Evidence (comprobante)
     const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
@@ -112,7 +120,7 @@ export default function POSScreen() {
     const handleConfirmSale = async (e: React.FormEvent) => {
         e.preventDefault();
         if (paymentMethod === 'credit' && !selectedClient) {
-            alert('Se requiere un cliente para ventas a crédito/fiado.');
+            toast.error('Se requiere un cliente para ventas a crédito/fiado.');
             return;
         }
         setIsSaving(true);
@@ -139,11 +147,38 @@ export default function POSScreen() {
             setEvidenceFile(null);
             setEvidencePreview(null);
             setCheckoutModalVisible(false);
-            alert('¡Venta registrada con éxito!');
+            toast.success('¡Venta registrada con éxito!');
         } catch (error: any) {
-            alert(error.message || 'No se pudo registrar la venta');
+            toast.error(error.message || 'No se pudo registrar la venta');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleQuickCreateClient = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newClientName || !newClientPhone) {
+            toast.warning('Completa los datos del cliente');
+            return;
+        }
+        setIsSavingClient(true);
+        try {
+            const clientId = await ClientService.createClient({
+                name: newClientName,
+                phone: newClientPhone,
+                active: true,
+                createdAt: Date.now()
+            });
+            const newClient = { id: clientId, name: newClientName, phone: newClientPhone, active: true, createdAt: Date.now() };
+            setSelectedClient(newClient);
+            setIsCreatingClient(false);
+            setNewClientName('');
+            setNewClientPhone('');
+            toast.success('Cliente creado y seleccionado');
+        } catch (error) {
+            toast.error('Error al crear cliente');
+        } finally {
+            setIsSavingClient(false);
         }
     };
 
@@ -410,31 +445,82 @@ export default function POSScreen() {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 transition-all animate-in fade-in duration-200">
                     <div className="ui-card w-full max-w-md border border-ui-border flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300">
                         <div className="p-8 pb-4">
-                            <h2 className="text-2xl font-black tracking-tight text-ui-text uppercase mb-6">Seleccionar Cliente</h2>
-                            <Input placeholder="Buscar por nombre..." value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} autoFocus leftIcon={<Search size={18} />} />
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-black tracking-tight text-ui-text uppercase">
+                                    {isCreatingClient ? 'Nuevo Cliente' : 'Seleccionar Cliente'}
+                                </h2>
+                                <button 
+                                    onClick={() => { setIsCreatingClient(!isCreatingClient); }}
+                                    className={`p-2 rounded-xl transition-all ${isCreatingClient ? 'bg-red-500/10 text-red-500' : 'bg-accent-primary/10 text-accent-primary'}`}
+                                >
+                                    {isCreatingClient ? <X size={20} /> : <PlusCircle size={20} />}
+                                </button>
+                            </div>
+                            
+                            {!isCreatingClient && (
+                                <Input 
+                                    placeholder="Buscar por nombre..." 
+                                    value={clientSearch} 
+                                    onChange={(e) => setClientSearch(e.target.value)} 
+                                    autoFocus 
+                                    leftIcon={<Search size={18} />} 
+                                />
+                            )}
                         </div>
 
                         <div className="flex-1 overflow-y-auto px-8 py-4">
-                            <div className="ui-input-box p-2">
-                                {filteredClients.length === 0 ? (
-                                    <div className="p-8 text-center text-ui-text-muted/40 font-bold uppercase text-xs">No hay resultados</div>
-                                ) : (
-                                    <ul className="space-y-2">
-                                        {filteredClients.map(c => (
-                                            <li key={c.id}>
-                                                <button onClick={() => { setSelectedClient(c); setClientModalVisible(false); }} className="w-full text-left p-4 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all outline-none">
-                                                    <p className="font-bold text-ui-text tracking-wide uppercase text-[13px]">{c.name}</p>
-                                                    <p className="text-[11px] font-bold text-accent-primary mt-1 tracking-widest">{c.phone}</p>
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
+                            {isCreatingClient ? (
+                                <form onSubmit={handleQuickCreateClient} className="space-y-4 animate-in slide-in-from-right duration-300">
+                                    <Input 
+                                        label="NOMBRE COMPLETO" 
+                                        value={newClientName} 
+                                        onChange={(e) => setNewClientName(e.target.value)} 
+                                        placeholder="Ej: Juan Pérez" 
+                                        required 
+                                    />
+                                    <Input 
+                                        label="TELÉFONO" 
+                                        value={newClientPhone} 
+                                        onChange={(e) => setNewClientPhone(e.target.value)} 
+                                        placeholder="Ej: 04121234567" 
+                                        required 
+                                        type="tel"
+                                    />
+                                    <Button type="submit" className="w-full mt-2" isLoading={isSavingClient}>
+                                        Guardar Cliente
+                                    </Button>
+                                </form>
+                            ) : (
+                                <div className="ui-input-box p-2">
+                                    {filteredClients.length === 0 ? (
+                                        <div className="p-8 text-center text-ui-text-muted/40 font-bold uppercase text-xs">No hay resultados</div>
+                                    ) : (
+                                        <ul className="space-y-2">
+                                            {filteredClients.map(c => (
+                                                <li key={c.id}>
+                                                    <button onClick={() => { setSelectedClient(c); setClientModalVisible(false); }} className="w-full text-left p-4 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all outline-none group border border-transparent hover:border-accent-primary/20">
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <p className="font-bold text-ui-text tracking-wide uppercase text-[13px]">{c.name}</p>
+                                                                <p className="text-[11px] font-bold text-accent-primary mt-1 tracking-widest">{c.phone}</p>
+                                                            </div>
+                                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <PlusCircle size={16} className="text-accent-primary" />
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
-                        <div className="p-8 pt-0">
-                            <button className="ui-btn ui-btn-secondary w-full" onClick={() => setClientModalVisible(false)}>Cerrar</button>
+                        <div className="p-8 pt-0 mt-4 flex gap-3 border-t border-ui-border pt-6">
+                            <button className="ui-btn ui-btn-secondary w-full" onClick={() => { setClientModalVisible(false); setIsCreatingClient(false); }}>
+                                Cerrar
+                            </button>
                         </div>
                     </div>
                 </div>

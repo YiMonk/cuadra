@@ -21,6 +21,7 @@ export interface UserMetadata {
     ownerId?: string;
     createdAt: number;
     updatedAt?: number;
+    subscriptionEndsAt?: number;
 }
 
 const USERS_COLLECTION = 'users';

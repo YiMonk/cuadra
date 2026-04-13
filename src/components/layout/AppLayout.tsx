@@ -38,23 +38,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return <>{children}</>;
     }
 
-    const isAdminGod = user?.role === 'admingod';
+    const isGlobalAdmin = user?.role === 'admingod' || user?.role === 'admin';
+    const isStaff = user?.role === 'staff';
+    const isOwner = user?.role === 'owner';
 
-    const navItems = isAdminGod ? [
+    const navItems = isGlobalAdmin ? [
         { name: 'Control', href: '/admin/dashboard', icon: ShieldAlert },
         { name: 'Usuarios', href: '/admin/users', icon: Users },
         { name: 'Menú', href: '/admin/menu', icon: Menu },
-    ] : [
+    ] : isStaff ? [
         { name: 'Venta', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', href: '/inventory', icon: Package },
         { name: 'Clientes', href: '/clients', icon: Users },
-        { name: 'Cobranzas', href: '/collections', icon: DollarSign },
+        { name: 'Menú', href: '/menu', icon: Menu },
+    ] : [
+        // Default Owner / Manager View
+        { name: 'Venta', href: '/pos', icon: ShoppingCart },
+        { name: 'Inventario', href: '/inventory', icon: Package },
+        { name: 'Clientes', href: '/clients', icon: Users },
         { name: 'Reportes', href: '/reports', icon: FileText },
-        { name: 'Más', href: '/menu', icon: Menu },
+        { name: 'Equipo', href: '/team', icon: Users },
+        { name: 'Config', href: '/settings', icon: Settings },
+        { name: 'Menú', href: '/menu', icon: Menu },
     ];
 
     // For mobile bottom nav
-    const mobileNavItems = navItems.slice(0, 4);
+    const mobileNavItems = (isGlobalAdmin || isStaff) ? navItems : navItems.slice(0, 5);
 
     return (
         <div className="flex h-screen bg-ui-bg transition-colors duration-500 font-sans overflow-hidden md:overflow-visible">
@@ -91,6 +100,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     {isActive && (
                                         <div className="absolute -right-1 w-1 h-4 bg-white rounded-full" />
                                     )}
+                                    
+                                    {/* Tooltip */}
+                                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-black/90 dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap shadow-2xl z-[100] border border-white/10">
+                                        {item.name}
+                                    </div>
                                 </Link>
                             );
                         })}
@@ -143,9 +157,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
             </main>
 
-            {/* Mobile Floating Bottom Pill (Styled to match new Bento Glass) */}
+            {/* Mobile Floating Bottom Pill */}
             <nav className="md:hidden fixed z-[90] left-4 right-4 bottom-6 transition-all duration-500 overflow-hidden">
-                <div className="ui-card backdrop-blur-3xl bg-black/90 dark:bg-white/90 p-2 flex justify-around items-center h-[64px] rounded-[32px] border-white/20 border-opacity-30">
+                <div className="ui-card backdrop-blur-3xl bg-black/80 dark:bg-white/80 p-1 flex justify-around items-center h-[72px] rounded-[36px] border border-white/10 shadow-float">
                     {mobileNavItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
