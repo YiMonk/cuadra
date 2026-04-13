@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Client } from '@/types/client';
 import { toast } from 'sonner';
+import { Card, CardContent } from '@/components/ui/Card';
 
 export default function ClientListScreen() {
     const [clients, setClients] = useState<any[]>([]); // Using any[] temporarily if types are not fully resolved
