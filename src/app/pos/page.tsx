@@ -179,7 +179,6 @@ export default function POSScreen() {
                 name: newClientName,
                 phone: newClientPhone,
                 active: true,
-                createdAt: Date.now()
             });
             const newClient = { id: clientId, name: newClientName, phone: newClientPhone, active: true, createdAt: Date.now() };
             setSelectedClient(newClient);
