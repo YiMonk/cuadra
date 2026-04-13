@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { SalesService } from '@/services/sales.service';
 import { UserService } from '@/services/user.service';
@@ -14,6 +17,9 @@ import { Select } from '@/components/ui/Select';
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 
 export default function ReportsScreen() {
+    const router = useRouter();
+    const { user, isLoading: authLoading } = useAuth();
+    
     const [loading, setLoading] = useState(true);
     const [allSales, setAllSales] = useState<Sale[]>([]);
     const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
@@ -42,8 +48,20 @@ export default function ReportsScreen() {
             }
         };
 
-        fetchInitialData();
-    }, []);
+        if (user && user.role !== 'staff') {
+            fetchInitialData();
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (!authLoading && user) {
+            if (user.role === 'staff') {
+                router.replace('/pos');
+            } else if (user.role === 'admin' || user.role === 'admingod') {
+                router.replace('/admin/dashboard');
+            }
+        }
+    }, [user, authLoading, router]);
 
     useEffect(() => {
         let filtered = allSales.filter(s => {
@@ -131,7 +149,7 @@ export default function ReportsScreen() {
         setCashboxMetrics(summaryList);
     };
 
-    if (loading) {
+    if (loading || authLoading || (user?.role === 'staff' || user?.role === 'admin' || user?.role === 'admingod')) {
         return (
             <div className="flex justify-center items-center h-[80vh]">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

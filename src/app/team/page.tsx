@@ -23,8 +23,11 @@ export default function TeamManagementScreen() {
     React.useEffect(() => {
         if (!authLoading && owner) {
             const isGlobalAdmin = owner.role === 'admin' || owner.role === 'admingod';
+            const isStaff = owner.role === 'staff';
             if (isGlobalAdmin) {
                 router.replace('/admin/dashboard');
+            } else if (isStaff) {
+                router.replace('/pos');
             }
         }
     }, [owner, authLoading, router]);
@@ -124,7 +127,7 @@ export default function TeamManagementScreen() {
         });
     };
 
-    if (loading || authLoading || (owner?.role === 'admin' || owner?.role === 'admingod')) {
+    if (loading || authLoading || (owner?.role === 'admin' || owner?.role === 'admingod' || owner?.role === 'staff')) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary"></div>

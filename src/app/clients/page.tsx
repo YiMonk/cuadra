@@ -6,6 +6,7 @@ import { Search, UserPlus, Phone, User as UserIcon, ChevronRight } from 'lucide-
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { Client } from '@/types/client';
 import { toast } from 'sonner';
 
@@ -20,6 +21,18 @@ export default function ClientListScreen() {
     const [newName, setNewName] = useState('');
     const [newPhone, setNewPhone] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    
+    const { user, isLoading: authLoading } = useAuth();
+
+    useEffect(() => {
+        if (!authLoading && user) {
+            if (user.role === 'staff') {
+                router.replace('/pos');
+            } else if (user.role === 'admin' || user.role === 'admingod') {
+                router.replace('/admin/dashboard');
+            }
+        }
+    }, [user, authLoading, router]);
 
     useEffect(() => {
         const unsubscribe = ClientService.subscribeToClients((updatedClients) => {
@@ -60,7 +73,7 @@ export default function ClientListScreen() {
         }
     };
 
-    if (loading) {
+    if (loading || authLoading || (user?.role === 'staff' || user?.role === 'admin' || user?.role === 'admingod')) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

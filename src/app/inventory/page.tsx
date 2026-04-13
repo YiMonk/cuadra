@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { Select } from '@/components/ui/Select';
 import { CategoryModal } from '@/components/inventory/CategoryModal';
 
@@ -30,6 +31,7 @@ export default function InventoryScreen() {
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterCategory, setFilterCategory] = useState('');
     const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'out'>('all');
 
     const [categories, setCategories] = useState<Category[]>([]);
@@ -85,14 +87,18 @@ export default function InventoryScreen() {
             );
         }
 
+        if (filterCategory) {
+            filtered = filtered.filter(p => p.category === filterCategory);
+        }
+
         if (stockFilter === 'low') {
             filtered = filtered.filter(p => p.stock > 0 && p.stock <= (p.minStockAlert || 5));
         } else if (stockFilter === 'out') {
-            filtered = filtered.filter(p => p.stock === 0);
+            filtered = filtered.filter(p => p.stock <= 0);
         }
 
         setFilteredProducts(filtered);
-    }, [searchQuery, stockFilter, products]);
+    }, [searchQuery, stockFilter, filterCategory, products]);
 
     const openCreateModal = () => {
         setEditingProduct(null);
@@ -258,6 +264,17 @@ export default function InventoryScreen() {
                     />
                 </div>
 
+                <div className="w-full md:w-56 shrink-0 relative z-10">
+                    <Select
+                        options={[
+                            { value: '', label: 'Todas las Categorías' },
+                            ...categories.map(c => ({ value: c.name, label: c.name }))
+                        ]}
+                        value={filterCategory}
+                        onChange={(val) => setFilterCategory(val)}
+                    />
+                </div>
+
                 <div className="ui-input-box p-1.5 flex shrink-0 gap-1.5">
                     <button
                         onClick={() => setStockFilter('all')}
@@ -289,13 +306,13 @@ export default function InventoryScreen() {
                 ) : (
                     filteredProducts.map(item => {
                         const isLowStock = item.stock > 0 && item.stock <= (item.minStockAlert || 5);
-                        const isOutOfStock = item.stock === 0;
+                        const isOutOfStock = item.stock <= 0;
 
                         return (
-                            <div key={item.id} className="ui-card ui-card-hover p-8 flex flex-col h-full group relative min-h-[300px]">
+                            <div key={item.id} className={`ui-card ui-card-hover p-8 flex flex-col h-full group relative min-h-[300px] transition-all ${isOutOfStock ? 'border-red-500/40 bg-red-500/5 shadow-[0_0_20px_rgba(239,68,68,0.05)]' : ''}`}>
                                 <div className="flex-1">
                                     <div className="flex justify-between items-start mb-6">
-                                        <div className={`p-4 rounded-2xl ${isOutOfStock ? 'bg-red-500/10 text-red-500' : isLowStock ? 'bg-orange-500/10 text-orange-600' : 'bg-green-500/10 text-green-600'}`}>
+                                        <div className={`p-4 rounded-2xl ${isOutOfStock ? 'bg-red-500 text-white shadow-lg animate-pulse' : isLowStock ? 'bg-orange-500/10 text-orange-600' : 'bg-green-500/10 text-green-600'}`}>
                                             <PackageOpen size={24} strokeWidth={2.5} />
                                         </div>
                                         {item.category && (

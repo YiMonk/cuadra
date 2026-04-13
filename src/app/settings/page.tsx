@@ -119,10 +119,10 @@ export default function SettingsScreen() {
                 <div className="h-1 w-20 bg-accent-primary mt-2 rounded-full" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-start">
                 {/* Perfil Header */}
-                <div className="md:col-span-4 ui-card border border-ui-border p-10 flex flex-col items-center text-center relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-linear-to-b from-accent-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="md:col-span-4 ui-card border border-ui-border p-6 md:p-10 flex flex-col items-center text-center relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-linear-to-b from-accent-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                     
                     <h2 className="text-3xl font-black text-ui-text mb-2 uppercase tracking-tighter">
                         {user?.displayName || 'Usuario'}
@@ -142,7 +142,7 @@ export default function SettingsScreen() {
                     </div>
 
                     <button
-                        className="ui-btn ui-btn-secondary w-full gap-2 py-6 text-sm uppercase tracking-widest flex items-center justify-center"
+                        className="ui-btn ui-btn-secondary w-full gap-2 py-4 md:py-6 text-sm uppercase tracking-widest flex items-center justify-center relative z-10"
                         onClick={() => {
                             setNewName(user?.displayName || '');
                             setNewEmail(user?.email || '');
@@ -158,15 +158,15 @@ export default function SettingsScreen() {
                 <div className="md:col-span-8 space-y-8">
                     {/* Preferencias */}
                     <div className="ui-card border border-ui-border overflow-hidden">
-                        <div className="px-8 py-5 flex items-center gap-3 border-b border-ui-border bg-black/2 dark:bg-white/2">
+                        <div className="px-4 md:px-8 py-4 md:py-5 flex items-center gap-3 border-b border-ui-border bg-black/2 dark:bg-white/2">
                             <div className="p-2 bg-accent-primary/10 rounded-lg">
                                 <Settings2 className="text-accent-primary" size={20} />
                             </div>
                             <h3 className="font-black text-ui-text uppercase tracking-widest text-sm">Preferencias de Sistema</h3>
                         </div>
 
-                        <div className="p-8 space-y-6">
-                            <div className="flex items-center justify-between p-6 ui-input-box border border-ui-border">
+                        <div className="p-4 md:p-8 space-y-6">
+                            <div className="flex items-center justify-between p-4 md:p-6 ui-input-box border border-ui-border">
                                 <div className="flex items-start gap-4">
                                     <div className={`p-3 rounded-xl ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-orange-500/20 text-orange-500'}`}>
                                         {isDark ? <Moon size={24} fill="currentColor" /> : <Sun size={24} fill="currentColor" />}
@@ -196,24 +196,24 @@ export default function SettingsScreen() {
 
                     {/* Seguridad y Sesion */}
                     <div className="ui-card border border-ui-border overflow-hidden">
-                        <div className="px-8 py-5 flex items-center gap-3 border-b border-ui-border bg-black/2 dark:bg-white/2">
+                        <div className="px-4 md:px-8 py-4 md:py-5 flex items-center gap-3 border-b border-ui-border bg-black/2 dark:bg-white/2">
                             <div className="p-2 bg-red-500/10 rounded-lg">
                                 <Shield className="text-red-500" size={20} />
                             </div>
                             <h3 className="font-black text-ui-text uppercase tracking-widest text-sm">Seguridad y Acceso</h3>
                         </div>
 
-                        <div className="p-8">
+                        <div className="p-4 md:p-8">
                             <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center justify-between p-6 ui-card hover:bg-black/5 dark:hover:bg-white/5 border border-red-500/20 text-red-500 transition-all font-black group relative overflow-hidden active:scale-95"
+                                className="w-full flex items-center justify-between p-4 md:p-6 ui-card hover:bg-black/5 dark:hover:bg-white/5 border border-red-500/20 text-red-500 transition-all font-black group relative overflow-hidden active:scale-95"
                             >
                                 <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <div className="flex items-center gap-4 relative z-10">
                                     <div className="p-3 bg-red-500/10 rounded-lg group-hover:scale-110 transition-transform">
                                         <LogOut size={22} strokeWidth={3} />
                                     </div>
-                                    <span className="uppercase tracking-[0.1em] text-lg">Cerrar Sesión Global</span>
+                                    <span className="uppercase tracking-[0.1em] text-sm md:text-lg">Cerrar Sesión Global</span>
                                 </div>
                                 <ChevronRight size={20} className="relative z-10 opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                             </button>

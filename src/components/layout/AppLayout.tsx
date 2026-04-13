@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -12,13 +12,18 @@ import {
     FileText,
     DollarSign,
     Menu,
+    Bell,
     ShieldAlert,
     Sun,
-    Moon,
-    LogOut
+    Moon
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
+import { ProductService } from '@/services/product.service';
+import { SalesService } from '@/services/sales.service';
+import { ClientService } from '@/services/client.service';
+
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -26,7 +31,80 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { user, isLoading, signOut } = useAuth();
     const { isDarkTheme, toggleTheme } = useAppTheme();
 
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [pendingCollectionsCount, setPendingCollectionsCount] = useState(0);
+    const notificationsRef = useRef<HTMLDivElement>(null);
+
     const isAuthRoute = pathname.startsWith('/auth');
+
+    useEffect(() => {
+        // Notification outside click handler
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+                setNotificationsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        if (!user || isAuthRoute) return;
+
+        let items: any[] = [];
+
+        // 1. Subscription Notification
+        if (user.role === 'owner' && user.subscriptionEndsAt) {
+            const timeDiff = user.subscriptionEndsAt - Date.now();
+            if (timeDiff > 0 && timeDiff <= ONE_WEEK_MS) {
+                const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                items.push({
+                    id: 'sub',
+                    type: 'alert',
+                    title: 'Suscripción por Vencer',
+                    desc: `Tu suscripción termina en ${daysLeft} día(s). Renueva para no perder el acceso.`,
+                    icon: ShieldAlert
+                });
+            } else if (timeDiff <= 0) {
+                items.push({
+                    id: 'sub-exp',
+                    type: 'danger',
+                    title: 'Suscripción Vencida',
+                    desc: 'Tu suscripción ha expirado. Contacta al administrador urgente.',
+                    icon: ShieldAlert
+                });
+            }
+        }
+
+        // 2. Load low inventory and debts if Owner/Admin/Staff
+        const loadOtherNotifications = async () => {
+            let temp = [...items];
+            
+            // Check debters
+            try {
+                const pendingSales = await SalesService.getPendingSales();
+                if (pendingSales.length > 0) {
+                    const uniqueClients = new Set(pendingSales.map(s => s.clientId).filter(Boolean));
+                    setPendingCollectionsCount(uniqueClients.size);
+                    if (uniqueClients.size > 0) {
+                        temp.push({
+                            id: 'debts',
+                            type: 'warning',
+                            title: 'Cobros Pendientes',
+                            desc: `Tienes deudas sin cobrar de ${uniqueClients.size} cliente(s).`,
+                            icon: DollarSign,
+                            link: '/collections'
+                        });
+                    }
+                }
+            } catch (e) { }
+
+            setNotifications(temp);
+        };
+
+        loadOtherNotifications();
+    }, [user, isAuthRoute]);
 
     useEffect(() => {
         if (!isLoading && !user && !isAuthRoute) {
@@ -48,7 +126,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ] : isStaff ? [
         { name: 'Venta', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', href: '/inventory', icon: Package },
-        { name: 'Clientes', href: '/clients', icon: Users },
         { name: 'Menú', href: '/menu', icon: Menu },
     ] : [
         // Default Owner / Manager View
@@ -57,7 +134,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'Clientes', href: '/clients', icon: Users },
         { name: 'Reportes', href: '/reports', icon: FileText },
         { name: 'Equipo', href: '/team', icon: Users },
-        { name: 'Config', href: '/settings', icon: Settings },
+        { name: 'Cobranzas', href: '/collections', icon: DollarSign },
         { name: 'Menú', href: '/menu', icon: Menu },
     ];
 
@@ -99,6 +176,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     {isActive && (
                                         <div className="absolute -right-1 w-1 h-4 bg-white rounded-full" />
                                     )}
+                                    {item.name === 'Cobranzas' && pendingCollectionsCount > 0 && (
+                                        <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white z-10 shadow-md">
+                                            {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
+                                        </div>
+                                    )}
                                     
                                     {/* Tooltip */}
                                     <div className="absolute left-full ml-4 px-3 py-1.5 bg-black/90 dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap shadow-2xl z-[100] border border-white/10">
@@ -118,9 +200,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             {isDarkTheme ? <Moon size={22} /> : <Sun size={22} />}
                         </button>
 
-                        <div className="w-10 h-10 rounded-full border-2 border-white/20 p-0.5 relative group cursor-pointer overflow-hidden" onClick={signOut}>
-                            <div className="w-full h-full bg-accent-primary rounded-full flex items-center justify-center text-[10px] font-black italic group-hover:bg-red-500 transition-colors">
-                                <LogOut size={16} className="text-white opacity-0 group-hover:opacity-100 absolute transition-opacity" />
+                        <div className="w-10 h-10 rounded-full border-2 border-white/20 p-0.5 relative group cursor-pointer overflow-hidden" onClick={() => router.push('/settings')}>
+                            <div className="w-full h-full bg-accent-primary rounded-full flex items-center justify-center text-[10px] font-black italic group-hover:bg-accent-secondary transition-colors">
+                                <Settings size={16} className="text-white opacity-0 group-hover:opacity-100 absolute transition-opacity" />
                                 <span className="group-hover:opacity-0 transition-opacity">{user?.displayName?.[0] || 'U'}</span>
                             </div>
                         </div>
@@ -143,11 +225,60 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         </div>
                         
                         {!isGlobalAdmin && (
-                            <div className="flex items-center gap-3">
-                                <div className="ui-card px-6 py-3 flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-accent-success animate-pulse" />
-                                    <span className="text-xs font-black uppercase tracking-widest text-ui-text">Sistema Activo</span>
-                                </div>
+                            <div className="flex items-center gap-3 relative" ref={notificationsRef}>
+                                <button 
+                                    onClick={() => setNotificationsOpen(!notificationsOpen)}
+                                    className={`relative w-12 h-12 rounded-2xl transition-colors border flex items-center justify-center group active:scale-95 shadow-sm ${notificationsOpen ? 'bg-white/10 dark:bg-black/10 border-accent-primary' : 'ui-card hover:bg-black/5 dark:hover:bg-white/5 border-ui-border'}`}
+                                >
+                                    <Bell size={22} className={`${notificationsOpen ? 'text-accent-primary' : 'text-ui-text-muted group-hover:text-accent-primary'} transition-colors`} />
+                                    {notifications.length > 0 && (
+                                        <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-ui-bg animate-pulse" />
+                                    )}
+                                </button>
+
+                                {/* Notifications Dropdown */}
+                                {notificationsOpen && (
+                                    <div className="absolute top-16 right-0 w-80 max-w-[calc(100vw-2rem)] ui-card border border-ui-border backdrop-blur-xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 rounded-3xl">
+                                        <div className="p-4 border-b border-ui-border/50 flex items-center justify-between bg-black/2 dark:bg-white/2">
+                                            <h3 className="font-black text-ui-text uppercase tracking-widest text-xs">Notificaciones</h3>
+                                            <span className="text-[10px] bg-accent-primary text-white px-2 py-0.5 rounded-full font-bold">{notifications.length}</span>
+                                        </div>
+                                        <div className="p-2 max-h-[60vh] overflow-y-auto">
+                                            {notifications.length === 0 ? (
+                                                <div className="p-8 text-center text-ui-text-muted/40 flex flex-col items-center">
+                                                    <Bell size={32} className="mb-2 opacity-30" />
+                                                    <span className="font-bold text-xs uppercase tracking-widest">No hay alertas</span>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-1">
+                                                    {notifications.map((notif) => {
+                                                        const Icon = notif.icon;
+                                                        const isDanger = notif.type === 'danger';
+                                                        const isAlert = notif.type === 'alert';
+                                                        
+                                                        return (
+                                                            <div 
+                                                                key={notif.id} 
+                                                                onClick={() => { if(notif.link) { router.push(notif.link); setNotificationsOpen(false); } }}
+                                                                className={`p-3 rounded-2xl flex gap-3 transition-colors ${notif.link ? 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/5' : ''} ${isDanger ? 'bg-red-500/10 border border-red-500/20' : isAlert ? 'bg-orange-500/10 border border-orange-500/20' : 'bg-transparent'}`}
+                                                            >
+                                                                <div className={`mt-0.5 p-2 rounded-full h-fit flex shrink-0 ${isDanger ? 'bg-red-500 text-white' : isAlert ? 'bg-orange-500 text-white' : 'bg-accent-primary/10 text-accent-primary'}`}>
+                                                                    <Icon size={16} />
+                                                                </div>
+                                                                <div>
+                                                                    <p className={`text-xs font-black uppercase mb-0.5 ${isDanger ? 'text-red-600 dark:text-red-400' : isAlert ? 'text-orange-600 dark:text-orange-400' : 'text-ui-text'}`}>
+                                                                        {notif.title}
+                                                                    </p>
+                                                                    <p className="text-[11px] font-medium text-ui-text-muted leading-tight">{notif.desc}</p>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -177,6 +308,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 </div>
                                 {isActive && (
                                     <div className="absolute -bottom-1 w-1.5 h-1.5 bg-accent-primary rounded-full" />
+                                )}
+                                {item.name === 'Cobranzas' && pendingCollectionsCount > 0 && (
+                                    <div className="absolute top-1 right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-transparent flex items-center justify-center text-[8px] font-bold text-white shadow-md z-10">
+                                        {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
+                                    </div>
                                 )}
                             </Link>
                         )

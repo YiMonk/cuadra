@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function CollectionsScreen() {
     const router = useRouter();
@@ -16,6 +17,7 @@ export default function CollectionsScreen() {
     const [filteredDebtors, setFilteredDebtors] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<'debt' | 'date'>('debt');
+    const [reminderModal, setReminderModal] = useState<{client: any, debt: number} | null>(null);
 
     useEffect(() => {
         const unsubscribe = SalesService.subscribeToPendingSales(async (pendingSales: any[]) => {
@@ -74,10 +76,24 @@ export default function CollectionsScreen() {
         setFilteredDebtors(filtered);
     }, [searchQuery, debtors, sortBy]);
 
-    const handleRemind = (client: any, debt: number) => {
-        const message = `Hola ${client.name}, te recordamos que tienes un saldo pendiente de $${debt.toFixed(2)} en Cuadra.`;
-        const whatsappUrl = `https://wa.me/${client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    const handleRemindClick = (client: any, debt: number) => {
+        setReminderModal({ client, debt });
+    };
+
+    const copyReminderMessage = () => {
+        if (!reminderModal) return;
+        const message = `Hola ${reminderModal.client.name}, te recordamos que tienes un saldo pendiente de $${reminderModal.debt.toFixed(2)} en Cuadra.`;
+        navigator.clipboard.writeText(message);
+        toast.success('Mensaje copiado al portapapeles');
+        setReminderModal(null);
+    };
+
+    const openWhatsApp = () => {
+        if (!reminderModal) return;
+        const message = `Hola ${reminderModal.client.name}, te recordamos que tienes un saldo pendiente de $${reminderModal.debt.toFixed(2)} en Cuadra.`;
+        const whatsappUrl = `https://wa.me/${reminderModal.client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
+        setReminderModal(null);
     };
 
     const totalDebt = debtors.reduce((sum, d) => sum + d.debt, 0);
@@ -165,9 +181,9 @@ export default function CollectionsScreen() {
 
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); handleRemind(item.client, item.debt); }}
+                                            onClick={(e) => { e.stopPropagation(); handleRemindClick(item.client, item.debt); }}
                                             className="p-3 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl transition-colors font-medium flex items-center justify-center group-hover:bg-green-50"
-                                            title="Recordar por WhatsApp"
+                                            title="Recordar Cobro"
                                         >
                                             <MessageCircle size={24} />
                                         </button>
@@ -192,6 +208,32 @@ export default function CollectionsScreen() {
                 )}
             </div>
 
+            {reminderModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 transition-all animate-in fade-in duration-200">
+                    <div className="ui-card w-full max-w-sm border border-ui-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 p-8 flex flex-col items-center text-center">
+                        <div className="w-16 h-16 bg-[#25D366]/20 text-[#25D366] rounded-2xl flex items-center justify-center mb-6">
+                            <MessageCircle size={32} />
+                        </div>
+                        <h2 className="text-xl font-black text-ui-text mb-2 uppercase tracking-tight">Vía de Contacto</h2>
+                        <p className="text-xs font-bold text-ui-text-muted mb-8 tracking-wide">
+                            Selecciona cómo notificar a <span className="text-ui-text">{reminderModal.client.name}</span>
+                        </p>
+                        
+                        <div className="w-full space-y-3">
+                            <button onClick={openWhatsApp} className="w-full py-4 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-black uppercase tracking-widest text-xs transition-transform active:scale-95 flex items-center justify-center gap-3 shadow-md">
+                                <MessageCircle size={18} /> Abrir WhatsApp
+                            </button>
+                            <button onClick={copyReminderMessage} className="w-full py-4 px-4 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-ui-text rounded-xl font-black uppercase tracking-widest text-xs transition-transform active:scale-95 flex items-center justify-center gap-3">
+                                <FileText size={18} opacity={0.5} /> Copiar Mensaje
+                            </button>
+                        </div>
+                        
+                        <button onClick={() => setReminderModal(null)} className="mt-8 text-[10px] p-2 font-black text-ui-text-muted uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

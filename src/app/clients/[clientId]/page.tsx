@@ -20,6 +20,7 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
     const [sales, setSales] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+    const [selectedDebts, setSelectedDebts] = useState<string[]>([]);
 
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -66,20 +67,35 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
         }
     };
 
+    const pendingSales = sales.filter(s => s.status === 'pending');
+
     const handleConfirmPayment = async () => {
         setIsSavingPayment(true);
         try {
-            const bulkNote = paymentNotes ? `[PAGO MASIVO] ${paymentNotes}` : '[PAGO MASIVO] Saldo total de crédito.';
+            const isPartial = selectedDebts.length > 0 && selectedDebts.length < pendingSales.length;
+            const bulkNote = paymentNotes ? `[PAGO MASIVO] ${paymentNotes}` : (isPartial ? `[PAGO PARCIAL] ${selectedDebts.length} deudas seleccionadas.` : '[PAGO MASIVO] Saldo total de crédito.');
 
-            await SalesService.payAllDebts(clientId, {
-                paymentMethod,
-                evidenceUrl: null, // PWA currently skips image proof for simplicity
-                notes: bulkNote,
-                cashboxId: currentUser?.uid,
-                cashboxName: currentUser?.displayName || 'Cajero',
-            });
+            if (selectedDebts.length > 0) {
+                await SalesService.paySpecificDebts(selectedDebts, {
+                    paymentMethod,
+                    evidenceUrl: null,
+                    notes: bulkNote,
+                    cashboxId: currentUser?.uid,
+                    cashboxName: currentUser?.displayName || 'Cajero',
+                });
+            } else {
+                await SalesService.payAllDebts(clientId, {
+                    paymentMethod,
+                    evidenceUrl: null,
+                    notes: bulkNote,
+                    cashboxId: currentUser?.uid,
+                    cashboxName: currentUser?.displayName || 'Cajero',
+                });
+            }
+            
             setPayModalVisible(false);
             setPaymentNotes('');
+            setSelectedDebts([]);
             loadData();
         } catch (error) {
             alert('No se pudo procesar el pago');
@@ -105,8 +121,10 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
         );
     }
 
-    const pendingSales = sales.filter(s => s.status === 'pending');
     const totalDebt = pendingSales.reduce((sum, s) => sum + (s.total || 0), 0);
+    const selectedDebtTotal = selectedDebts.length > 0 
+        ? pendingSales.filter(s => selectedDebts.includes(s.id)).reduce((sum, s) => sum + (s.total || 0), 0)
+        : totalDebt;
 
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -169,14 +187,14 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
                         <div className="mt-8 p-5 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                             <div>
                                 <h3 className="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-widest mb-1 flex items-center">
-                                    <Banknote size={16} className="mr-2" /> Deuda Pendiente
+                                    <Banknote size={16} className="mr-2" /> {selectedDebts.length > 0 ? 'Deuda Seleccionada' : 'Deuda Pendiente'}
                                 </h3>
                                 <p className="text-3xl font-black text-red-700 dark:text-red-300">
-                                    ${totalDebt.toFixed(2)}
+                                    ${selectedDebtTotal.toFixed(2)}
                                 </p>
                             </div>
                             <Button onClick={() => setPayModalVisible(true)} className="bg-red-600 hover:bg-red-700 shadow-md shadow-red-500/20">
-                                Saldar Completamente
+                                {selectedDebts.length > 0 ? `Saldar Seleccionadas (${selectedDebts.length})` : 'Saldar Completamente'}
                             </Button>
                         </div>
                     )}
@@ -200,40 +218,65 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
                             <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
                                 <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800/50 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
                                     <tr>
-                                        <th scope="col" className="px-6 py-4 font-bold">Fecha</th>
+                                        <th scope="col" className="px-4 py-4 w-10"></th>
+                                        <th scope="col" className="px-2 py-4 font-bold">Fecha</th>
                                         <th scope="col" className="px-6 py-4 font-bold">Monto Total</th>
                                         <th scope="col" className="px-6 py-4 font-bold">Estado</th>
                                         <th scope="col" className="px-6 py-4"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {sales.map((sale) => (
-                                        <tr key={sale.id} onClick={() => router.push(`/sales/${sale.id}`)} className="bg-white border-b dark:bg-gray-900 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/80 cursor-pointer transition-colors group">
-                                            <td className="px-6 py-4 font-medium text-gray-900 dark:text-white flex items-center">
-                                                <Calendar size={14} className="mr-2 text-gray-400" />
-                                                {new Date(sale.createdAt).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
-                                                ${(sale.total || 0).toFixed(2)}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {sale.status === 'paid' ? (
-                                                    <span className="flex items-center text-xs font-bold text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-1 rounded-full w-fit">
-                                                        <CheckCircle2 size={12} className="mr-1" />
-                                                        PAGADO
-                                                    </span>
-                                                ) : (
-                                                    <span className="flex items-center text-xs font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 py-1 rounded-full w-fit">
-                                                        <Clock size={12} className="mr-1" />
-                                                        PENDIENTE
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <ChevronRight size={18} className="text-gray-300 dark:text-gray-600 group-hover:text-blue-500 transition-colors inline-block" />
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {sales.map((sale) => {
+                                        const isPending = sale.status === 'pending';
+                                        const isSelected = selectedDebts.includes(sale.id);
+
+                                        return (
+                                            <tr 
+                                                key={sale.id} 
+                                                onClick={() => {
+                                                    if (isPending) {
+                                                        setSelectedDebts(prev => 
+                                                            prev.includes(sale.id) ? prev.filter(id => id !== sale.id) : [...prev, sale.id]
+                                                        );
+                                                    } else {
+                                                        router.push(`/sales/${sale.id}`);
+                                                    }
+                                                }} 
+                                                className={`border-b dark:border-gray-800 transition-colors group ${isPending ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 ' + (isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-900') : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 bg-white dark:bg-gray-900'}`}
+                                            >
+                                                <td className="px-4 py-4">
+                                                    {isPending && (
+                                                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 dark:border-gray-600'}`}>
+                                                            {isSelected && <Check size={14} className="text-white" />}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-2 py-4 font-medium text-gray-900 dark:text-white flex items-center">
+                                                    <Calendar size={14} className="mr-2 text-gray-400" />
+                                                    {new Date(sale.createdAt).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
+                                                    ${(sale.total || 0).toFixed(2)}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {sale.status === 'paid' ? (
+                                                        <span className="flex items-center text-xs font-bold text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-1 rounded-full w-fit">
+                                                            <CheckCircle2 size={12} className="mr-1" />
+                                                            PAGADO
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center text-xs font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 py-1 rounded-full w-fit">
+                                                            <Clock size={12} className="mr-1" />
+                                                            PENDIENTE
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    {!isPending && <ChevronRight size={18} className="text-gray-300 dark:text-gray-600 group-hover:text-blue-500 transition-colors inline-block" />}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -251,7 +294,7 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
 
                             <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl mb-6 flex items-center justify-between border border-gray-100 dark:border-gray-800">
                                 <span className="font-medium text-gray-600 dark:text-gray-300">Total a cobrar:</span>
-                                <span className="text-2xl font-black text-red-600 dark:text-red-400">${totalDebt.toFixed(2)}</span>
+                                <span className="text-2xl font-black text-red-600 dark:text-red-400">${selectedDebtTotal.toFixed(2)}</span>
                             </div>
 
                             <div className="space-y-4 mb-6">

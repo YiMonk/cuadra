@@ -43,9 +43,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (existingIndex >= 0) {
                 const newItems = [...prev];
+                if (newItems[existingIndex].quantity >= newItems[existingIndex].stock) {
+                    return prev;
+                }
                 newItems[existingIndex].quantity += 1;
                 return newItems;
             }
+
+            if (product.stock <= 0) return prev;
 
             return [...prev, {
                 ...product,
@@ -63,7 +68,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             return prev.map(i => {
                 if (i.id === productId && i.variantId === variantId) {
-                    return { ...i, quantity };
+                    const boundedQuantity = Math.max(0, Math.min(quantity, i.stock));
+                    return { ...i, quantity: boundedQuantity };
                 }
                 return i;
             });

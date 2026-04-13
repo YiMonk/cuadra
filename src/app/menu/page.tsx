@@ -41,7 +41,11 @@ export default function MenuPage() {
         { title: 'Configuración', icon: Settings, route: '/settings', color: 'text-slate-500', bg: 'bg-slate-50 dark:bg-slate-900/20', description: 'Opciones de la app' }
     ];
 
-    const menuItems = user?.role === 'admingod' ? admingodItems : standardItems;
+    const staffItems = [
+        { title: 'Configuración', icon: Settings, route: '/settings', color: 'text-slate-500', bg: 'bg-slate-50 dark:bg-slate-900/20', description: 'Opciones de la app' }
+    ];
+
+    const menuItems = user?.role === 'admingod' ? admingodItems : user?.role === 'staff' ? staffItems : standardItems;
 
     return (
         <div className="p-4 md:p-8 max-w-3xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">

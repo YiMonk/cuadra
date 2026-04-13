@@ -23,6 +23,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    
+    // Deletion Modal State
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [deleteEmailConfirm, setDeleteEmailConfirm] = useState('');
 
     // Form inputs
     const [displayName, setDisplayName] = useState('');
@@ -110,26 +114,28 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
         }
     };
 
-    const handleDeleteUser = async () => {
-        toast.error('¿Estás seguro de eliminar los METADATOS de este usuario?', {
-            description: 'Esto no elimina la cuenta de autenticación, pero borrará su perfil en la base de datos.',
-            action: {
-                label: 'Eliminar permanentemente',
-                onClick: async () => {
-                    setIsDeleting(true);
-                    try {
-                        await UserService.deleteUserMetadata(userId);
-                        toast.success('Metadatos eliminados');
-                        router.push('/admin/users');
-                    } catch (error) {
-                        toast.error('Error eliminando metadatos');
-                    } finally {
-                        setIsDeleting(false);
-                    }
-                }
-            },
-            cancel: { label: 'Cancelar' }
-        });
+    const handleDeleteUser = () => {
+        setDeleteEmailConfirm('');
+        setDeleteModalVisible(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!userMeta || deleteEmailConfirm !== userMeta.email) return;
+
+        setIsDeleting(true);
+        try {
+            // Delete metadata from firestore
+            await UserService.deleteUserMetadata(userId);
+
+            // Inform the user since client-side cannot delete other's auth profiles
+            toast.success('Usuario y metadatos eliminados permanentemente del sistema');
+            setDeleteModalVisible(false);
+            router.push('/admin/users');
+        } catch (error) {
+            toast.error('Error eliminando usuario');
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     if (loading) {
@@ -283,7 +289,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
                 <div className="flex items-center gap-3 text-red-500/60 p-4 bg-red-500/5 rounded-2xl border border-red-500/10">
                     <AlertCircle size={20} />
                     <p className="text-[10px] font-bold uppercase tracking-widest max-w-[400px]">
-                        Las acciones de eliminación de metadatos son irreversibles. No eliminarán la cuenta de Email del usuario.
+                        Las acciones de eliminación son irreversibles. Se borrará permanentemente todo el perfil y configuración del usuario en la base de datos.
                     </p>
                 </div>
                 
@@ -292,9 +298,75 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
                     className="flex items-center gap-2 text-red-500 hover:bg-red-500/10 px-6 py-4 rounded-2xl transition-all font-black uppercase tracking-widest text-[11px] border border-red-500/20 active:scale-95"
                     disabled={isDeleting}
                 >
-                    <Trash2 size={18} /> {isDeleting ? 'Eliminando...' : 'Eliminar Metadatos'}
+                    <Trash2 size={18} /> {isDeleting ? 'Eliminando...' : 'Eliminar Usuario'}
                 </button>
             </div>
+
+            {/* GitHub style Critical Deletion Modal */}
+            {deleteModalVisible && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <Card className="w-full max-w-md shadow-2xl border-red-500/10 bg-white/95 dark:bg-gray-900/90 backdrop-blur-3xl rounded-[32px] animate-in zoom-in-95 duration-300 overflow-hidden">
+                        <CardContent className="p-8">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                                        <AlertCircle className="text-red-500" size={24} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black text-ui-text uppercase tracking-tighter leading-none">Eliminar Usuario</h2>
+                                    </div>
+                                </div>
+                                <button onClick={() => setDeleteModalVisible(false)} className="p-2 text-gray-500 hover:text-red-500 transition-colors">
+                                    <XCircle size={24} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
+                                    Esta acción es <strong className="text-red-500">irreversible</strong>. Se eliminará permanentemente la cuenta de usuario, todos sus registros, y su configuración en la plataforma.
+                                </p>
+                                
+                                <div className="p-5 bg-red-50 dark:bg-red-500/5 rounded-2xl border border-red-100 dark:border-red-500/10 shadow-inner">
+                                    <p className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest text-center mb-3">
+                                        Para confirmar, escribe el correo del usuario:
+                                    </p>
+                                    <p className="text-sm font-black text-center text-ui-text select-all bg-white dark:bg-black/20 p-2 rounded-lg border border-red-100 dark:border-white/5">
+                                        {userMeta.email}
+                                    </p>
+                                </div>
+
+                                <Input 
+                                    value={deleteEmailConfirm}
+                                    onChange={(e) => setDeleteEmailConfirm(e.target.value)}
+                                    placeholder="Confirmar correo completo..."
+                                    className="font-mono text-center h-14 tracking-wide"
+                                />
+
+                                <div className="flex gap-4 pt-2">
+                                    <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        className="flex-1 uppercase font-black tracking-widest h-14" 
+                                        onClick={() => { setDeleteModalVisible(false); setDeleteEmailConfirm(''); }} 
+                                        disabled={isDeleting}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                    <Button 
+                                        variant="danger"
+                                        className="flex-1 uppercase font-black tracking-widest h-14" 
+                                        isLoading={isDeleting} 
+                                        disabled={deleteEmailConfirm !== userMeta.email || isDeleting}
+                                        onClick={handleConfirmDelete}
+                                    >
+                                        Eliminar
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }

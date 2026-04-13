@@ -12,8 +12,8 @@
   --ui-text-inverse: #FFFFFF;
   
   /* Accents - Keeping a refined version of your current blue */
-  --accent-primary: #1C1C1E; 
-  --accent-secondary: #007AFF; /* Refined iOS-style Blue instead of purple */
+  --accent-primary: #007AFF; 
+  --accent-secondary: #5856D6;
   --accent-success: #34C759;
   --accent-danger: #FF3B30;
   --accent-warning: #EA580C;
@@ -44,7 +44,7 @@
   
   --ui-text: #FFFFFF;
   --ui-text-muted: #8E8E93;
-  --ui-text-inverse: #000000;
+  --ui-text-inverse: #FFFFFF; /* White text on blue primary buttons */
   
   /* Shadows */
   --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.3);

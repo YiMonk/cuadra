@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from 'next/navigation';
+
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -116,7 +118,7 @@ export default function POSScreen() {
     }, [products]);
 
     const filteredProducts = useMemo(() => {
-        let result = products;
+        let result = products.filter(p => p.stock > 0);
         if (searchQuery) result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
         if (selectedCategory) result = result.filter(p => p.category === selectedCategory);
         return result;
@@ -173,7 +175,7 @@ export default function POSScreen() {
         }
         setIsSavingClient(true);
         try {
-            const clientId = await ClientService.createClient({
+            const clientId = await ClientService.addClient({
                 name: newClientName,
                 phone: newClientPhone,
                 active: true,
@@ -441,6 +443,32 @@ export default function POSScreen() {
                                 )}
 
                                 <Input label="NOTAS DE VENTA" value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} placeholder="Ej: Pago pendiente..." />
+
+                                {paymentMethod === 'credit' && !selectedClient && (
+                                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <AlertCircle className="text-red-500" size={20} />
+                                            <span className="text-sm font-bold text-red-500">Debes asignar un cliente</span>
+                                        </div>
+                                        <button type="button" onClick={() => setClientModalVisible(true)} className="px-4 py-2 bg-red-500 text-white text-xs font-black rounded-lg uppercase tracking-widest active:scale-95 transition-all">
+                                            Asignar
+                                        </button>
+                                    </div>
+                                )}
+                                {paymentMethod === 'credit' && selectedClient && (
+                                    <div className="p-4 bg-accent-primary/10 border border-accent-primary/20 rounded-xl flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <UserIcon className="text-accent-primary" size={20} />
+                                            <div>
+                                                <p className="text-[10px] uppercase font-black tracking-widest text-accent-primary">Fiado a</p>
+                                                <p className="text-sm font-bold text-ui-text">{selectedClient.name}</p>
+                                            </div>
+                                        </div>
+                                        <button type="button" onClick={() => setClientModalVisible(true)} className="px-3 py-1.5 bg-black/10 dark:bg-white/10 text-ui-text text-xs font-bold rounded-lg uppercase">
+                                            Cambiar
+                                        </button>
+                                    </div>
+                                )}
 
                                 <div className="flex gap-4 pt-4">
                                     <button type="button" className="ui-btn ui-btn-secondary flex-1" onClick={() => setCheckoutModalVisible(false)} disabled={isSaving}>Cancelar</button>

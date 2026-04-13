@@ -212,6 +212,26 @@ export const SalesService = {
        throw error;
      }
    },
+
+   // Pay specific debts
+   paySpecificDebts: async (saleIds: string[], updates: Partial<Sale>) => {
+     try {
+       const promises = saleIds.map(saleId => 
+         updateDoc(doc(db, SALES_COLLECTION, saleId), { 
+           ...updates,
+           status: 'paid',
+           paidAt: Date.now(),
+           updatedAt: Date.now() 
+         })
+       );
+       
+       await Promise.all(promises);
+       return true;
+     } catch (error) {
+       console.error("Error paying specific debts: ", error);
+       throw error;
+     }
+   },
  
    // Subscribe to pending sales for real-time updates in Collections
    subscribeToPendingSales: (callback: (sales: Sale[]) => void) => {
