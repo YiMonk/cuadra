@@ -31,7 +31,7 @@ export default function SettingsScreen() {
                 label: 'Cerrar Sesión',
                 onClick: () => signOut()
             },
-            cancel: { label: 'Cancelar' }
+            cancel: { label: 'Cancelar', onClick: () => {} }
         });
     };
 

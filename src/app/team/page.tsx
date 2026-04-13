@@ -123,7 +123,7 @@ export default function TeamManagementScreen() {
                     }
                 }
             },
-            cancel: { label: 'Cancelar' }
+            cancel: { label: 'Cancelar', onClick: () => {} }
         });
     };
 

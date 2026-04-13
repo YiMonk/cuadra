@@ -70,7 +70,7 @@ export default function AdminGodDashboardPage() {
                     }
                 }
             },
-            cancel: { label: 'Cancelar' }
+            cancel: { label: 'Cancelar', onClick: () => {} }
         });
     };
 

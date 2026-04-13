@@ -135,7 +135,7 @@ export default function InventoryScreen() {
                     }
                 }
             },
-            cancel: { label: 'Cancelar' }
+            cancel: { label: 'Cancelar', onClick: () => {} }
         });
     };
 
