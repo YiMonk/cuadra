@@ -18,12 +18,7 @@ import {
     Moon,
     LogOut,
     User
-} from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { useAppTheme } from '@/context/ThemeContext';
-import { ProductService } from '@/services/product.service';
-import { SalesService } from '@/services/sales.service';
-import { ClientService } from '@/services/client.service';
+import { useCart } from '@/context/CartContext';
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -32,6 +27,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const { user, isLoading, signOut } = useAuth();
     const { isDarkTheme, toggleTheme } = useAppTheme();
+    const { items } = useCart();
+    const cartItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -141,7 +138,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // For mobile bottom nav - Always append Profile
     const baseMobileItems = (isGlobalAdmin || isStaff) ? navItems : navItems.slice(0, 4);
     const mobileNavItems = [
-        ...baseMobileItems,
+        ...baseMobileItems.map(item => ({
+            ...item,
+            onClick: item.href === '/pos' ? (e: any) => {
+                if (pathname === '/pos') {
+                    e.preventDefault();
+                    window.dispatchEvent(new CustomEvent('toggle-cart'));
+                }
+            } : undefined
+        })),
         { name: 'Perfil', href: '/settings', icon: User }
     ];
 
@@ -177,6 +182,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     <Icon size={24} strokeWidth={isActive ? 3 : 2} />
                                     {isActive && (
                                         <div className="absolute -right-1 w-1 h-4 bg-black dark:bg-white rounded-full" />
+                                    )}
+                                    {item.name === 'Venta' && cartItemsCount > 0 && (
+                                        <div className="absolute top-1 right-1 w-4 h-4 bg-accent-primary rounded-full flex items-center justify-center text-[8px] font-bold text-white z-10 shadow-md">
+                                            {cartItemsCount > 9 ? '9+' : cartItemsCount}
+                                        </div>
                                     )}
                                     {item.name === 'Cobranzas' && pendingCollectionsCount > 0 && (
                                         <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white z-10 shadow-md">
@@ -320,6 +330,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <div className={`p-2 rounded-2xl transition-all duration-500 ${isActive ? 'bg-white/10 dark:bg-black/10 scale-110' : ''}`}>
                                     <Icon size={24} strokeWidth={isActive ? 3 : 2} />
                                 </div>
+                                {item.name === 'Venta' && cartItemsCount > 0 && (
+                                    <div className="absolute top-1 right-3 w-4 h-4 bg-accent-primary rounded-full border-2 border-ui-bg flex items-center justify-center text-[8px] font-bold text-white shadow-md z-10">
+                                        {cartItemsCount > 9 ? '9+' : cartItemsCount}
+                                    </div>
+                                )}
                                 {isActive && (
                                     <div className="absolute -bottom-1 w-1.5 h-1.5 bg-accent-primary rounded-full" />
                                 )}

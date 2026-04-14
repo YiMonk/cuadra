@@ -97,6 +97,20 @@ export default function POSScreen() {
     };
 
     useEffect(() => {
+        if (items.length > 0 && isCartMinimized) {
+            setIsCartMinimized(false);
+        }
+    }, [items.length]);
+
+    useEffect(() => {
+        const handleToggleCart = () => {
+            setIsCartMinimized(prev => !prev);
+        };
+        window.addEventListener('toggle-cart', handleToggleCart);
+        return () => window.removeEventListener('toggle-cart', handleToggleCart);
+    }, []);
+
+    useEffect(() => {
         const unsubscribe = ProductService.subscribeToProducts((list) => {
             setProducts(list);
             setLoading(false);
@@ -357,7 +371,7 @@ export default function POSScreen() {
                     )}
                 </div>
 
-                <div className="p-5 mt-2 bg-ui-surface border-t border-ui-border">
+                <div className="p-5 pb-[110px] md:pb-5 mt-2 bg-ui-surface border-t border-ui-border">
                     <button onClick={() => setClientModalVisible(true)} className={`w-full p-3.5 rounded-2xl flex items-center justify-between transition-all mb-5 ${selectedClient ? 'bg-accent-primary/5 border-accent-primary border' : 'ui-card hover:ui-card-hover border border-ui-border text-ui-text-muted'}`}>
                         <div className="flex items-center gap-3.5">
                             <div className={`p-2.5 rounded-full ${selectedClient ? 'bg-accent-primary text-white shadow-md' : 'bg-black/5 dark:bg-white/5 text-ui-text-muted'}`}>
@@ -383,7 +397,7 @@ export default function POSScreen() {
                     </div>
 
                     <button onClick={() => setCheckoutModalVisible(true)} disabled={items.length === 0} className="ui-btn ui-btn-primary w-full text-[16px] h-[56px] uppercase tracking-widest leading-none disabled:opacity-50">
-                        Continuar
+                        Realizar Venta
                     </button>
                 </div>
             </div></div>
