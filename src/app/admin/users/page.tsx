@@ -152,73 +152,72 @@ export default function AdminUserManagementPage() {
                 </CardContent>
             </Card>
 
-            <div className="space-y-3 mt-4">
+            <div className="space-y-4 mt-6">
                 {filteredUsers.length === 0 ? (
-                    <div className="text-center py-16 text-gray-400 dark:text-gray-600">
-                        <UserCog className="mx-auto mb-4 opacity-30" size={56} />
-                        <p className="text-lg font-medium">No se encontraron usuarios</p>
+                    <div className="text-center py-20 text-ui-text-muted/30">
+                        <UserCog className="mx-auto mb-6 opacity-20" size={64} />
+                        <p className="text-xl font-black uppercase tracking-widest">No hay usuarios registrados</p>
                     </div>
                 ) : (
                     filteredUsers.map(item => (
                         <button
                             key={item.id}
                             onClick={() => router.push(`/admin/users/${item.id}`)}
-                            className={`w-full flex items-center p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900/50 text-left group
-                ${item.active ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-950 opacity-80'}`
-                            }
+                            className="w-full flex items-center p-6 ui-card border border-ui-border hover:border-accent-primary/40 transition-all duration-300 group text-left relative overflow-hidden"
                         >
-                            <div
-                                className={`w-14 h-14 rounded-2xl flex items-center justify-center mr-6 shadow-inner transition-transform group-hover:scale-105 shrink-0
-                ${item.role === 'admin' || item.role === 'admingod' ? 'bg-accent-primary/10 text-accent-primary'
-                                        : item.role === 'owner' ? 'bg-accent-success/10 text-accent-success'
-                                            : 'bg-white/5 text-ui-text-muted'}`}
+                            <div className="absolute inset-0 bg-accent-primary/2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            
+                            <div className={`w-16 h-16 rounded-[22px] flex items-center justify-center mr-8 shadow-inner transition-transform group-hover:scale-110 shrink-0
+                                ${item.role === 'admin' || item.role === 'admingod' ? 'bg-accent-primary/10 text-accent-primary'
+                                : item.role === 'owner' ? 'bg-accent-success/10 text-accent-success'
+                                : 'bg-black/5 dark:bg-white/5 text-ui-text-muted'}`}
                             >
-                                {item.role === 'admingod' ? <ShieldAlert size={28} /> : item.role === 'admin' ? <Shield size={28} /> : <UserIcon size={28} />}
+                                {item.role === 'admingod' ? <ShieldAlert size={32} /> : item.role === 'admin' ? <Shield size={32} /> : <UserIcon size={32} />}
                             </div>
-
-                            <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <h3 className="text-xl font-black text-ui-text uppercase tracking-tight group-hover:text-accent-primary transition-colors truncate">{item.displayName}</h3>
-                                    <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border
-                                        ${item.role === 'admingod' ? 'bg-purple-500/10 text-purple-500 border-purple-500/20' : 
-                                          item.role === 'admin' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 
-                                          item.role === 'owner' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
-                                          'bg-white/5 text-ui-text-muted border-white/10'}
+ 
+                            <div className="flex-1 min-w-0 relative z-10">
+                                <div className="flex flex-wrap items-center gap-3 mb-1">
+                                    <h3 className="text-2xl font-black text-ui-text uppercase tracking-tighter transition-colors group-hover:text-accent-primary truncate">
+                                        {item.displayName}
+                                    </h3>
+                                    <div className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-[0.2em] border
+                                        ${item.role === 'admingod' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' : 
+                                          item.role === 'admin' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' : 
+                                          item.role === 'owner' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 
+                                          'bg-black/5 dark:bg-white/5 text-ui-text-muted border-ui-border/50'}
                                     `}>
-                                        {item.role === 'admingod' ? 'Master' : item.role === 'admin' ? 'Admin' : item.role === 'owner' ? 'Tienda' : 'Staff'}
+                                        {item.role === 'admingod' ? 'Master' : item.role === 'admin' ? 'Gestor' : item.role === 'owner' ? 'Socio' : 'Colaborador'}
                                     </div>
                                     {item.id === user?.uid && (
-                                        <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[8px] font-black tracking-[0.2em] shadow-lg shadow-amber-500/20">TU CUENTA</span>
+                                        <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[8px] font-black tracking-[0.2em] shadow-lg shadow-amber-500/20">MI CUENTA</span>
                                     )}
                                 </div>
-                                <p className="text-sm font-bold text-ui-text-muted mt-1 truncate lowercase">{item.email}</p>
+                                <p className="text-[11px] font-bold text-ui-text-muted truncate lowercase opacity-70 mb-4">{item.email}</p>
                                 
-                                <div className="flex flex-wrap items-center gap-4 mt-4">
-                                    {/* Subscription Badge */}
+                                <div className="flex flex-wrap items-center gap-4">
                                     {(item.role === 'admin' || item.role === 'owner') && (
                                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border
-                                            ${!item.subscriptionEndsAt ? 'bg-white/5 text-ui-text-muted border-white/5' :
-                                              item.subscriptionEndsAt < Date.now() ? 'bg-red-500/10 text-red-500 border-red-500/10' : 'bg-accent-success/10 text-accent-success border-accent-success/10'}
+                                            ${!item.subscriptionEndsAt ? 'bg-black/5 dark:bg-white/5 text-ui-text-muted border-ui-border/50' :
+                                              item.subscriptionEndsAt < Date.now() ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-accent-success/10 text-accent-success border-accent-success/20'}
                                         `}>
                                             <Calendar size={14} className="opacity-70" />
-                                            {!item.subscriptionEndsAt ? 'Sincronizando...' :
-                                             item.subscriptionEndsAt < Date.now() ? 'Suscripción Vencida' : 
-                                             `${Math.ceil((item.subscriptionEndsAt - Date.now()) / (1000 * 60 * 60 * 24))} días de crédito`}
+                                            {!item.subscriptionEndsAt ? 'Verificando...' :
+                                             item.subscriptionEndsAt < Date.now() ? 'Expirado' : 
+                                             `${Math.ceil((item.subscriptionEndsAt - Date.now()) / (1000 * 60 * 60 * 24))} días`}
                                         </div>
                                     )}
                                     
-                                    {/* Status Badge */}
                                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border
-                                        ${item.active ? 'bg-accent-info/10 text-accent-info border-accent-info/10' : 'bg-red-500/10 text-red-500 border-red-500/10'}
+                                        ${item.active ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}
                                     `}>
-                                        <Clock size={14} className="opacity-70" />
-                                        {item.active ? 'Acceso Activo' : 'Acceso Bloqueado'}
+                                        <CheckCircle2 size={14} className="opacity-70" />
+                                        {item.active ? 'Operativo' : 'Suspendido'}
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="ml-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                                <ArrowRight className="text-gray-400 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all" size={24} />
+ 
+                            <div className="ml-6 flex items-center justify-center w-10 h-10 rounded-full bg-black/5 dark:bg-white/5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-4 transition-all duration-300">
+                                <ArrowRight className="text-ui-text" size={20} />
                             </div>
                         </button>
                     ))

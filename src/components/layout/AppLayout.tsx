@@ -15,7 +15,9 @@ import {
     Bell,
     ShieldAlert,
     Sun,
-    Moon
+    Moon,
+    LogOut,
+    User
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
@@ -126,7 +128,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ] : isStaff ? [
         { name: 'Venta', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', href: '/inventory', icon: Package },
-        { name: 'Menú', href: '/menu', icon: Menu },
     ] : [
         // Default Owner / Manager View
         { name: 'Venta', href: '/pos', icon: ShoppingCart },
@@ -135,11 +136,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'Reportes', href: '/reports', icon: FileText },
         { name: 'Equipo', href: '/team', icon: Users },
         { name: 'Cobranzas', href: '/collections', icon: DollarSign },
-        { name: 'Menú', href: '/menu', icon: Menu },
     ];
 
-    // For mobile bottom nav
-    const mobileNavItems = (isGlobalAdmin || isStaff) ? navItems : navItems.slice(0, 5);
+    // For mobile bottom nav - Always append Profile
+    const baseMobileItems = (isGlobalAdmin || isStaff) ? navItems : navItems.slice(0, 4);
+    const mobileNavItems = [
+        ...baseMobileItems,
+        { name: 'Perfil', href: '/settings', icon: User }
+    ];
 
     return (
         <div className="flex h-screen bg-ui-bg transition-colors duration-500 font-sans overflow-hidden md:overflow-visible">
@@ -151,7 +155,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     {/* Logo Section */}
                     <div className="mb-10 relative group">
                         <div className="absolute -inset-2 bg-gradient-to-tr from-accent-primary to-accent-secondary opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-700" />
-                        <div className="relative w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-black shadow-lg">
+                        <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors ${isDarkTheme ? 'bg-white text-black' : 'bg-black text-white'}`}>
                             <span className="text-xl font-black italic">C</span>
                         </div>
                     </div>
@@ -160,21 +164,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <nav className="flex-1 flex flex-col items-center gap-6 w-full">
                         {navItems.map((item) => {
                             const Icon = item.icon;
-                            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    title={item.name}
-                                    className={`relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-400 group active:scale-90
-                                        ${isActive
-                                            ? 'bg-white text-black shadow-[0_8px_30px_rgba(255,255,255,0.3)]'
-                                            : 'text-white/40 hover:text-white hover:bg-white/10'
-                                        }`}
+                            // @ts-ignore
+                            const isActive = item.href ? (pathname === item.href || pathname.startsWith(item.href + '/')) : false;
+
+                            const content = (
+                                <div className={`relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-400 group active:scale-95
+                                    ${isActive
+                                        ? (isDarkTheme ? 'bg-white text-black shadow-[0_8px_30px_rgba(255,255,255,0.3)]' : 'bg-black text-white shadow-float')
+                                        : (isDarkTheme ? 'text-white/40 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-black hover:bg-black/5')
+                                    }`}
                                 >
                                     <Icon size={24} strokeWidth={isActive ? 3 : 2} />
                                     {isActive && (
-                                        <div className="absolute -right-1 w-1 h-4 bg-white rounded-full" />
+                                        <div className="absolute -right-1 w-1 h-4 bg-black dark:bg-white rounded-full" />
                                     )}
                                     {item.name === 'Cobranzas' && pendingCollectionsCount > 0 && (
                                         <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white z-10 shadow-md">
@@ -186,7 +188,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     <div className="absolute left-full ml-4 px-3 py-1.5 bg-black/90 dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap shadow-2xl z-[100] border border-white/10">
                                         {item.name}
                                     </div>
-                                </Link>
+                                </div>
+                            );
+
+                            return (
+                                // @ts-ignore
+                                item.onClick ? (
+                                    // @ts-ignore
+                                    <button key={item.name} onClick={item.onClick} title={item.name} className="contents">
+                                        {content}
+                                    </button>
+                                ) : (
+                                    // @ts-ignore
+                                    <Link key={item.name} href={item.href} title={item.name} className="contents">
+                                        {content}
+                                    </Link>
+                                )
                             );
                         })}
                     </nav>
@@ -195,15 +212,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <div className="mt-auto flex flex-col items-center gap-6">
                         <button
                             onClick={toggleTheme}
-                            className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+                            className="w-12 h-12 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-90"
                         >
                             {isDarkTheme ? <Moon size={22} /> : <Sun size={22} />}
                         </button>
 
-                        <div className="w-10 h-10 rounded-full border-2 border-white/20 p-0.5 relative group cursor-pointer overflow-hidden" onClick={() => router.push('/settings')}>
-                            <div className="w-full h-full bg-accent-primary rounded-full flex items-center justify-center text-[10px] font-black italic group-hover:bg-accent-secondary transition-colors">
-                                <Settings size={16} className="text-white opacity-0 group-hover:opacity-100 absolute transition-opacity" />
-                                <span className="group-hover:opacity-0 transition-opacity">{user?.displayName?.[0] || 'U'}</span>
+                        <div className="w-10 h-10 rounded-full border-2 border-white/20 p-0.5 relative group cursor-pointer overflow-hidden active:scale-95 transition-transform" onClick={() => router.push('/settings')}>
+                            <div className="w-full h-full bg-accent-primary rounded-full flex items-center justify-center text-[10px] font-black italic group-hover:bg-accent-secondary transition-colors text-white">
+                                {user?.displayName?.[0] || 'U'}
                             </div>
                         </div>
                     </div>
@@ -294,15 +310,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <div className="ui-card backdrop-blur-3xl bg-white/80 dark:bg-black/80 p-1 flex justify-around items-center h-[72px] rounded-[36px] border border-black/5 dark:border-white/10 shadow-float">
                     {mobileNavItems.map((item) => {
                         const Icon = item.icon;
-                        const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 relative
-                                    ${isActive ? 'text-white dark:text-black' : 'text-white/40 dark:text-black/40'}
-                                `}
-                            >
+                        // @ts-ignore
+                        const isActive = item.href ? (pathname === item.href || pathname.startsWith(item.href + '/')) : false;
+
+                        const content = (
+                            <div className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 relative
+                                ${isActive ? 'text-white dark:text-black' : 'text-white/60 dark:text-black/60'}
+                            `}>
                                 <div className={`p-2 rounded-2xl transition-all duration-500 ${isActive ? 'bg-white/10 dark:bg-black/10 scale-110' : ''}`}>
                                     <Icon size={24} strokeWidth={isActive ? 3 : 2} />
                                 </div>
@@ -314,8 +328,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                         {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
                                     </div>
                                 )}
-                            </Link>
-                        )
+                            </div>
+                        );
+
+                        return (
+                            // @ts-ignore
+                            item.onClick ? (
+                                <button key={item.name} onClick={item.onClick} className="flex-1 h-full">
+                                    {content}
+                                </button>
+                            ) : (
+                                <Link
+                                    // @ts-ignore
+                                    key={item.name}
+                                    // @ts-ignore
+                                    href={item.href}
+                                    className="flex-1 h-full"
+                                >
+                                    {content}
+                                </Link>
+                            )
+                        );
                     })}
                 </div>
             </nav>

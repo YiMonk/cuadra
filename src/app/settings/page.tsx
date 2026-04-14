@@ -113,36 +113,49 @@ export default function SettingsScreen() {
     if (isLoading) return null;
 
     return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div>
-                <h1 className="text-4xl font-black tracking-tighter text-ui-text uppercase">Configuración</h1>
-                <div className="h-1 w-20 bg-accent-primary mt-2 rounded-full" />
-            </div>
+        <div className="p-4 md:p-12 max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-ui-text uppercase leading-none">Settings</h1>
+                    <p className="text-ui-text-muted font-bold mt-3 uppercase tracking-[0.3em] text-[10px] flex items-center gap-2">
+                        <Settings2 size={14} className="text-accent-primary" /> Sistema / Perfil de Usuario
+                    </p>
+                </div>
+            </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-start">
-                {/* Perfil Header */}
-                <div className="md:col-span-4 ui-card border border-ui-border p-6 md:p-10 flex flex-col items-center text-center relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-linear-to-b from-accent-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+                {/* Perfil Header - Bento Style */}
+                <div className="md:col-span-12 lg:col-span-4 ui-card border border-ui-border p-8 flex flex-col items-center text-center relative overflow-hidden group shadow-float">
+                    <div className="absolute inset-x-0 top-0 h-1 bg-accent-primary shadow-[0_0_20px_rgba(0,122,255,0.5)]" />
                     
-                    <h2 className="text-3xl font-black text-ui-text mb-2 uppercase tracking-tighter">
+                    <div className="w-24 h-24 rounded-3xl bg-linear-to-tr from-accent-primary to-accent-secondary p-1 mb-6 shadow-xl group-hover:scale-105 transition-transform duration-500">
+                        <div className="w-full h-full bg-white dark:bg-black rounded-[22px] flex items-center justify-center">
+                            <span className="text-4xl font-black text-transparent bg-clip-text bg-linear-to-tr from-accent-primary to-accent-secondary italic">
+                                {user?.displayName?.[0] || 'U'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <h2 className="text-3xl font-black text-ui-text mb-1 uppercase tracking-tighter">
                         {user?.displayName || 'Usuario'}
                     </h2>
-                    <p className="text-sm font-bold text-accent-primary break-all mb-4 uppercase tracking-widest opacity-80">
+                    <p className="text-[11px] font-bold text-ui-text-muted mb-6 uppercase tracking-[0.2em] opacity-80">
                         {user?.email}
                     </p>
 
-                    <div className="inline-block px-4 py-1.5 bg-accent-primary/5 dark:bg-white/5 text-ui-text-muted rounded-md text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-ui-border">
+                    <div className="flex flex-wrap justify-center gap-2 mb-8">
                         {user?.role === 'admingod' ? (
-                            <span className="text-accent-primary">⭐ Admin Master</span>
+                            <span className="px-3 py-1 bg-amber-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg shadow-amber-500/20">⭐ Master</span>
                         ) : user?.role === 'admin' ? (
-                            <span className="text-accent-primary text-xs tracking-tighter">Administrador del Negocio</span>
+                            <span className="px-3 py-1 bg-accent-primary text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg shadow-blue-500/20">Administrador</span>
                         ) : (
-                            <span className="text-accent-success">Colaborador (Staff)</span>
+                            <span className="px-3 py-1 bg-accent-success text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full">Colaborador</span>
                         )}
+                        <span className="px-3 py-1 bg-ui-bg dark:bg-white/5 border border-ui-border text-ui-text-muted text-[9px] font-black uppercase tracking-[0.2em] rounded-full">Activo</span>
                     </div>
 
                     <button
-                        className="ui-btn ui-btn-secondary w-full gap-2 py-4 md:py-6 text-sm uppercase tracking-widest flex items-center justify-center relative z-10"
+                        className="ui-btn ui-btn-primary w-full gap-3 py-4 text-xs group/btn relative overflow-hidden"
                         onClick={() => {
                             setNewName(user?.displayName || '');
                             setNewEmail(user?.email || '');
@@ -151,76 +164,56 @@ export default function SettingsScreen() {
                             setProfileDialogVisible(true);
                         }}
                     >
-                        <Edit3 size={18} /> Editar Perfil
+                        <Edit3 size={16} /> <span>Gestionar Identidad</span>
+                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
                     </button>
                 </div>
 
-                <div className="md:col-span-8 space-y-8">
+                <div className="md:col-span-12 lg:col-span-8 space-y-8">
                     {/* Preferencias */}
-                    <div className="ui-card border border-ui-border overflow-hidden">
-                        <div className="px-4 md:px-8 py-4 md:py-5 flex items-center gap-3 border-b border-ui-border bg-black/2 dark:bg-white/2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="ui-card border border-ui-border p-8 flex flex-col justify-between group cursor-pointer hover:border-accent-primary/30 transition-all shadow-bento" onClick={() => setTheme(isDark ? 'light' : 'dark')}>
+                            <div className="flex justify-between items-start mb-8">
+                                <div className={`p-4 rounded-2xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-orange-500/10 text-orange-500'} group-hover:scale-110 transition-transform duration-500`}>
+                                    {isDark ? <Moon size={28} fill="currentColor" /> : <Sun size={28} fill="currentColor" />}
+                                </div>
+                                <div className={`w-12 h-6 rounded-full border border-ui-border p-1 flex items-center transition-colors ${isDark ? 'bg-accent-primary' : 'bg-ui-bg'}`}>
+                                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${isDark ? 'translate-x-6' : 'translate-x-0'}`} />
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="font-black text-ui-text uppercase tracking-tight text-xl mb-1">Apariencia</h3>
+                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">{isDark ? 'Modo Oscuro' : 'Modo Claro'} Activado</p>
+                            </div>
+                        </div>
+
+                        <div className="ui-card border border-ui-border p-8 flex flex-col justify-between group hover:border-red-500/30 transition-all shadow-bento cursor-pointer" onClick={handleLogout}>
+                            <div className="flex justify-between items-start mb-8">
+                                <div className="p-4 bg-red-500/10 rounded-2xl text-red-500 group-hover:scale-110 transition-transform duration-500">
+                                    <LogOut size={28} />
+                                </div>
+                                <ChevronRight size={20} className="text-ui-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-ui-text uppercase tracking-tight text-xl mb-1 text-red-500">Finalizar Sesión</h3>
+                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Desconectar cuenta actual</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Build Info */}
+                    <div className="ui-card border border-ui-border p-6 bg-black/5 dark:bg-white/5 flex items-center justify-between shadow-soft">
+                        <div className="flex items-center gap-4">
                             <div className="p-2 bg-accent-primary/10 rounded-lg">
-                                <Settings2 className="text-accent-primary" size={20} />
+                                <Shield className="text-accent-primary" size={18} />
                             </div>
-                            <h3 className="font-black text-ui-text uppercase tracking-widest text-sm">Preferencias de Sistema</h3>
-                        </div>
-
-                        <div className="p-4 md:p-8 space-y-6">
-                            <div className="flex items-center justify-between p-4 md:p-6 ui-input-box border border-ui-border">
-                                <div className="flex items-start gap-4">
-                                    <div className={`p-3 rounded-xl ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-orange-500/20 text-orange-500'}`}>
-                                        {isDark ? <Moon size={24} fill="currentColor" /> : <Sun size={24} fill="currentColor" />}
-                                    </div>
-                                    <div>
-                                        <p className="font-black text-ui-text uppercase tracking-tight text-lg">Tema Visual</p>
-                                        <p className="text-sm text-ui-text-muted font-bold mt-1 uppercase tracking-widest">{isDark ? 'Modo oscuro activado' : 'Modo claro activado'}</p>
-                                    </div>
-                                </div>
-                                
-                                {/* Flat Switch Large */}
-                                <button
-                                    onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                                    className="relative w-20 h-10 rounded-full bg-black/10 dark:bg-white/10 p-1 transition-colors duration-300 focus:outline-none flex items-center"
-                                >
-                                    <div className={`w-8 h-8 rounded-full shadow-md bg-white flex items-center justify-center transition-transform duration-300 ${isDark ? 'translate-x-10' : 'translate-x-0'}`}>
-                                        {isDark ? (
-                                            <Moon size={16} className="text-indigo-600 fill-indigo-600" />
-                                        ) : (
-                                            <Sun size={16} className="text-orange-500 fill-orange-500" />
-                                        )}
-                                    </div>
-                                </button>
+                            <div>
+                                <p className="text-[10px] font-black text-ui-text uppercase tracking-widest">Estado de Seguridad</p>
+                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-[0.1em]">Protección en tiempo real activa</p>
                             </div>
                         </div>
+                        <span className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.2em] opacity-40">Build v2.1.0</span>
                     </div>
-
-                    {/* Seguridad y Sesion */}
-                    <div className="ui-card border border-ui-border overflow-hidden">
-                        <div className="px-4 md:px-8 py-4 md:py-5 flex items-center gap-3 border-b border-ui-border bg-black/2 dark:bg-white/2">
-                            <div className="p-2 bg-red-500/10 rounded-lg">
-                                <Shield className="text-red-500" size={20} />
-                            </div>
-                            <h3 className="font-black text-ui-text uppercase tracking-widest text-sm">Seguridad y Acceso</h3>
-                        </div>
-
-                        <div className="p-4 md:p-8">
-                            <button
-                                onClick={handleLogout}
-                                className="w-full flex items-center justify-between p-4 md:p-6 ui-card hover:bg-black/5 dark:hover:bg-white/5 border border-red-500/20 text-red-500 transition-all font-black group relative overflow-hidden active:scale-95"
-                            >
-                                <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="flex items-center gap-4 relative z-10">
-                                    <div className="p-3 bg-red-500/10 rounded-lg group-hover:scale-110 transition-transform">
-                                        <LogOut size={22} strokeWidth={3} />
-                                    </div>
-                                    <span className="uppercase tracking-[0.1em] text-sm md:text-lg">Cerrar Sesión Global</span>
-                                </div>
-                                <ChevronRight size={20} className="relative z-10 opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <p className="text-center text-[10px] text-ui-text-muted font-black uppercase tracking-widest opacity-40 py-4">Cuadra Admin PWA • Build v2.0.0</p>
                 </div>
             </div>
 
