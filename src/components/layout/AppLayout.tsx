@@ -308,7 +308,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Mobile Floating Bottom Pill */}
             <nav className="md:hidden fixed z-[90] left-4 right-4 bottom-6 transition-all duration-500 overflow-hidden">
                 <div className="ui-card backdrop-blur-3xl bg-white/80 dark:bg-black/80 p-1 flex justify-around items-center h-[72px] rounded-[36px] border border-black/5 dark:border-white/10 shadow-float">
-                    {mobileNavItems.map((item) => {
+                    {mobileNavItems.map((item: any) => {
                         const Icon = item.icon;
                         // @ts-ignore
                         const isActive = item.href ? (pathname === item.href || pathname.startsWith(item.href + '/')) : false;
