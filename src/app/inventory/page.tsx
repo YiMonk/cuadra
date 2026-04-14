@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ProductService } from '@/services/product.service';
 import { CategoryService } from '@/services/category.service';
+import { LocationService } from '@/services/location.service';
 import { Product } from '@/types/inventory';
 import { Category } from '@/types/category';
 import { Search, Plus, PackageOpen, AlertCircle, XCircle, Edit, Trash2, PackagePlus, ArrowRightLeft, LayoutGrid, X } from 'lucide-react';
@@ -51,7 +52,20 @@ export default function InventoryScreen() {
     const [stock, setStock] = useState('');
     const [minStock, setMinStock] = useState('5');
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedLocation, setSelectedLocation] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    const [locations, setLocations] = useState<{id: string, name: string}[]>([]);
+    
+    useEffect(() => {
+        const unsub = LocationService.subscribeToLocations(data => {
+            setLocations(data);
+            if (data.length > 0 && !selectedLocation) {
+                setSelectedLocation(data[0].id);
+            }
+        });
+        return () => unsub();
+    }, []);
 
     // Form State (Stock Adjustment)
     const [adjustmentQuantity, setAdjustmentQuantity] = useState('');
@@ -107,6 +121,7 @@ export default function InventoryScreen() {
         setStock('');
         setMinStock('5');
         setSelectedCategory('');
+        setSelectedLocation(locations.length > 0 ? locations[0].id : '');
         setProductModalVisible(true);
     };
 
@@ -117,6 +132,7 @@ export default function InventoryScreen() {
         setStock(product.stock.toString());
         setMinStock((product.minStockAlert || 5).toString());
         setSelectedCategory(product.category || '');
+        setSelectedLocation((product as any).location || (locations.length > 0 ? locations[0].id : ''));
         setProductModalVisible(true);
     };
 
@@ -163,7 +179,8 @@ export default function InventoryScreen() {
                     price: priceVal,
                     stock: stockVal,
                     minStockAlert: parseInt(minStock) || 5,
-                    category: selectedCategory || 'General'
+                    category: selectedCategory || 'General',
+                    location: selectedLocation
                 });
             } else {
                 await ProductService.addProduct({
@@ -173,6 +190,8 @@ export default function InventoryScreen() {
                     minStockAlert: parseInt(minStock) || 5,
                     category: selectedCategory || 'General',
                     description: '',
+                    // @ts-ignore
+                    location: selectedLocation
                 });
             }
             setProductModalVisible(false);
@@ -426,6 +445,15 @@ export default function InventoryScreen() {
                                             onChange={(val) => setSelectedCategory(val)}
                                         />
                                     </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-ui-text-muted">Ubicación / Sede</p>
+                                    <Select
+                                        options={locations.map(l => ({ value: l.id, label: l.name }))}
+                                        value={selectedLocation}
+                                        onChange={(val) => setSelectedLocation(val)}
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 pt-2">

@@ -9,10 +9,14 @@ import { UserService } from '@/services/user.service';
 import { Sale } from '@/types/sales';
 import { UserMetadata } from '@/services/user.service';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon } from 'lucide-react';
+import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { toast } from 'sonner';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 
@@ -149,6 +153,101 @@ export default function ReportsScreen() {
         setCashboxMetrics(summaryList);
     };
 
+    const exportToExcel = () => {
+        try {
+            const dataToExport = filteredSales.map(sale => {
+                const time = typeof sale.createdAt === 'number' ? sale.createdAt : (sale.createdAt as any)?.toDate?.()?.getTime() || 0;
+                return {
+                    ID: sale.id.substring(0, 8),
+                    Fecha: new Date(time).toLocaleString(),
+                    Cajero: sale.creatorName || 'N/A',
+                    Caja: sale.cashboxName || 'Sin Caja',
+                    Metodo: sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod === 'transfer' ? 'Transferencia' : 'Crédito',
+                    Estado: sale.status === 'paid' ? 'Pagado' : sale.status === 'pending' ? 'Pendiente' : 'Cancelado',
+                    Total: Number(sale.total).toFixed(2)
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+            XLSX.writeFile(wb, `Reporte_Cuadra_${new Date().toISOString().split('T')[0]}.xlsx`);
+            toast.success("Excel exportado correctamente");
+        } catch (e) {
+            toast.error("Error al exportar Excel");
+        }
+    };
+
+    const exportToPDF = () => {
+        try {
+            const doc = new jsPDF();
+            const dateStr = new Date().toISOString().split('T')[0];
+            
+            // Header
+            doc.setFillColor(0, 122, 255);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(28);
+            doc.text("CUADRA", 20, 25);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("SISTEMA DE GESTIÓN Y MÉTRICAS", 20, 32);
+            doc.text(`REPORTE GENERADO: ${new Date().toLocaleString()}`, 130, 25);
+
+            // Metrics
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("Resumen General", 20, 55);
+            
+            autoTable(doc, {
+                startY: 60,
+                head: [['KPI', 'Valor']],
+                body: [
+                    ['Ventas Reales (Pagadas)', `$${metrics.revenue.toFixed(2)}`],
+                    ['Cuentas por Cobrar', `$${metrics.pending.toFixed(2)}`],
+                    ['Transacciones Totales', `${metrics.count}`],
+                    ['Valor Promedio Ticket', `$${metrics.average.toFixed(2)}`]
+                ],
+                theme: 'striped',
+                headStyles: { fillColor: [0, 122, 255], textColor: [255, 255, 255] },
+                margin: { left: 20, right: 20 }
+            });
+
+            // Sales list
+            const lastY = (doc as any).lastAutoTable.finalY || 100;
+            doc.setFontSize(16);
+            doc.text("Listado Detallado de Ventas", 20, lastY + 20);
+            
+            autoTable(doc, {
+                startY: lastY + 25,
+                head: [['Fecha', 'Cajero', 'Método', 'Estado', 'Total']],
+                body: filteredSales.map(s => {
+                    const time = typeof s.createdAt === 'number' ? s.createdAt : (s.createdAt as any)?.toDate?.()?.getTime() || 0;
+                    return [
+                        new Date(time).toLocaleDateString(),
+                        s.creatorName || 'N/A',
+                        s.paymentMethod === 'cash' ? 'Efec.' : s.paymentMethod === 'transfer' ? 'Transf.' : 'Créd.',
+                        s.status === 'paid' ? 'Pagado' : s.status === 'pending' ? 'Pend.' : 'Can.',
+                        `$${Number(s.total).toFixed(2)}`
+                    ];
+                }),
+                headStyles: { fillColor: [31, 41, 55] },
+                alternateRowStyles: { fillColor: [249, 250, 251] },
+                margin: { left: 20, right: 20 }
+            });
+
+            doc.save(`Reporte_Cuadra_${dateStr}.pdf`);
+            toast.success("PDF exportado correctamente");
+        } catch (e) {
+            console.error(e);
+            toast.error("Error al exportar PDF");
+        }
+    };
+
     if (loading || authLoading || (user?.role === 'staff' || user?.role === 'admin' || user?.role === 'admingod')) {
         return (
             <div className="flex justify-center items-center h-[80vh]">
@@ -165,7 +264,7 @@ export default function ReportsScreen() {
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Ventas y Métricas</h1>
                     <p className="text-foreground/60 font-medium">Análisis completo de operaciones</p>
                 </div>
-                <div className="flex items-center gap-3 min-w-[200px]">
+                <div className="flex items-center gap-3">
                     <Select
                         options={[
                             { value: 'all', label: 'Todas las cajas' },
@@ -174,7 +273,16 @@ export default function ReportsScreen() {
                         value={selectedCashier}
                         onChange={(val) => setSelectedCashier(val)}
                         icon={<UserIcon size={16} />}
+                        className="w-[200px]"
                     />
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={exportToExcel} className="hidden md:flex gap-2">
+                            <FileSpreadsheet size={16} /> Excel
+                        </Button>
+                        <Button variant="primary" size="sm" onClick={exportToPDF} className="flex gap-2">
+                            <Download size={16} /> PDF
+                        </Button>
+                    </div>
                 </div>
             </div>
 

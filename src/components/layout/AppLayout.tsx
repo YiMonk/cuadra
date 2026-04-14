@@ -135,7 +135,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'Inventario', href: '/inventory', icon: Package },
         { name: 'Clientes', href: '/clients', icon: Users },
         { name: 'Reportes', href: '/reports', icon: FileText },
-        { name: 'Equipo', href: '/team', icon: Users },
+        { name: 'Administración', href: '/team', icon: ShieldAlert },
         { name: 'Cobranzas', href: '/collections', icon: DollarSign },
     ];
 
@@ -148,6 +148,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 if (pathname === '/pos') {
                     e.preventDefault();
                     window.dispatchEvent(new CustomEvent('toggle-cart'));
+                } else {
+                    router.push('/pos');
                 }
             } : undefined
         })),
@@ -243,74 +245,115 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Main Content Area: The Bento Canvas */}
             <main className="flex-1 h-full overflow-y-auto relative custom-scrollbar overflow-x-hidden">
                 <div className="w-full max-w-[1400px] mx-auto px-4 md:px-12 pt-8 md:pt-12 pb-32 md:pb-12 h-auto min-h-full">
-                    {/* Page Header (Bento Style) */}
-                    <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-left-4 duration-1000">
-                        <div>
-                            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-ui-text">
+                    {/* Page Header (Premium Modern Layout) */}
+                    <div className="mb-12 flex flex-col gap-8 animate-in fade-in slide-in-from-top-6 duration-1000">
+                        {/* Top Action Bar - Aligned Right */}
+                        <div className="flex justify-end items-center gap-4" ref={notificationsRef}>
+                            {!isGlobalAdmin && (
+                                <>
+                                    {/* Cart Toggle Button */}
+                                    <button 
+                                        onClick={() => {
+                                            if (pathname !== '/pos') {
+                                                router.push('/pos');
+                                            } else {
+                                                window.dispatchEvent(new CustomEvent('toggle-cart'));
+                                            }
+                                        }}
+                                        className="relative w-14 h-14 rounded-2xl ui-glass-card border border-ui-border/50 hover:border-accent-primary/50 hover:bg-accent-primary/5 transition-all duration-300 active:scale-90 flex items-center justify-center shadow-premium group"
+                                        title="Ver Carrito"
+                                    >
+                                        <div className="absolute inset-0 bg-accent-primary/5 opacity-0 group-hover:opacity-100 rounded-2xl blur-xl transition-opacity" />
+                                        <ShoppingCart size={24} className="text-ui-text-muted group-hover:text-accent-primary transition-colors relative z-10" />
+                                        {cartItemsCount > 0 && (
+                                            <div className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 bg-accent-primary rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg border-2 border-ui-bg animate-bounce-subtle z-20">
+                                                {cartItemsCount > 9 ? '9+' : cartItemsCount}
+                                            </div>
+                                        )}
+                                    </button>
+
+                                    {/* Notifications Button */}
+                                    <div className="relative">
+                                        <button 
+                                            onClick={() => setNotificationsOpen(!notificationsOpen)}
+                                            className={`relative w-14 h-14 rounded-2xl transition-all duration-300 border flex items-center justify-center group active:scale-90 shadow-premium ${notificationsOpen ? 'bg-accent-primary/10 border-accent-primary text-accent-primary' : 'ui-glass-card border-ui-border/50 text-ui-text-muted hover:border-accent-primary/50 hover:text-accent-primary'}`}
+                                        >
+                                            <Bell size={24} className="transition-transform group-hover:rotate-12" />
+                                            {notifications.length > 0 && (
+                                                <div className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full border-2 border-ui-bg animate-pulse shadow-glow-red" />
+                                            )}
+                                        </button>
+
+                                        {/* Notifications Dropdown */}
+                                        {notificationsOpen && (
+                                            <div className="absolute top-16 right-0 w-80 max-w-[calc(100vw-2rem)] ui-glass-card border border-ui-border/50 backdrop-blur-3xl shadow-float z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 rounded-[2rem]">
+                                                <div className="p-5 border-b border-ui-border/30 flex items-center justify-between bg-white/5 dark:bg-black/5">
+                                                    <h3 className="font-black text-ui-text uppercase tracking-[0.2em] text-[10px]">Notificaciones</h3>
+                                                    <span className="text-[9px] bg-accent-primary text-white px-2.5 py-1 rounded-full font-black shadow-lg shadow-accent-primary/30">{notifications.length}</span>
+                                                </div>
+                                                <div className="p-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                                                    {notifications.length === 0 ? (
+                                                        <div className="py-12 text-center text-ui-text-muted/30 flex flex-col items-center">
+                                                            <div className="w-16 h-16 rounded-full bg-ui-text-muted/5 flex items-center justify-center mb-4">
+                                                                <Bell size={28} className="opacity-20" />
+                                                            </div>
+                                                            <span className="font-black text-[10px] uppercase tracking-widest">Bandeja vacía</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            {notifications.map((notif) => {
+                                                                const Icon = notif.icon;
+                                                                const isDanger = notif.type === 'danger';
+                                                                const isAlert = notif.type === 'alert';
+                                                                
+                                                                return (
+                                                                    <div 
+                                                                        key={notif.id} 
+                                                                        onClick={() => { if(notif.link) { router.push(notif.link); setNotificationsOpen(false); } }}
+                                                                        className={`p-4 rounded-2xl flex gap-4 transition-all duration-300 border ${notif.link ? 'cursor-pointer hover:translate-x-1 hover:bg-white/5 dark:hover:bg-black/5' : ''} ${isDanger ? 'bg-red-500/5 border-red-500/20 hover:border-red-500/40' : isAlert ? 'bg-orange-500/5 border-orange-500/20 hover:border-orange-500/40' : 'bg-transparent border-transparent'}`}
+                                                                    >
+                                                                        <div className={`p-2.5 rounded-xl h-fit flex shrink-0 shadow-lg ${isDanger ? 'bg-red-500 text-white' : isAlert ? 'bg-orange-500 text-white' : 'bg-accent-primary text-white'}`}>
+                                                                            <Icon size={18} />
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className={`text-[11px] font-black uppercase mb-1 tracking-tight ${isDanger ? 'text-red-600 dark:text-red-400' : isAlert ? 'text-orange-600 dark:text-orange-400' : 'text-ui-text'}`}>
+                                                                                {notif.title}
+                                                                            </p>
+                                                                            <p className="text-[11px] font-bold text-ui-text-muted leading-relaxed line-clamp-2">{notif.desc}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Status Pill - Role Indicator */}
+                            <div className="ui-card h-12 px-5 flex items-center justify-center border-ui-border shadow-soft bg-white dark:bg-white/5 animate-in fade-in zoom-in duration-500 delay-300">
+                                <div className={`w-2 h-2 rounded-full mr-3 ${isGlobalAdmin ? 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]' : isOwner ? 'bg-blue-500' : 'bg-green-500'}`} />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-ui-text-muted">
+                                    {isGlobalAdmin ? 'Admin God' : isOwner ? 'Propietario' : 'Staff'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Main Title Area (Now Below) */}
+                        <div className="animate-in fade-in slide-in-from-left-8 duration-1000 ease-out">
+                            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-ui-text drop-shadow-sm">
                                 {navItems.find(n => pathname.startsWith(n.href))?.name || 'Dashboard'}
                             </h2>
-                            <p className="text-ui-text-muted font-bold mt-2 uppercase tracking-[0.2em] text-xs">
-                                Gestiona tus operaciones diarias con Mermis 2025
-                            </p>
-                        </div>
-                        
-                        {!isGlobalAdmin && (
-                            <div className="flex items-center gap-3 relative" ref={notificationsRef}>
-                                <button 
-                                    onClick={() => setNotificationsOpen(!notificationsOpen)}
-                                    className={`relative w-12 h-12 rounded-2xl transition-colors border flex items-center justify-center group active:scale-95 shadow-sm ${notificationsOpen ? 'bg-white/10 dark:bg-black/10 border-accent-primary' : 'ui-card hover:bg-black/5 dark:hover:bg-white/5 border-ui-border'}`}
-                                >
-                                    <Bell size={22} className={`${notificationsOpen ? 'text-accent-primary' : 'text-ui-text-muted group-hover:text-accent-primary'} transition-colors`} />
-                                    {notifications.length > 0 && (
-                                        <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-ui-bg animate-pulse" />
-                                    )}
-                                </button>
-
-                                {/* Notifications Dropdown */}
-                                {notificationsOpen && (
-                                    <div className="absolute top-16 right-0 w-80 max-w-[calc(100vw-2rem)] ui-card border border-ui-border backdrop-blur-xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 rounded-3xl">
-                                        <div className="p-4 border-b border-ui-border/50 flex items-center justify-between bg-black/2 dark:bg-white/2">
-                                            <h3 className="font-black text-ui-text uppercase tracking-widest text-xs">Notificaciones</h3>
-                                            <span className="text-[10px] bg-accent-primary text-white px-2 py-0.5 rounded-full font-bold">{notifications.length}</span>
-                                        </div>
-                                        <div className="p-2 max-h-[60vh] overflow-y-auto">
-                                            {notifications.length === 0 ? (
-                                                <div className="p-8 text-center text-ui-text-muted/40 flex flex-col items-center">
-                                                    <Bell size={32} className="mb-2 opacity-30" />
-                                                    <span className="font-bold text-xs uppercase tracking-widest">No hay alertas</span>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-1">
-                                                    {notifications.map((notif) => {
-                                                        const Icon = notif.icon;
-                                                        const isDanger = notif.type === 'danger';
-                                                        const isAlert = notif.type === 'alert';
-                                                        
-                                                        return (
-                                                            <div 
-                                                                key={notif.id} 
-                                                                onClick={() => { if(notif.link) { router.push(notif.link); setNotificationsOpen(false); } }}
-                                                                className={`p-3 rounded-2xl flex gap-3 transition-colors ${notif.link ? 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/5' : ''} ${isDanger ? 'bg-red-500/10 border border-red-500/20' : isAlert ? 'bg-orange-500/10 border border-orange-500/20' : 'bg-transparent'}`}
-                                                            >
-                                                                <div className={`mt-0.5 p-2 rounded-full h-fit flex shrink-0 ${isDanger ? 'bg-red-500 text-white' : isAlert ? 'bg-orange-500 text-white' : 'bg-accent-primary/10 text-accent-primary'}`}>
-                                                                    <Icon size={16} />
-                                                                </div>
-                                                                <div>
-                                                                    <p className={`text-xs font-black uppercase mb-0.5 ${isDanger ? 'text-red-600 dark:text-red-400' : isAlert ? 'text-orange-600 dark:text-orange-400' : 'text-ui-text'}`}>
-                                                                        {notif.title}
-                                                                    </p>
-                                                                    <p className="text-[11px] font-medium text-ui-text-muted leading-tight">{notif.desc}</p>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                            <div className="flex items-center gap-4 mt-4">
+                                <div className="h-[2px] w-12 bg-accent-primary rounded-full" />
+                                <p className="text-ui-text-muted font-bold uppercase tracking-[0.3em] text-[10px] md:text-xs">
+                                    Gestiona tus operaciones diarias con <span className="text-ui-text">Mermis 2025</span>
+                                </p>
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     <div className="animate-in fade-in zoom-in-95 duration-700">

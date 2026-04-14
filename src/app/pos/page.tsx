@@ -8,6 +8,8 @@ import { useCart } from '@/context/CartContext';
 import { ProductService } from '@/services/product.service';
 import { ClientService } from '@/services/client.service';
 import { SalesService } from '@/services/sales.service';
+import { LocationService } from '@/services/location.service';
+import { CashboxService } from '@/services/cashbox.service';
 import { storage } from '@/config/firebaseConfig';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Product } from '@/types/inventory';
@@ -15,10 +17,11 @@ import { Client } from '@/types/client';
 import { 
     Search, ShoppingCart, Minus, Plus, X, User as UserIcon, Camera, AlertCircle, 
     ChevronDown, ChevronUp, Tag, Coffee, Shirt, Utensils, Zap, Package, 
-    Smartphone, Home, LayoutGrid, Pizza, Briefcase, Gift, Droplets 
+    Smartphone, Home, LayoutGrid, Pizza, Briefcase, Gift, Droplets, Shield
 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 import { toast } from 'sonner';
 import { PlusCircle, Loader2 } from 'lucide-react';
 
@@ -87,6 +90,24 @@ export default function POSScreen() {
     const [evidencePreview, setEvidencePreview] = useState<string | null>(null);
     const evidenceInputRef = useRef<HTMLInputElement>(null);
 
+    // Context State
+    const [selectedLocation, setSelectedLocation] = useState<string>('all');
+    const [selectedCashbox, setSelectedCashbox] = useState<string>('default');
+    
+    // Dynamic Data
+    const [locations, setLocations] = useState<{id: string, name: string}[]>([]);
+    const [cashboxes, setCashboxes] = useState<{id: string, name: string}[]>([]);
+
+    useEffect(() => {
+        const unsubLoc = LocationService.subscribeToLocations(data => {
+            setLocations(data);
+        });
+        const unsubBox = CashboxService.subscribeToCashboxes(data => {
+            setCashboxes(data);
+        });
+        return () => { unsubLoc(); unsubBox(); };
+    }, []);
+
     const handleEvidenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -135,8 +156,14 @@ export default function POSScreen() {
         let result = products.filter(p => p.stock > 0);
         if (searchQuery) result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
         if (selectedCategory) result = result.filter(p => p.category === selectedCategory);
+        
+        // Filter by location if product has a location field
+        if (selectedLocation !== 'all') {
+            result = result.filter(p => (p as any).location === selectedLocation || !(p as any).location);
+        }
+        
         return result;
-    }, [products, searchQuery, selectedCategory]);
+    }, [products, searchQuery, selectedCategory, selectedLocation]);
 
     const filteredClients = useMemo(() => {
         if (!clientSearch) return clients;
@@ -157,6 +184,8 @@ export default function POSScreen() {
                 await uploadBytes(fileRef, evidenceFile);
                 evidenceUrl = await getDownloadURL(fileRef);
             }
+            const cashboxObj = CASHBOXES.find(c => c.id === selectedCashbox) || { id: currentUser?.uid, name: currentUser?.displayName || 'Cajero' };
+
             await SalesService.createSale({
                 items: items as any,
                 total,
@@ -165,8 +194,11 @@ export default function POSScreen() {
                 clientName: selectedClient?.name || null,
                 evidenceUrl,
                 notes: paymentNotes || undefined,
-                cashboxId: currentUser?.uid,
-                cashboxName: currentUser?.displayName || 'Cajero',
+                cashboxId: selectedCashbox === 'default' ? (currentUser?.uid || '') : selectedCashbox,
+                cashboxName: cashboxes.find(c => c.id === selectedCashbox)?.name || currentUser?.displayName || 'Cajero',
+                // @ts-ignore
+                locationId: selectedLocation !== 'all' ? selectedLocation : null,
+                locationName: selectedLocation !== 'all' ? locations.find(l => l.id === selectedLocation)?.name : null
             });
             clearCart();
             setPaymentNotes('');
@@ -235,6 +267,20 @@ export default function POSScreen() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full h-14 pl-12 pr-6 rounded-2xl bg-white/50 dark:bg-white/5 border border-ui-border focus:bg-white dark:focus:bg-white/10 focus:ring-4 focus:ring-accent-primary/10 transition-all outline-none font-bold text-ui-text"
                             />
+                        </div>
+
+                        <div className="flex gap-4">
+                            <div className="w-56">
+                                <Select
+                                    options={[
+                                        { value: 'all', label: 'Todas las Sedes' },
+                                        ...locations.map(l => ({ value: l.id, label: l.name }))
+                                    ]}
+                                    value={selectedLocation}
+                                    onChange={(val) => setSelectedLocation(val)}
+                                    icon={<Home size={16} />}
+                                />
+                            </div>
                         </div>
 
                         {categories.length > 0 && (
@@ -434,6 +480,31 @@ export default function POSScreen() {
                                             <span className="text-xl">📝</span>
                                             <span className="uppercase tracking-wide text-xs">Fiado / A Crédito</span>
                                         </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-ui-text-muted">Caja Receptora</p>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setSelectedCashbox('default')} 
+                                            className={`p-3 rounded-xl transition-all flex flex-col items-center justify-center gap-1 font-bold border-2 active:scale-95 ${selectedCashbox === 'default' ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-transparent bg-black/5 dark:bg-white/5 text-ui-text-muted opacity-60'}`}
+                                        >
+                                            <Shield size={16} />
+                                            <span className="uppercase tracking-tight text-[10px] whitespace-nowrap">Personal</span>
+                                        </button>
+                                        {cashboxes.map(box => (
+                                            <button 
+                                                key={box.id} 
+                                                type="button" 
+                                                onClick={() => setSelectedCashbox(box.id)} 
+                                                className={`p-3 rounded-xl transition-all flex flex-col items-center justify-center gap-1 font-bold border-2 active:scale-95 ${selectedCashbox === box.id ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-transparent bg-black/5 dark:bg-white/5 text-ui-text-muted opacity-60'}`}
+                                            >
+                                                <Smartphone size={16} />
+                                                <span className="uppercase tracking-tight text-[10px] whitespace-nowrap">{box.name}</span>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 

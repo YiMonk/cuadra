@@ -116,5 +116,21 @@ export const UserService = {
             console.error("Error deleting user metadata:", error);
             throw error;
         }
+    },
+
+    // Subscribe to team members for a specific owner
+    subscribeToTeam: (ownerId: string, callback: (members: UserMetadata[]) => void) => {
+        const q = query(
+            collection(db, USERS_COLLECTION),
+            where('ownerId', '==', ownerId),
+            orderBy('createdAt', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            const members = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            } as UserMetadata));
+            callback(members);
+        });
     }
 };
