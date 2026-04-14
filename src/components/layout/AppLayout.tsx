@@ -18,7 +18,11 @@ import {
     Moon,
     LogOut,
     User
+} from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useAppTheme } from '@/context/ThemeContext';
 import { useCart } from '@/context/CartContext';
+import { SalesService } from '@/services/sales.service';
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
