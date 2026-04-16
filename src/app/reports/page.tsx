@@ -158,7 +158,7 @@ export default function ReportsScreen() {
             const dataToExport = filteredSales.map(sale => {
                 const time = typeof sale.createdAt === 'number' ? sale.createdAt : (sale.createdAt as any)?.toDate?.()?.getTime() || 0;
                 return {
-                    ID: sale.id.substring(0, 8),
+                    ID: sale.id?.substring(0, 8) || 'N/A',
                     Fecha: new Date(time).toLocaleString(),
                     Cajero: sale.creatorName || 'N/A',
                     Caja: sale.cashboxName || 'Sin Caja',
