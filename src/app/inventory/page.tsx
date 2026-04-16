@@ -190,7 +190,6 @@ export default function InventoryScreen() {
                     minStockAlert: parseInt(minStock) || 5,
                     category: selectedCategory || 'General',
                     description: '',
-                    // @ts-ignore
                     location: selectedLocation
                 });
             }

@@ -13,6 +13,7 @@ export interface Product {
   createdAt: number;
   updatedAt: number;
   variants?: ProductVariant[];
+  location?: string;
 }
 
 export interface ProductVariant {
