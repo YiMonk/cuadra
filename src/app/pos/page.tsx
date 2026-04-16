@@ -195,7 +195,7 @@ export default function POSScreen() {
                 await uploadBytes(fileRef, evidenceFile);
                 evidenceUrl = await getDownloadURL(fileRef);
             }
-            const cashboxObj = CASHBOXES.find(c => c.id === selectedCashbox) || { id: currentUser?.uid, name: currentUser?.displayName || 'Cajero' };
+            const cashboxObj = cashboxes.find(c => c.id === selectedCashbox) || { id: currentUser?.uid, name: currentUser?.displayName || 'Cajero' };
 
             await SalesService.createSale({
                 items: items as any,
