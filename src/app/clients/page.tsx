@@ -10,6 +10,8 @@ import { useAuth } from '@/context/AuthContext';
 import { Client } from '@/types/client';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/Card';
+import { useContactPicker } from '@/hooks/useContactPicker';
+import { Contact2 } from 'lucide-react';
 
 export default function ClientListScreen() {
     const [clients, setClients] = useState<any[]>([]); // Using any[] temporarily if types are not fully resolved
@@ -24,6 +26,15 @@ export default function ClientListScreen() {
     const [isSaving, setIsSaving] = useState(false);
     
     const { user, isLoading: authLoading } = useAuth();
+    const { isSupported, pickContact } = useContactPicker();
+
+    const handlePickContact = async () => {
+        const contact = await pickContact();
+        if (contact) {
+            setNewName(contact.name);
+            setNewPhone(contact.phone);
+        }
+    };
 
     useEffect(() => {
         if (!authLoading && user) {
@@ -155,6 +166,16 @@ export default function ClientListScreen() {
                                     placeholder="Ej: 04121234567"
                                     type="tel"
                                     required
+                                    rightIcon={isSupported ? (
+                                        <button 
+                                            type="button" 
+                                            onClick={handlePickContact}
+                                            className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors text-ios-blue"
+                                            title="Importar de contactos"
+                                        >
+                                            <Contact2 size={20} />
+                                        </button>
+                                    ) : undefined}
                                 />
                                 <div className="flex gap-3 pt-4">
                                     <Button type="button" variant="ghost" className="flex-1" onClick={() => setModalVisible(false)} disabled={isSaving}>

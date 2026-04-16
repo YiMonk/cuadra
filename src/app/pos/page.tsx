@@ -23,7 +23,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { toast } from 'sonner';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, Contact2 } from 'lucide-react';
+import { useContactPicker } from '@/hooks/useContactPicker';
 
 // Icon mapping for categories
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -84,6 +85,16 @@ export default function POSScreen() {
     const [newClientName, setNewClientName] = useState('');
     const [newClientPhone, setNewClientPhone] = useState('');
     const [isSavingClient, setIsSavingClient] = useState(false);
+
+    const { isSupported, pickContact } = useContactPicker();
+
+    const handlePickContact = async () => {
+        const contact = await pickContact();
+        if (contact) {
+            setNewClientName(contact.name);
+            setNewClientPhone(contact.phone);
+        }
+    };
 
     // Evidence (comprobante)
     const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
@@ -609,6 +620,16 @@ export default function POSScreen() {
                                         placeholder="Ej: 04121234567" 
                                         required 
                                         type="tel"
+                                        rightIcon={isSupported ? (
+                                            <button 
+                                                type="button" 
+                                                onClick={handlePickContact}
+                                                className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors text-accent-primary"
+                                                title="Importar de contactos"
+                                            >
+                                                <Contact2 size={18} />
+                                            </button>
+                                        ) : undefined}
                                     />
                                     <Button type="submit" className="w-full mt-2" isLoading={isSavingClient}>
                                         Guardar Cliente
