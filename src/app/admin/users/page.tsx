@@ -232,7 +232,7 @@ export default function AdminUserManagementPage() {
                             <div className="flex justify-between items-center mb-8">
                                 <div>
                                     <h2 className="text-2xl font-black text-ui-text uppercase tracking-tighter">Registrar Dueño</h2>
-                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Nueva Suscripción Mermis</p>
+                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Nueva Suscripción Cuadra</p>
                                 </div>
                                 <button onClick={() => setModalVisible(false)} className="p-2 text-gray-500 hover:text-red-500 transition-colors">
                                     <X size={24} />

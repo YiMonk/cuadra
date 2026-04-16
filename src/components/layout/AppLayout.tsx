@@ -349,9 +349,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </h2>
                             <div className="flex items-center gap-4 mt-4">
                                 <div className="h-[2px] w-12 bg-accent-primary rounded-full" />
-                                <p className="text-ui-text-muted font-bold uppercase tracking-[0.3em] text-[10px] md:text-xs">
-                                    Gestiona tus operaciones diarias con <span className="text-ui-text">Mermis 2025</span>
-                                </p>
                             </div>
                         </div>
                     </div>
