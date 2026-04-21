@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useCurrency } from '@/context/CurrencyContext';
 
 export default function CollectionsScreen() {
     const router = useRouter();
+    const { formatPrice } = useCurrency();
     const [loading, setLoading] = useState(true);
     const [debtors, setDebtors] = useState<any[]>([]);
     const [filteredDebtors, setFilteredDebtors] = useState<any[]>([]);
@@ -118,20 +120,18 @@ export default function CollectionsScreen() {
                 </div>
                 <div className="liquid-glass rounded-[18px] p-4 flex flex-col items-center min-w-[160px]" style={{ border: '1px solid rgba(255,59,48,0.20)' }}>
                     <span className="text-[11px] font-black text-ios-red/70 tracking-widest uppercase mb-1">Total Deuda</span>
-                    <span className="text-3xl font-black text-ios-red">${totalDebt.toFixed(2)}</span>
+                    <span className="text-3xl font-black text-ios-red">{formatPrice(totalDebt)}</span>
                 </div>
             </div>
 
             <div className="flex flex-col md:flex-row gap-3 mb-2">
-                <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/35" size={18} />
-                    <Input
-                        placeholder="Buscar deudor..."
-                        className="pl-12 h-14 text-base liquid-glass border-0 w-full"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
+                <Input
+                    placeholder="BUSCAR DEUDOR..."
+                    className="text-[13px] liquid-glass w-full"
+                    leftIcon={<Search size={18} />}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
 
                 <div className="liquid-glass rounded-[18px] flex p-1 shrink-0 h-14 gap-1">
                     <button
@@ -173,32 +173,29 @@ export default function CollectionsScreen() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between md:justify-end gap-6 md:w-1/2">
-                                    <div className="text-left md:text-right">
-                                        <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mb-1">Deuda</span>
-                                        <span className="text-2xl font-black text-red-600 dark:text-red-400">${item.debt.toFixed(2)}</span>
+                                <div className="flex items-center justify-between gap-4 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-0 border-ui-border">
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-[9px] md:text-[10px] font-black text-ui-text-muted uppercase tracking-[0.15em] mb-0.5 truncate">Total Pendiente</span>
+                                        <span className="text-xl md:text-2xl font-black text-red-600 dark:text-red-400 tracking-tighter">
+                                            {formatPrice(item.debt)}
+                                        </span>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2.5">
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleRemindClick(item.client, item.debt); }}
-                                            className="p-3 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl transition-colors font-medium flex items-center justify-center group-hover:bg-green-50"
+                                            className="w-11 h-11 flex items-center justify-center text-green-500 bg-green-500/5 hover:bg-green-500/10 border border-green-500/10 rounded-2xl transition-all active:scale-90"
                                             title="Recordar Cobro"
                                         >
-                                            <MessageCircle size={24} />
+                                            <MessageCircle size={20} strokeWidth={2.5} />
                                         </button>
+                                        
                                         <Button
                                             onClick={() => router.push(`/clients/${item.client.id}`)}
-                                            className="hidden sm:flex"
+                                            className="h-11 px-5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
                                         >
                                             Gestionar
                                         </Button>
-                                        <button
-                                            onClick={() => router.push(`/clients/${item.client.id}`)}
-                                            className="sm:hidden p-3 text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-xl"
-                                        >
-                                            <ChevronRight size={24} />
-                                        </button>
                                     </div>
                                 </div>
 

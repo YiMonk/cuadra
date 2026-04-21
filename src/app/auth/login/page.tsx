@@ -123,8 +123,8 @@ export default function LoginPage() {
                     <div className="w-16 h-16 bg-linear-to-tr from-blue-600 to-teal-400 rounded-2xl mx-auto mb-4 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-500/20">
                         C
                     </div>
-                    <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">Cuadra</h1>
-                    <p className="text-gray-500 mt-2 font-medium">Gestiona tus ventas de forma simple</p>
+                    <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase">Cuadra</h1>
+                    <p className="text-gray-600 dark:text-ui-text-muted mt-3 font-bold uppercase tracking-widest text-[11px] opacity-80 italic">Gestiona tus ventas de forma simple</p>
                 </div>
 
                 <Card className="overflow-hidden border border-black/5 dark:border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] bg-white/80 dark:bg-black/40 backdrop-blur-2xl rounded-[40px] animate-in fade-in slide-in-from-bottom-8 duration-1000">
@@ -230,7 +230,7 @@ export default function LoginPage() {
                                     <div className="w-full border-t border-white/5" />
                                 </div>
                                 <div className="relative flex justify-center text-[10px] font-black tracking-widest uppercase">
-                                    <span className="px-4 bg-white dark:bg-[#0a0a0a] text-gray-400/60 rounded-full transition-colors">¿No tienes una cuenta?</span>
+                                    <span className="px-4 bg-white dark:bg-[#0a0a0a] text-ui-text-muted rounded-full transition-colors">¿No tienes una cuenta?</span>
                                 </div>
                             </div>
 

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from 'next-themes';
+import { useAppTheme } from '@/context/ThemeContext';
 import { UserService } from '@/services/user.service';
 import { auth } from '@/config/firebaseConfig';
 import { updateProfile, verifyBeforeUpdateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 export default function SettingsScreen() {
     const { user, signOut, isLoading, reloadUser } = useAuth();
-    const { theme, setTheme } = useTheme();
+    const { isDarkTheme, toggleTheme } = useAppTheme();
 
     const [profileDialogVisible, setProfileDialogVisible] = useState(false);
     const [newName, setNewName] = useState(user?.displayName || '');
@@ -22,8 +22,6 @@ export default function SettingsScreen() {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [updating, setUpdating] = useState(false);
-
-    const isDark = theme === 'dark';
 
     const handleLogout = () => {
         toast.warning('¿Estás seguro que deseas salir?', {
@@ -172,18 +170,18 @@ export default function SettingsScreen() {
                 <div className="md:col-span-12 lg:col-span-8 space-y-8">
                     {/* Preferencias */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="ui-card border border-ui-border p-8 flex flex-col justify-between group cursor-pointer hover:border-accent-primary/30 transition-all shadow-bento" onClick={() => setTheme(isDark ? 'light' : 'dark')}>
+                        <div className="ui-card border border-ui-border p-8 flex flex-col justify-between group cursor-pointer hover:border-accent-primary/30 transition-all shadow-bento" onClick={toggleTheme}>
                             <div className="flex justify-between items-start mb-8">
-                                <div className={`p-4 rounded-2xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-orange-500/10 text-orange-500'} group-hover:scale-110 transition-transform duration-500`}>
-                                    {isDark ? <Moon size={28} fill="currentColor" /> : <Sun size={28} fill="currentColor" />}
+                                <div className={`p-4 rounded-2xl ${isDarkTheme ? 'bg-indigo-500/10 text-indigo-400' : 'bg-orange-500/10 text-orange-500'} group-hover:scale-110 transition-transform duration-500`}>
+                                    {isDarkTheme ? <Moon size={28} fill="currentColor" /> : <Sun size={28} fill="currentColor" />}
                                 </div>
-                                <div className={`w-12 h-6 rounded-full border border-ui-border p-1 flex items-center transition-colors ${isDark ? 'bg-accent-primary' : 'bg-ui-bg'}`}>
-                                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${isDark ? 'translate-x-6' : 'translate-x-0'}`} />
+                                <div className={`w-12 h-6 rounded-full border border-ui-border p-1 flex items-center transition-colors ${isDarkTheme ? 'bg-accent-primary' : 'bg-ui-bg'}`}>
+                                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${isDarkTheme ? 'translate-x-6' : 'translate-x-0'}`} />
                                 </div>
                             </div>
                             <div>
                                 <h3 className="font-black text-ui-text uppercase tracking-tight text-xl mb-1">Apariencia</h3>
-                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">{isDark ? 'Modo Oscuro' : 'Modo Claro'} Activado</p>
+                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">{isDarkTheme ? 'Modo Oscuro' : 'Modo Claro'} Activado</p>
                             </div>
                         </div>
 

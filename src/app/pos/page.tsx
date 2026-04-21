@@ -25,6 +25,7 @@ import { Select } from '@/components/ui/Select';
 import { toast } from 'sonner';
 import { PlusCircle, Loader2, Contact2 } from 'lucide-react';
 import { useContactPicker } from '@/hooks/useContactPicker';
+import { useCurrency } from '@/context/CurrencyContext';
 
 // Icon mapping for categories
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -50,6 +51,10 @@ export default function POSScreen() {
     const router = useRouter();
     const { user: currentUser, isLoading: authLoading } = useAuth();
     const { items, total, selectedClient, setSelectedClient, addToCart, updateQuantity, clearCart } = useCart();
+    const { formatPrice, fromUSD, toUSD, currency, exchangeRate } = useCurrency();
+
+    // Payment Currency State (for recording notes or visual only)
+    const [paymentCurrency, setPaymentCurrency] = useState<'USD' | 'VES'>('USD');
 
     useEffect(() => {
         if (!authLoading && currentUser) {
@@ -197,6 +202,10 @@ export default function POSScreen() {
             }
             const cashboxObj = cashboxes.find(c => c.id === selectedCashbox) || { id: currentUser?.uid, name: currentUser?.displayName || 'Cajero' };
 
+            const finalNotes = paymentCurrency === 'VES' 
+                ? `[PAGO EN BS] Monto: Bs. ${(total * exchangeRate).toFixed(2)} (Tasa: ${exchangeRate}). ${paymentNotes}`
+                : paymentNotes;
+
             await SalesService.createSale({
                 items: items as any,
                 total,
@@ -204,7 +213,7 @@ export default function POSScreen() {
                 clientId: selectedClient?.id || null,
                 clientName: selectedClient?.name || null,
                 evidenceUrl,
-                notes: paymentNotes || undefined,
+                notes: finalNotes || undefined,
                 cashboxId: selectedCashbox === 'default' ? (currentUser?.uid || '') : selectedCashbox,
                 cashboxName: cashboxes.find(c => c.id === selectedCashbox)?.name || currentUser?.displayName || 'Cajero',
                 // @ts-ignore
@@ -318,7 +327,7 @@ export default function POSScreen() {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0 pb-20 md:pb-0 pr-2">
+                <div className="flex-1 overflow-y-auto min-h-0 pb-20 md:pb-12 px-4 -mx-4 custom-scrollbar">
                     {filteredProducts.length === 0 ? (
                         <div className="text-center py-20 text-gray-400">
                             <ShoppingCart className="mx-auto mb-4 opacity-30" size={48} />
@@ -348,7 +357,9 @@ export default function POSScreen() {
                                         <div className="mt-6 flex items-end justify-between">
                                             <div className="flex flex-col">
                                                 <span className="text-xs font-bold text-ui-text-muted uppercase tracking-widest mb-1">Precio</span>
-                                                <span className="font-black text-3xl text-ui-text tracking-tighter">${product.price.toFixed(2)}</span>
+                                                <span className="font-black text-2xl text-ui-text tracking-tighter">
+                                                    {formatPrice(product.price)}
+                                                </span>
                                             </div>
 
                                             {qtyInCart > 0 && (
@@ -367,11 +378,11 @@ export default function POSScreen() {
 
             {/* Cart Invoice Sidebar (Glass Bento Widget) */}
             <div className={`fixed inset-x-0 bottom-0 lg:relative lg:inset-x-auto lg:bottom-auto w-full lg:w-[450px] shrink-0 flex flex-col transition-all duration-700 z-50
-                ${items.length > 0 ? (isCartMinimized ? 'translate-y-[calc(100%-80px)] lg:translate-y-0' : 'translate-y-0') : 'translate-y-[120%] lg:translate-y-0 lg:opacity-50'} h-[75vh] lg:h-full`}>
+                ${items.length > 0 ? (isCartMinimized ? 'translate-y-[calc(100%-80px)] lg:translate-y-0' : 'translate-y-0') : 'translate-y-[120%] lg:translate-y-0'} h-[75vh] lg:h-full`}>
                 
-                <div className="ui-card h-full flex flex-col p-4 border border-white/20 shadow-float">
+                <div className="ui-card ui-glass-card h-full flex flex-col p-4 border-ui-border shadow-float overflow-hidden relative">
 
-                <div className="p-5 relative cursor-pointer md:cursor-default" onClick={() => window.innerWidth < 768 && setIsCartMinimized(!isCartMinimized)}>
+                <div className="p-4 relative cursor-pointer md:cursor-default" onClick={() => window.innerWidth < 768 && setIsCartMinimized(!isCartMinimized)}>
                     <div className="w-12 h-1.5 bg-ui-border rounded-full mx-auto mb-4 md:hidden" />
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-black tracking-wide flex items-center gap-3 text-ui-text">
@@ -403,22 +414,22 @@ export default function POSScreen() {
                             <p className="text-sm font-bold tracking-wide uppercase">El carrito está vacío</p>
                         </div>
                     ) : (
-                        <ul className="space-y-3 pb-2 pt-2">
+                        <ul className="space-y-2 pb-2 pt-2">
                             {items.map(item => (
-                                <li key={item.id + (item.variantId || '')} className="p-4 flex gap-3 ui-card ui-card-hover border border-ui-border mx-1">
+                                <li key={item.id + (item.variantId || '')} className="py-2.5 px-3 flex gap-2 ui-card ui-card-hover border border-ui-border/60 mx-1">
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="text-[14px] font-black text-ui-text truncate tracking-wide uppercase">{item.name}</h4>
-                                        <p className="text-[12px] font-bold text-accent-primary mt-1">${item.price.toFixed(2)}</p>
+                                        <h4 className="text-[12px] font-black text-ui-text truncate tracking-tight uppercase leading-tight">{item.name}</h4>
+                                        <p className="text-[10px] font-bold text-accent-primary mt-0.5">{formatPrice(item.price)}</p>
                                     </div>
-                                    <div className="flex flex-col items-end gap-3">
-                                        <span className="font-black text-[15px] text-ui-text">${(item.price * item.quantity).toFixed(2)}</span>
-                                        <div className="flex items-center ui-input-box p-1">
+                                    <div className="flex flex-col items-end justify-center gap-1">
+                                        <span className="font-extrabold text-[12px] text-ui-text">{formatPrice(item.price * item.quantity)}</span>
+                                        <div className="flex items-center ui-input-box p-0">
                                             <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 hover:bg-black/10 dark:hover:bg-white/10 text-ui-text-muted transition-colors rounded-md active:scale-95">
-                                                <Minus size={14} strokeWidth={3} />
+                                                <Minus size={10} strokeWidth={4} />
                                             </button>
-                                            <span className="w-7 text-center text-[13px] font-bold text-ui-text">{item.quantity}</span>
+                                            <span className="w-5 text-center text-[11px] font-black text-ui-text">{item.quantity}</span>
                                             <button onClick={() => addToCart(item)} className="p-1 hover:bg-black/10 dark:hover:bg-white/10 text-ui-text-muted transition-colors rounded-md active:scale-95" disabled={item.quantity >= item.stock}>
-                                                <Plus size={14} strokeWidth={3} />
+                                                <Plus size={10} strokeWidth={4} />
                                             </button>
                                         </div>
                                     </div>
@@ -428,33 +439,35 @@ export default function POSScreen() {
                     )}
                 </div>
 
-                <div className="p-5 pb-[110px] md:pb-5 mt-2 bg-ui-surface border-t border-ui-border">
-                    <button onClick={() => setClientModalVisible(true)} className={`w-full p-3.5 rounded-2xl flex items-center justify-between transition-all mb-5 ${selectedClient ? 'bg-accent-primary/5 border-accent-primary border' : 'ui-card hover:ui-card-hover border border-ui-border text-ui-text-muted'}`}>
-                        <div className="flex items-center gap-3.5">
-                            <div className={`p-2.5 rounded-full ${selectedClient ? 'bg-accent-primary text-white shadow-md' : 'bg-black/5 dark:bg-white/5 text-ui-text-muted'}`}>
-                                <UserIcon size={18} />
+                <div className="p-3 pb-[85px] md:pb-4 mt-auto bg-white/50 dark:bg-white/5 border-t border-ui-border shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+                    <button onClick={() => setClientModalVisible(true)} className={`w-full p-2 rounded-xl flex items-center justify-between transition-all mb-2.5 ${selectedClient ? 'bg-accent-primary/5 border-accent-primary border shadow-sm' : 'ui-card hover:ui-card-hover border border-ui-border text-ui-text-muted'}`}>
+                        <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${selectedClient ? 'bg-accent-primary text-white shadow-md shadow-accent-primary/20' : 'bg-black/5 dark:bg-white/5 text-ui-text-muted'}`}>
+                                <UserIcon size={12} strokeWidth={2.5} />
                             </div>
-                            <div className="text-left">
+                            <div className="text-left min-w-0">
                                 {selectedClient ? (
                                     <>
-                                        <p className="text-[10px] font-black text-accent-primary uppercase tracking-widest">Cliente</p>
-                                        <p className="font-bold text-ui-text text-[14px] truncate max-w-[150px]">{selectedClient.name}</p>
+                                        <p className="text-[8px] font-black text-accent-primary uppercase tracking-[0.15em] mb-0.5">Cliente Seleccionado</p>
+                                        <p className="font-extrabold text-ui-text text-[12px] truncate max-w-[170px] leading-none uppercase">{selectedClient.name}</p>
                                     </>
                                 ) : (
-                                    <p className="font-bold tracking-wide text-[13px]">Asignar Cliente</p>
+                                    <p className="font-black uppercase tracking-widest text-[10px] text-ui-text-muted/60">Asignar Cliente</p>
                                 )}
                             </div>
                         </div>
-                        {selectedClient && <div onClick={(e) => { e.stopPropagation(); setSelectedClient(null); }} className="w-8 h-8 flex items-center justify-center text-[#FF3B30] bg-red-500/10 rounded-full hover:bg-red-500/20 active:scale-90 transition-all"><X size={14} strokeWidth={3} /></div>}
+                        {selectedClient && <div onClick={(e) => { e.stopPropagation(); setSelectedClient(null); }} className="w-6 h-6 flex items-center justify-center text-[#FF3B30] bg-red-500/5 rounded-full hover:bg-red-500/10 active:scale-90 transition-all"><X size={12} strokeWidth={3} /></div>}
                     </button>
 
-                    <div className="flex justify-between items-center mb-6 px-1">
-                        <span className="text-ui-text-muted font-bold tracking-wide uppercase text-[12px]">Total</span>
-                        <span className="text-[32px] font-black text-ui-text">${total.toFixed(2)}</span>
+                    <div className="flex justify-between items-center mb-2.5 px-1.5">
+                        <span className="text-ui-text-muted font-black tracking-[0.1em] uppercase text-[9px]">Total General</span>
+                        <span className="text-xl md:text-2xl font-black text-ui-text tracking-tighter">
+                            {formatPrice(total)}
+                        </span>
                     </div>
 
-                    <button onClick={() => setCheckoutModalVisible(true)} disabled={items.length === 0} className="ui-btn ui-btn-primary w-full text-[16px] h-[56px] uppercase tracking-widest leading-none disabled:opacity-50">
-                        Realizar Venta
+                    <button onClick={() => setCheckoutModalVisible(true)} disabled={items.length === 0} className="ui-btn ui-btn-primary w-full text-[13px] h-[44px] rounded-xl uppercase font-black tracking-widest leading-none disabled:opacity-50 shadow-lg shadow-accent-primary/20 active:scale-[0.98] transition-all">
+                        Finalizar Cobro
                     </button>
                 </div>
             </div></div>
@@ -470,9 +483,34 @@ export default function POSScreen() {
                             </div>
 
                             <form onSubmit={handleConfirmSale} className="space-y-8">
-                                <div className="ui-input-box px-6 py-6 flex items-center justify-between">
-                                    <span className="text-ui-text-muted font-black uppercase tracking-widest text-[12px]">Total a Pagar</span>
-                                    <span className="text-3xl font-black text-ui-text">${total.toFixed(2)}</span>
+                                <div className="ui-input-box px-6 py-4 flex flex-col gap-2 relative overflow-hidden">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-ui-text-muted font-black uppercase tracking-widest text-[10px]">Total a Pagar</span>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                type="button"
+                                                onClick={() => setPaymentCurrency('USD')}
+                                                className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-widest transition-all ${paymentCurrency === 'USD' ? 'bg-accent-primary text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text-muted'}`}
+                                            >
+                                                USD
+                                            </button>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setPaymentCurrency('VES')}
+                                                className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-widest transition-all ${paymentCurrency === 'VES' ? 'bg-orange-500 text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text-muted'}`}
+                                            >
+                                                VES
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-3xl font-black text-ui-text">
+                                            {paymentCurrency === 'USD' ? `$ ${total.toFixed(2)}` : `Bs. ${(total * exchangeRate).toFixed(2)}`}
+                                        </span>
+                                        {paymentCurrency === 'VES' && (
+                                            <span className="text-[10px] font-black text-ui-text-muted opacity-50">Tasa: {exchangeRate}</span>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-4">

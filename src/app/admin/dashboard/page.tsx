@@ -14,7 +14,8 @@ import {
     ShoppingCart,
     Trash2,
     RefreshCw,
-    Settings
+    Settings,
+    UserPlus
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { toast } from 'sonner';
@@ -127,6 +128,7 @@ export default function AdminGodDashboardPage() {
     }, [filteredData, timeRange]);
 
     const totalSalesVolume = filteredData.filteredSales.reduce((acc, s) => acc + (s.total || 0), 0);
+    const totalSubscriptionRevenue = filteredData.filteredUsers.reduce((acc, u) => acc + (u.subscriptionPrice || 0), 0);
 
     if (loading) {
         return (
@@ -140,9 +142,9 @@ export default function AdminGodDashboardPage() {
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">AdminGod</h1>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium tracking-wide">Gestión Global del Sistema</p>
+                <div className="flex flex-col">
+                    <h1 className="text-4xl font-black tracking-tighter text-ui-text uppercase leading-none mb-2">Panel Maestro</h1>
+                    <p className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.3em] opacity-60">Gestión Global del Ecosistema Cuadra</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="min-w-[180px]">
@@ -178,76 +180,87 @@ export default function AdminGodDashboardPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/50">
-                    <CardContent className="p-5 flex flex-col">
-                        <Store className="text-blue-600 dark:text-blue-400 mb-2" size={24} />
-                        <span className="text-xs font-bold text-blue-600/70 dark:text-blue-400/70 uppercase tracking-widest mb-1">Tiendas</span>
-                        <span className="text-2xl font-black text-blue-900 dark:text-blue-100">{owners.length}</span>
-                    </CardContent>
-                </Card>
-                <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-900/50">
-                    <CardContent className="p-5 flex flex-col">
-                        <Users className="text-purple-600 dark:text-purple-400 mb-2" size={24} />
-                        <span className="text-xs font-bold text-purple-600/70 dark:text-purple-400/70 uppercase tracking-widest mb-1">Usuarios</span>
-                        <span className="text-2xl font-black text-purple-900 dark:text-purple-100">{users.length}</span>
-                    </CardContent>
-                </Card>
-                <Card className="bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-900/50">
-                    <CardContent className="p-5 flex flex-col">
-                        <Banknote className="text-green-600 dark:text-green-400 mb-2" size={24} />
-                        <span className="text-xs font-bold text-green-600/70 dark:text-green-400/70 uppercase tracking-widest mb-1">Volumen</span>
-                        <span className="text-2xl font-black text-green-900 dark:text-green-100">
-                            {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(totalSalesVolume)}
-                        </span>
-                    </CardContent>
-                </Card>
-                <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-900/50">
-                    <CardContent className="p-5 flex flex-col">
-                        <ShoppingCart className="text-orange-600 dark:text-orange-400 mb-2" size={24} />
-                        <span className="text-xs font-bold text-orange-600/70 dark:text-orange-400/70 uppercase tracking-widest mb-1">Ventas</span>
-                        <span className="text-2xl font-black text-orange-900 dark:text-orange-100">{filteredData.filteredSales.length}</span>
-                    </CardContent>
-                </Card>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="ui-card ui-glass-card p-6 flex flex-col group hover:border-accent-primary/50 transition-all duration-300">
+                    <div className="w-12 h-12 rounded-2xl bg-accent-primary/10 flex items-center justify-center text-accent-primary mb-4 shadow-inner group-hover:scale-110 transition-transform">
+                        <Store size={24} />
+                    </div>
+                    <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Tiendas</span>
+                    <span className="text-3xl font-black text-ui-text tracking-tighter">{owners.length}</span>
+                </div>
+
+                <div className="ui-card ui-glass-card p-6 flex flex-col group hover:border-purple-500/50 transition-all duration-300">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-4 shadow-inner group-hover:scale-110 transition-transform">
+                        <Users size={24} />
+                    </div>
+                    <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Usuarios</span>
+                    <span className="text-3xl font-black text-ui-text tracking-tighter">{users.length}</span>
+                </div>
+
+                <div className="ui-card ui-glass-card p-6 flex flex-col group hover:border-emerald-500/50 transition-all duration-300 bg-linear-to-br from-emerald-500/5 to-transparent">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 shadow-inner group-hover:scale-110 transition-transform">
+                        <Banknote size={24} />
+                    </div>
+                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Recaudación Total</span>
+                    <span className="text-3xl font-black text-ui-text tracking-tighter">
+                        {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(totalSubscriptionRevenue)}
+                    </span>
+                    <span className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mt-2 opacity-50 italic">Suscripciones Activas</span>
+                </div>
+
+                <div className="ui-card ui-glass-card p-6 flex flex-col group hover:border-orange-500/50 transition-all duration-300">
+                    <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-600 dark:text-orange-400 mb-4 shadow-inner group-hover:scale-110 transition-transform">
+                        <ShoppingCart size={24} />
+                    </div>
+                    <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Transacciones</span>
+                    <span className="text-3xl font-black text-ui-text tracking-tighter">{filteredData.filteredSales.length}</span>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <Card>
-                    <CardContent className="p-6">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Actividad de Ventas</h3>
-                        <div className="h-[250px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-                                    <Tooltip
-                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: 'rgba(255, 255, 255, 0.9)', color: '#000' }}
-                                    />
-                                    <Line type="monotone" dataKey="ventas" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+                <div className="ui-card ui-glass-card p-8">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center text-accent-primary">
+                            <ShoppingCart size={20} />
                         </div>
-                    </CardContent>
-                </Card>
+                        <h3 className="text-sm font-black text-ui-text uppercase tracking-widest">Actividad de Ventas</h3>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                                <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} hide />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', backgroundColor: 'rgba(255, 255, 255, 0.95)', color: '#000', padding: '12px 20px' }}
+                                    itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
+                                />
+                                <Line type="monotone" dataKey="ventas" stroke="#3b82f6" strokeWidth={4} dot={{ r: 0 }} activeDot={{ r: 6, strokeWidth: 2 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
 
-                <Card>
-                    <CardContent className="p-6">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Nuevos Usuarios</h3>
-                        <div className="h-[250px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                    <Tooltip
-                                        cursor={{ fill: 'transparent' }}
-                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: 'rgba(255, 255, 255, 0.9)', color: '#000' }}
-                                    />
-                                    <Bar dataKey="usuarios" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                <div className="ui-card ui-glass-card p-8">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                            <UserPlus size={20} />
                         </div>
-                    </CardContent>
-                </Card>
+                        <h3 className="text-sm font-black text-ui-text uppercase tracking-widest">Nuevos Usuarios</h3>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                                <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                                <Tooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', backgroundColor: 'rgba(255, 255, 255, 0.95)', color: '#000', padding: '12px 20px' }}
+                                    itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
+                                />
+                                <Bar dataKey="usuarios" fill="#10b981" radius={[8, 8, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
             </div>
         </div>
     );

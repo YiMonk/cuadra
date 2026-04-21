@@ -2,6 +2,7 @@ import {
   collection, 
   doc, 
   setDoc, 
+  getDoc,
   getDocs, 
   query, 
   orderBy, 
@@ -22,6 +23,7 @@ export interface UserMetadata {
     createdAt: number;
     updatedAt?: number;
     subscriptionEndsAt?: number;
+    subscriptionPrice?: number;
 }
 
 const USERS_COLLECTION = 'users';
@@ -44,14 +46,13 @@ export const UserService = {
     getUserById: async (uid: string): Promise<UserMetadata | null> => {
         try {
             const userRef = doc(db, USERS_COLLECTION, uid);
-            const snapshot = await getDocs(query(collection(db, USERS_COLLECTION), where('id', '==', uid))); // Using query in case search by ID directly doesn't work well
-            if (!snapshot.empty) {
-                return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as UserMetadata;
-            }
-            // Alternative fetch by doc ref
-            const docSnap = await getDocs(query(collection(db, USERS_COLLECTION), where('__name__', '==', uid)));
-             if (!docSnap.empty) {
-                return { id: docSnap.docs[0].id, ...docSnap.docs[0].data() } as UserMetadata;
+            const docSnap = await getDoc(userRef);
+            
+            if (docSnap.exists()) {
+                return { 
+                    id: docSnap.id, 
+                    ...docSnap.data() 
+                } as UserMetadata;
             }
             return null;
         } catch (error) {

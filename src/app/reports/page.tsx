@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrency } from '@/context/CurrencyContext';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { SalesService } from '@/services/sales.service';
@@ -23,6 +24,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 export default function ReportsScreen() {
     const router = useRouter();
     const { user, isLoading: authLoading } = useAuth();
+    const { formatPrice, fromUSD, currency } = useCurrency();
     
     const [loading, setLoading] = useState(true);
     const [allSales, setAllSales] = useState<Sale[]>([]);
@@ -259,28 +261,34 @@ export default function ReportsScreen() {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Ventas y Métricas</h1>
-                    <p className="text-foreground/60 font-medium">Análisis completo de operaciones</p>
+                    <h1 className="text-3xl md:text-[40px] font-black tracking-tighter text-ui-text uppercase leading-none">Métricas</h1>
+                    <div className="flex items-center gap-2 mt-2">
+                        <div className="h-1 w-8 bg-accent-primary rounded-full" />
+                        <p className="text-ui-text-muted/80 font-black uppercase tracking-[0.2em] text-[10px]">Análisis de Operaciones</p>
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Select
-                        options={[
-                            { value: 'all', label: 'Todas las cajas' },
-                            ...cashiers.map(c => ({ value: c.id, label: c.displayName || c.id }))
-                        ]}
-                        value={selectedCashier}
-                        onChange={(val) => setSelectedCashier(val)}
-                        icon={<UserIcon size={16} />}
-                        className="w-[200px]"
-                    />
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={exportToExcel} className="hidden md:flex gap-2">
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                    <div className="w-full sm:w-64 z-30">
+                        <Select
+                            options={[
+                                { value: 'all', label: 'Todas las cajas' },
+                                ...cashiers.map(c => ({ value: c.id, label: c.displayName || c.id }))
+                            ]}
+                            value={selectedCashier}
+                            onChange={(val) => setSelectedCashier(val)}
+                            icon={<UserIcon size={16} className="text-accent-primary" />}
+                        />
+                    </div>
+                    
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Button variant="outline" onClick={exportToExcel} className="flex-1 sm:flex-none h-12 px-5 bg-white dark:bg-black/5 hover:bg-gray-50 border-ui-border/50 font-black uppercase tracking-widest text-[10px] rounded-xl flex items-center justify-center gap-2">
                             <FileSpreadsheet size={16} /> Excel
                         </Button>
-                        <Button variant="primary" size="sm" onClick={exportToPDF} className="flex gap-2">
-                            <Download size={16} /> PDF
+                        <Button variant="primary" onClick={exportToPDF} className="flex-1 sm:flex-none h-12 px-5 bg-accent-primary text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-accent-primary/20 flex items-center justify-center gap-2">
+                            <Download size={16} /> Export PDF
                         </Button>
                     </div>
                 </div>
@@ -295,7 +303,7 @@ export default function ReportsScreen() {
                         </div>
                         <div className="mt-6">
                             <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] mb-1">Ingresos Reales</p>
-                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">${metrics.revenue.toFixed(2)}</h3>
+                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(metrics.revenue)}</h3>
                         </div>
                     </CardContent>
                 </Card>
@@ -307,7 +315,7 @@ export default function ReportsScreen() {
                         </div>
                         <div className="mt-6">
                             <p className="text-[10px] font-black text-red-500 dark:text-red-400 uppercase tracking-[0.2em] mb-1">Cuentas por Cobrar</p>
-                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">${metrics.pending.toFixed(2)}</h3>
+                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(metrics.pending)}</h3>
                         </div>
                     </CardContent>
                 </Card>
@@ -331,7 +339,7 @@ export default function ReportsScreen() {
                         </div>
                         <div className="mt-6">
                             <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-[0.2em] mb-1">Ticket Promedio</p>
-                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">${metrics.average.toFixed(2)}</h3>
+                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(metrics.average)}</h3>
                         </div>
                     </CardContent>
                 </Card>
@@ -348,10 +356,10 @@ export default function ReportsScreen() {
                                     <LineChart data={chartData}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `$${value}`} tick={{ fill: '#6B7280', fontSize: 12 }} dx={-10} />
+                                        <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => currency === 'USD' ? `$${value}` : `Bs.${Math.round(fromUSD(value))}`} tick={{ fill: '#6B7280', fontSize: 12 }} dx={-10} />
                                         <Tooltip
                                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                                            formatter={(value: any) => [`$${value}`, 'Ventas']}
+                                            formatter={(value: any) => [formatPrice(value), 'Ventas']}
                                             labelStyle={{ color: '#374151', fontWeight: 'bold' }}
                                         />
                                         <Line
@@ -437,10 +445,10 @@ export default function ReportsScreen() {
                                                 </span>
                                             </td>
                                             <td className="p-4 text-right font-bold text-green-600 dark:text-green-500">
-                                                ${box.real.toFixed(2)}
+                                                {formatPrice(box.real)}
                                             </td>
                                             <td className="p-4 text-right font-bold text-blue-600 dark:text-blue-500">
-                                                ${box.teorico.toFixed(2)}
+                                                {formatPrice(box.teorico)}
                                             </td>
                                         </tr>
                                     ))

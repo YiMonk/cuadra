@@ -17,11 +17,13 @@ import {
     Sun,
     Moon,
     LogOut,
-    User
+    User,
+    Clock
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useCart } from '@/context/CartContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { SalesService } from '@/services/sales.service';
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -32,6 +34,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { user, isLoading, signOut } = useAuth();
     const { isDarkTheme, toggleTheme } = useAppTheme();
     const { items } = useCart();
+    const { currency, exchangeRate, toggleCurrency, isLoading: currencyLoading } = useCurrency();
     const cartItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -126,9 +129,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const navItems = isGlobalAdmin ? [
         { name: 'Control', href: '/admin/dashboard', icon: ShieldAlert },
         { name: 'Usuarios', href: '/admin/users', icon: Users },
+        { name: 'Historial', href: '/admin/activities', icon: Clock },
     ] : isStaff ? [
         { name: 'Venta', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', href: '/inventory', icon: Package },
+        { name: 'Cobranzas', href: '/collections', icon: DollarSign },
+        { name: 'Clientes', href: '/clients', icon: Users },
     ] : [
         // Default Owner / Manager View
         { name: 'Venta', href: '/pos', icon: ShoppingCart },
@@ -140,7 +146,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ];
 
     // For mobile bottom nav - Always append Profile
-    const baseMobileItems = (isGlobalAdmin || isStaff) ? navItems : navItems.slice(0, 4);
+    const baseMobileItems = (isGlobalAdmin || isStaff) 
+        ? navItems 
+        : navItems.filter(item => ['Venta', 'Inventario', 'Cobranzas', 'Clientes', 'Reportes'].includes(item.name));
     const mobileNavItems = [
         ...baseMobileItems.map(item => ({
             ...item,
@@ -243,14 +251,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </aside>
 
             {/* Main Content Area: The Bento Canvas */}
-            <main className="flex-1 h-full overflow-y-auto relative custom-scrollbar overflow-x-hidden">
+            <main className="flex-1 h-full overflow-y-auto relative custom-scrollbar">
                 <div className="w-full max-w-[1400px] mx-auto px-4 md:px-12 pt-8 md:pt-12 pb-32 md:pb-12 h-auto min-h-full">
                     {/* Page Header (Premium Modern Layout) */}
                     <div className="mb-12 flex flex-col gap-8 animate-in fade-in slide-in-from-top-6 duration-1000">
                         {/* Top Action Bar - Aligned Right */}
-                        <div className="flex justify-end items-center gap-4" ref={notificationsRef}>
+                        <div className="flex justify-end items-center gap-2 md:gap-4 px-2 md:px-0" ref={notificationsRef}>
                             {!isGlobalAdmin && (
                                 <>
+                                    {/* BCV Toggle Button */}
+                                    <button
+                                        onClick={toggleCurrency}
+                                        className="relative h-12 md:h-14 px-2.5 md:px-4 rounded-xl md:rounded-2xl ui-glass-card border border-ui-border/50 hover:border-accent-primary/50 hover:bg-accent-primary/5 transition-all duration-300 active:scale-90 flex items-center gap-2 md:gap-3 shadow-premium group overflow-hidden"
+                                        title={`Cambiar a ${currency === 'USD' ? 'Bolívares (Bs.)' : 'Dólares ($)'}`}
+                                    >
+                                        <div className="absolute inset-0 bg-accent-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className={`w-8 md:w-9 h-8 md:h-9 rounded-full flex items-center justify-center transition-all duration-500 font-black text-xs shrink-0 ${currency === 'USD' ? 'bg-accent-primary text-white' : 'bg-orange-500 text-white rotate-[360deg]'}`}>
+                                            {currency === 'USD' ? '$' : 'Bs'}
+                                        </div>
+                                        {!currencyLoading && (
+                                            <div className="hidden sm:flex flex-col items-start leading-none pr-1">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-ui-text opacity-40 mb-1 group-hover:opacity-100">Tasa BCV</span>
+                                                <span className="text-[13px] font-black text-ui-text">Bs. {exchangeRate.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                    </button>
+
                                     {/* Cart Toggle Button */}
                                     <button 
                                         onClick={() => {
@@ -260,7 +286,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                                 window.dispatchEvent(new CustomEvent('toggle-cart'));
                                             }
                                         }}
-                                        className="relative w-14 h-14 rounded-2xl ui-glass-card border border-ui-border/50 hover:border-accent-primary/50 hover:bg-accent-primary/5 transition-all duration-300 active:scale-90 flex items-center justify-center shadow-premium group"
+                                        className="relative w-12 md:w-14 h-12 md:h-14 rounded-xl md:rounded-2xl ui-glass-card border border-ui-border/50 hover:border-accent-primary/50 hover:bg-accent-primary/5 transition-all duration-300 active:scale-90 flex items-center justify-center shadow-premium group"
                                         title="Ver Carrito"
                                     >
                                         <div className="absolute inset-0 bg-accent-primary/5 opacity-0 group-hover:opacity-100 rounded-2xl blur-xl transition-opacity" />
@@ -276,7 +302,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     <div className="relative">
                                         <button 
                                             onClick={() => setNotificationsOpen(!notificationsOpen)}
-                                            className={`relative w-14 h-14 rounded-2xl transition-all duration-300 border flex items-center justify-center group active:scale-90 shadow-premium ${notificationsOpen ? 'bg-accent-primary/10 border-accent-primary text-accent-primary' : 'ui-glass-card border-ui-border/50 text-ui-text-muted hover:border-accent-primary/50 hover:text-accent-primary'}`}
+                                            className={`relative w-12 md:w-14 h-12 md:h-14 rounded-xl md:rounded-2xl transition-all duration-300 border flex items-center justify-center group active:scale-90 shadow-premium ${notificationsOpen ? 'bg-accent-primary/10 border-accent-primary text-accent-primary' : 'ui-glass-card border-ui-border/50 text-ui-text-muted hover:border-accent-primary/50 hover:text-accent-primary'}`}
                                         >
                                             <Bell size={24} className="transition-transform group-hover:rotate-12" />
                                             {notifications.length > 0 && (
@@ -334,7 +360,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             )}
 
                             {/* Status Pill - Role Indicator */}
-                            <div className="ui-card h-12 px-5 flex items-center justify-center border-ui-border shadow-soft bg-white dark:bg-white/5 animate-in fade-in zoom-in duration-500 delay-300">
+                            <div className="hidden sm:flex ui-card h-12 px-5 items-center justify-center border-ui-border shadow-soft bg-white dark:bg-white/5 animate-in fade-in zoom-in duration-500 delay-300">
                                 <div className={`w-2 h-2 rounded-full mr-3 ${isGlobalAdmin ? 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]' : isOwner ? 'bg-blue-500' : 'bg-green-500'}`} />
                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-ui-text-muted">
                                     {isGlobalAdmin ? 'Admin God' : isOwner ? 'Propietario' : 'Staff'}
@@ -343,8 +369,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         </div>
 
                         {/* Main Title Area (Now Below) */}
-                        <div className="animate-in fade-in slide-in-from-left-8 duration-1000 ease-out">
-                            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-ui-text drop-shadow-sm">
+                        <div className="animate-in fade-in slide-in-from-left-8 duration-1000 ease-out px-2 md:px-0">
+                            <h2 className="text-3xl md:text-7xl font-black tracking-tighter text-ui-text drop-shadow-sm uppercase">
                                 {navItems.find(n => pathname.startsWith(n.href))?.name || 'Dashboard'}
                             </h2>
                             <div className="flex items-center gap-4 mt-4">
@@ -360,8 +386,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </main>
 
             {/* Mobile Floating Bottom Pill */}
-            <nav className="md:hidden fixed z-[90] left-4 right-4 bottom-6 transition-all duration-500 overflow-hidden">
-                <div className="ui-card backdrop-blur-3xl bg-white/80 dark:bg-black/80 p-1 flex justify-around items-center h-[72px] rounded-[36px] border border-black/5 dark:border-white/10 shadow-float">
+            <nav className="md:hidden fixed z-[90] left-4 right-4 bottom-6 transition-all duration-500">
+                <div className="ui-card backdrop-blur-3xl bg-white/80 dark:bg-black/80 px-2 flex justify-around items-center h-[72px] rounded-[36px] border border-black/5 dark:border-white/10 shadow-float">
                     {mobileNavItems.map((item: any) => {
                         const Icon = item.icon;
                         // @ts-ignore
@@ -371,11 +397,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             <div className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 relative
                                 ${isActive ? 'text-white dark:text-black' : 'text-white/60 dark:text-black/60'}
                             `}>
-                                <div className={`p-2 rounded-2xl transition-all duration-500 ${isActive ? 'bg-white/10 dark:bg-black/10 scale-110' : ''}`}>
-                                    <Icon size={24} strokeWidth={isActive ? 3 : 2} />
+                                <div className={`p-1.5 md:p-2 rounded-2xl transition-all duration-500 ${isActive ? 'bg-white/10 dark:bg-black/10 scale-110' : ''}`}>
+                                    <Icon size={22} strokeWidth={isActive ? 3 : 2} />
                                 </div>
                                 {item.name === 'Venta' && cartItemsCount > 0 && (
-                                    <div className="absolute top-1 right-3 w-4 h-4 bg-accent-primary rounded-full border-2 border-ui-bg flex items-center justify-center text-[8px] font-bold text-white shadow-md z-10">
+                                    <div className="absolute top-0 -right-1 w-4 h-4 bg-accent-primary rounded-full border-2 border-ui-bg flex items-center justify-center text-[8px] font-black text-white shadow-sm z-10">
                                         {cartItemsCount > 9 ? '9+' : cartItemsCount}
                                     </div>
                                 )}
@@ -383,7 +409,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     <div className="absolute -bottom-1 w-1.5 h-1.5 bg-accent-primary rounded-full" />
                                 )}
                                 {item.name === 'Cobranzas' && pendingCollectionsCount > 0 && (
-                                    <div className="absolute top-1 right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-transparent flex items-center justify-center text-[8px] font-bold text-white shadow-md z-10">
+                                    <div className="absolute top-0 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-ui-bg flex items-center justify-center text-[8px] font-black text-white shadow-sm z-10">
                                         {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
                                     </div>
                                 )}

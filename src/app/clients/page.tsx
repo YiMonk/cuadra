@@ -107,15 +107,13 @@ export default function ClientListScreen() {
                 </Button>
             </div>
 
-            <div className="relative mb-2">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/35" size={18} />
-                <Input
-                    placeholder="Buscar por nombre o teléfono..."
-                    className="pl-12 h-14 text-base liquid-glass border-0"
-                    value={searchQuery}
-                    onChange={onChangeSearch}
-                />
-            </div>
+            <Input
+                placeholder="BUSCAR POR NOMBRE O TELÉFONO..."
+                className="liquid-glass mb-2"
+                leftIcon={<Search size={18} />}
+                value={searchQuery}
+                onChange={onChangeSearch}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredClients.length === 0 ? (

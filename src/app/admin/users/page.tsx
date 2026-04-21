@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { initializeApp, getApps, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '@/config/firebaseConfig';
+import { ActivityService } from '@/services/activity.service';
 
 export default function AdminUserManagementPage() {
     const { user } = useAuth();
@@ -27,6 +28,7 @@ export default function AdminUserManagementPage() {
     const [newEmail, setNewEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [subDays, setSubDays] = useState('30');
+    const [subPrice, setSubPrice] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -81,8 +83,21 @@ export default function AdminUserManagementPage() {
                 active: true,
                 ownerId: uid,
                 subscriptionEndsAt,
+                subscriptionPrice: parseFloat(subPrice) || 0,
                 createdAt: Date.now()
             });
+
+            // Log administrative action
+            if (user) {
+                await ActivityService.logAction({
+                    action: 'user_created',
+                    targetUserId: uid,
+                    targetUserName: newName,
+                    adminId: user.uid,
+                    adminName: user.displayName || 'Admin',
+                    details: `Se registró nueva tienda: ${newName} (${newEmail}) con ${subDays} días de acceso por $${subPrice || '0'}.`
+                });
+            }
 
             toast.success("Usuario registrado con éxito");
             setModalVisible(false);
@@ -276,6 +291,15 @@ export default function AdminUserManagementPage() {
                                         required
                                     />
                                 </div>
+
+                                <Input 
+                                    label="MONTO DE SUSCRIPCIÓN ($)"
+                                    type="number"
+                                    value={subPrice}
+                                    onChange={(e) => setSubPrice(e.target.value)}
+                                    placeholder="0.00"
+                                    required
+                                />
 
                                 <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10 flex items-start gap-3">
                                     <CheckCircle2 className="text-blue-500 shrink-0 mt-0.5" size={16} />

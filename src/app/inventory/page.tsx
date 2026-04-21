@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Select } from '@/components/ui/Select';
 import { CategoryModal } from '@/components/inventory/CategoryModal';
+import { useCurrency } from '@/context/CurrencyContext';
 
 export default function InventoryScreen() {
     const router = useRouter();
@@ -47,8 +48,10 @@ export default function InventoryScreen() {
     const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
     // Form State (Product)
+    const { formatPrice, toUSD, currency: globalCurrency, fromUSD } = useCurrency();
     const [name, setName] = useState('');
     const [price, setPrice] = useState('');
+    const [priceCurrency, setPriceCurrency] = useState<'USD' | 'VES'>('USD');
     const [stock, setStock] = useState('');
     const [minStock, setMinStock] = useState('5');
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -129,6 +132,7 @@ export default function InventoryScreen() {
         setEditingProduct(product);
         setName(product.name);
         setPrice(product.price.toString());
+        setPriceCurrency('USD');
         setStock(product.stock.toString());
         setMinStock((product.minStockAlert || 5).toString());
         setSelectedCategory(product.category || '');
@@ -173,10 +177,13 @@ export default function InventoryScreen() {
 
         setIsSaving(true);
         try {
+            const priceNum = parseFloat(price);
+            const priceInUSD = priceCurrency === 'VES' ? toUSD(priceNum, 'VES') : priceNum;
+
             if (editingProduct) {
                 await ProductService.updateProduct(editingProduct.id!, {
                     name,
-                    price: priceVal,
+                    price: priceInUSD,
                     stock: stockVal,
                     minStockAlert: parseInt(minStock) || 5,
                     category: selectedCategory || 'General',
@@ -185,7 +192,7 @@ export default function InventoryScreen() {
             } else {
                 await ProductService.addProduct({
                     name,
-                    price: priceVal,
+                    price: priceInUSD,
                     stock: stockVal,
                     minStockAlert: parseInt(minStock) || 5,
                     category: selectedCategory || 'General',
@@ -241,77 +248,80 @@ export default function InventoryScreen() {
     return (
         <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
 
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6">
                 <div>
-                    <h1 className="text-[32px] font-black tracking-tight text-ui-text uppercase leading-none">Inventario</h1>
+                    <h1 className="text-3xl md:text-[40px] font-black tracking-tighter text-ui-text uppercase leading-none">Inventario</h1>
                     <div className="flex items-center gap-2 mt-2">
-                        <div className="h-1 w-8 bg-accent-primary rounded-full" />
-                        <p className="text-ui-text-muted/80 font-black uppercase tracking-[0.2em] text-[10px]">Catálogo y Existencias</p>
+                        <div className="h-1 w-8 bg-accent-primary rounded-full transition-all group-hover:w-12" />
+                        <p className="text-ui-text-muted/80 font-black uppercase tracking-[0.2em] text-[10px]">Catálogo Global</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 w-full md:w-auto">
                     {user?.role !== 'staff' && (
                         <>
                             <button 
                                 onClick={() => setCategoryModalVisible(true)} 
-                                className="ui-card hover:ui-card-hover border border-white/20 active:scale-95 transition-all duration-400 px-8 h-20 flex flex-col items-center justify-center min-w-[140px] group shadow-float bg-white/40 dark:bg-white/5"
+                                className="flex-1 md:flex-none ui-card hover:ui-card-hover border border-white/20 active:scale-95 transition-all duration-400 px-4 md:px-6 h-12 md:h-16 flex items-center justify-center gap-2 min-w-0 md:min-w-[140px] group shadow-premium"
                             >
-                                <LayoutGrid size={24} className="text-ui-text-muted group-hover:text-accent-primary transition-colors mb-1" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted group-hover:text-ui-text">Categorías</span>
+                                <LayoutGrid size={18} className="text-ui-text-muted group-hover:text-accent-primary transition-colors" />
+                                <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-ui-text-muted group-hover:text-ui-text truncate">Categorías</span>
                             </button>
                             
                             <button 
                                 onClick={openCreateModal} 
-                                className="bg-black text-white dark:bg-white dark:text-black hover:scale-[1.03] active:scale-95 transition-all duration-400 rounded-2xl px-8 h-20 flex flex-col items-center justify-center min-w-[180px] shadow-float"
+                                className="flex-1 md:flex-none bg-accent-primary text-white hover:scale-[1.03] active:scale-95 transition-all duration-400 rounded-xl md:rounded-2xl px-5 md:px-8 h-12 md:h-16 flex items-center justify-center gap-2 min-w-0 md:min-w-[180px] shadow-premium"
                             >
-                                <Plus size={28} strokeWidth={3} />
-                                <span className="text-[10px] font-black uppercase tracking-widest mt-1">Nuevo Producto</span>
+                                <Plus size={20} strokeWidth={3} />
+                                <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest truncate">Nuevo</span>
                             </button>
                         </>
                     )}
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-6 mb-8">
-                <div className="relative flex-1">
+            <div className="flex flex-col lg:flex-row items-center gap-4 mb-10">
+                <div className="relative w-full lg:flex-1">
                     <Input
-                        placeholder="BUSCAR PRODUCTO..."
-                        leftIcon={<Search size={20} className="text-accent-cyan" />}
+                        placeholder="BUSCAR EN EL INVENTARIO..."
+                        leftIcon={<Search size={20} className="text-accent-primary" />}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-14 !pl-12 !rounded-2xl shadow-premium border-white/20"
                     />
                 </div>
 
-                <div className="w-full md:w-56 shrink-0 relative z-10">
-                    <Select
-                        options={[
-                            { value: '', label: 'Todas las Categorías' },
-                            ...categories.map(c => ({ value: c.name, label: c.name }))
-                        ]}
-                        value={filterCategory}
-                        onChange={(val) => setFilterCategory(val)}
-                    />
-                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+                    <div className="w-full sm:w-56 shrink-0 z-20">
+                        <Select
+                            options={[
+                                { value: '', label: 'Toda Categoría' },
+                                ...categories.map(c => ({ value: c.name, label: c.name }))
+                            ]}
+                            value={filterCategory}
+                            onChange={(val) => setFilterCategory(val)}
+                        />
+                    </div>
 
-                <div className="ui-input-box p-1.5 flex shrink-0 gap-1.5">
-                    <button
-                        onClick={() => setStockFilter('all')}
-                        className={`px-6 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${stockFilter === 'all' ? 'ui-active-pill scale-[1.05]' : 'text-ui-text-muted hover:text-ui-text hover:bg-black/5 dark:hover:bg-white/5 active:scale-95'}`}
-                    >
-                        Todos
-                    </button>
-                    <button
-                        onClick={() => setStockFilter('low')}
-                        className={`px-6 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${stockFilter === 'low' ? 'bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)] scale-[1.05]' : 'text-[#FF8A00] hover:bg-orange-500/10 active:scale-95'}`}
-                    >
-                        <AlertCircle size={16} /> Bajo
-                    </button>
-                    <button
-                        onClick={() => setStockFilter('out')}
-                        className={`px-6 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${stockFilter === 'out' ? 'bg-[#FF3B30] text-white shadow-[0_4px_12px_rgba(255,59,48,0.3)] scale-[1.05]' : 'text-[#FF3B30] hover:bg-red-500/10 active:scale-95'}`}
-                    >
-                        <XCircle size={16} /> Faltan
-                    </button>
+                    <div className="ui-card p-1.5 flex shrink-0 gap-1.5 bg-black/2 tracking-tighter dark:bg-white/5 border-ui-border/50 rounded-2xl w-full sm:w-auto overflow-x-auto hide-scrollbar">
+                        <button
+                            onClick={() => setStockFilter('all')}
+                            className={`flex-1 sm:flex-none px-4 md:px-6 py-2.5 rounded-xl text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all ${stockFilter === 'all' ? 'bg-accent-primary text-white shadow-lg shadow-blue-500/20' : 'text-ui-text-muted hover:text-ui-text'}`}
+                        >
+                            Todos
+                        </button>
+                        <button
+                            onClick={() => setStockFilter('low')}
+                            className={`flex-1 sm:flex-none px-4 md:px-6 py-2.5 rounded-xl text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${stockFilter === 'low' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-orange-500/60 hover:text-orange-500'}`}
+                        >
+                            <AlertCircle size={14} /> <span className="hidden sm:inline">Bajo</span>
+                        </button>
+                        <button
+                            onClick={() => setStockFilter('out')}
+                            className={`flex-1 sm:flex-none px-4 md:px-6 py-2.5 rounded-xl text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${stockFilter === 'out' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'text-red-500/60 hover:text-red-500'}`}
+                        >
+                            <XCircle size={14} /> <span className="hidden sm:inline">Faltantes</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -327,24 +337,25 @@ export default function InventoryScreen() {
                         const isOutOfStock = item.stock <= 0;
 
                         return (
-                            <div key={item.id} className={`ui-card ui-card-hover p-8 flex flex-col h-full group relative min-h-[300px] transition-all ${isOutOfStock ? 'border-red-500/40 bg-red-500/5 shadow-[0_0_20px_rgba(239,68,68,0.05)]' : ''}`}>
+                            <div key={item.id} className={`ui-card ui-card-hover p-6 md:p-8 flex flex-col h-full group relative min-h-[280px] md:min-h-[300px] transition-all ${isOutOfStock ? 'border-red-500/40 bg-red-500/5 shadow-premium' : 'border-ui-border/50'}`}>
                                 <div className="flex-1">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className={`p-4 rounded-2xl ${isOutOfStock ? 'bg-red-500 text-white shadow-lg animate-pulse' : isLowStock ? 'bg-orange-500/10 text-orange-600' : 'bg-green-500/10 text-green-600'}`}>
-                                            <PackageOpen size={24} strokeWidth={2.5} />
+                                    <div className="flex justify-between items-start mb-4 md:mb-6">
+                                        <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl shrink-0 ${isOutOfStock ? 'bg-red-500 text-white shadow-lg animate-pulse' : isLowStock ? 'bg-orange-500/10 text-orange-600' : 'bg-green-500/10 text-green-600'}`}>
+                                            <PackageOpen size={22} strokeWidth={2.5} />
                                         </div>
                                         {item.category && (
-                                            <span className="px-4 py-2 bg-black/5 dark:bg-white/10 text-ui-text-muted rounded-full text-[10px] font-black tracking-widest uppercase">
+                                            <span className="px-3 py-1.5 bg-black/5 dark:bg-white/10 text-ui-text-muted rounded-full text-[9px] md:text-[10px] font-black tracking-widest uppercase">
                                                 {item.category}
                                             </span>
                                         )}
                                     </div>
                                     
-                                    <h3 className="text-2xl font-black text-ui-text tracking-tight mb-2 leading-none">{item.name}</h3>
+                                    <h3 className="text-xl md:text-2xl font-black text-ui-text tracking-tight mb-2 leading-none">{item.name}</h3>
                                     
                                     <div className="flex items-baseline gap-2 mb-6">
-                                        <span className="text-3xl font-black text-ui-text tracking-tighter">${item.price.toFixed(2)}</span>
-                                        <span className="text-xs font-bold text-ui-text-muted uppercase tracking-widest">USD</span>
+                                        <span className="text-3xl font-black text-ui-text tracking-tighter">
+                                            {formatPrice(item.price)}
+                                        </span>
                                     </div>
 
                                     <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest
@@ -424,15 +435,35 @@ export default function InventoryScreen() {
                                     required
                                 />
                                 <div className="grid grid-cols-2 gap-4">
-                                    <Input
-                                        label="Precio (USD)"
-                                        value={price}
-                                        onChange={(e) => setPrice(e.target.value)}
-                                        placeholder="0.00"
-                                        type="number"
-                                        step="0.01"
-                                        required
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            label={`Precio (${priceCurrency})`}
+                                            value={price}
+                                            onChange={(e) => setPrice(e.target.value)}
+                                            placeholder="0.00"
+                                            type="number"
+                                            step="0.01"
+                                            required
+                                            rightIcon={
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const currentVal = parseFloat(price) || 0;
+                                                        if (priceCurrency === 'USD') {
+                                                            setPriceCurrency('VES');
+                                                            setPrice(fromUSD(currentVal, 'VES').toFixed(2));
+                                                        } else {
+                                                            setPriceCurrency('USD');
+                                                            setPrice(toUSD(currentVal, 'VES').toFixed(2));
+                                                        }
+                                                    }}
+                                                    className="px-2 py-1 bg-accent-primary/10 text-accent-primary rounded text-[10px] font-black uppercase tracking-widest hover:bg-accent-primary/20 transition-colors"
+                                                >
+                                                    {priceCurrency}
+                                                </button>
+                                            }
+                                        />
+                                    </div>
                                     <div className="space-y-2">
                                         <p className="text-[11px] font-black uppercase tracking-widest text-neo-text-muted">Categoría</p>
                                         <Select

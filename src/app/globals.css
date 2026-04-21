@@ -20,9 +20,9 @@
   --accent-info: #0891B2;
   
   /* Bento Shadows - Soft & Organic */
-  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
-  --shadow-bento: 0 20px 40px rgba(0, 0, 0, 0.05);
-  --shadow-float: 0 30px 60px rgba(0, 0, 0, 0.12);
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+  --shadow-bento: 0 10px 30px rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 20px 50px rgba(0, 0, 0, 0.15);
 
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 
@@ -38,17 +38,18 @@
 .dark {
   /* Dark Palette - Glass Bento */
   --ui-bg: #2d303a; /* Much deeper black for better contrast */
-  --ui-surface: rgba(255, 255, 255, 0.03); /* Lighter glass dark base */
-  --ui-surface-hover: rgba(255, 255, 255, 0.07);
-  --ui-border: rgba(255, 255, 255, 0.12); /* Stronger border */
+  --ui-surface: rgba(30, 32, 40, 0.8); /* Much more solid glass base */
+  --ui-surface-hover: rgba(40, 42, 50, 0.9);
+  --ui-border: rgba(255, 255, 255, 0.15); /* Stronger border */
   
   --ui-text: #FFFFFF;
   --ui-text-muted: #8E8E93;
   --ui-text-inverse: #FFFFFF; /* White text on blue primary buttons */
   
   /* Shadows - More prominent for depth */
-  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 0, 0, 0.2);
-  --shadow-bento: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --shadow-bento: 0 10px 40px rgba(0, 0, 0, 0.4);
+  --shadow-float: 0 20px 50px rgba(0, 0, 0, 0.6);
 }
 
 @theme inline {
@@ -61,6 +62,10 @@
   --color-accent-danger: var(--accent-danger);
   
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  
+  --color-ios-blue: #007AFF;
+  --color-ios-red: #FF3B30;
+  --color-ios-green: #34C759;
 }
 
 * {
@@ -111,11 +116,43 @@ body {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
 }
 
+.liquid-glass {
+  background: var(--ui-surface);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  border: 1px solid var(--ui-border);
+  box-shadow: var(--shadow-bento);
+  transition: all 0.3s ease;
+}
+
+input.liquid-glass, .ui-input-box.liquid-glass {
+  box-shadow: none !important;
+}
+
+.dark .liquid-glass {
+  background: rgba(40, 42, 50, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .dark .ui-glass-sidebar {
   background: rgba(10, 10, 12, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: white;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.ui-glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-soft);
+}
+
+.dark .ui-glass-card {
+  background: rgba(30, 32, 40, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-bento);
 }
 
 .dark body {

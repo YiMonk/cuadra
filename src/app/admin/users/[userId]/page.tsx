@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { toast } from 'sonner';
+import { ActivityService } from '@/services/activity.service';
 
 export default function UserDetailPage({ params }: { params: Promise<{ userId: string }> }) {
     const resolvedParams = use(params);
@@ -32,10 +33,21 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
     const [displayName, setDisplayName] = useState('');
     const [active, setActive] = useState(true);
     const [daysToAdd, setDaysToAdd] = useState('30');
+    const [history, setHistory] = useState<any[]>([]);
 
     useEffect(() => {
         loadUser();
+        loadHistory();
     }, [userId]);
+
+    const loadHistory = async () => {
+        try {
+            const logs = await ActivityService.getUserHistory(userId);
+            setHistory(logs);
+        } catch (error) {
+            console.error("Error loading history:", error);
+        }
+    };
 
     const loadUser = async () => {
         setLoading(true);
@@ -65,6 +77,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
                 displayName,
                 active
             });
+            if (currentUser) {
+                await ActivityService.logAction({
+                    action: 'user_status_changed',
+                    targetUserId: userId,
+                    targetUserName: userMeta?.displayName || 'Usuario',
+                    adminId: currentUser.uid,
+                    adminName: currentUser.displayName || 'Admin',
+                    details: `Perfil de usuario actualizado. Nombre: ${displayName}, Estado: ${active ? 'Activo' : 'Inactivo'}`
+                });
+            }
             toast.success('Perfil actualizado');
             loadUser();
         } catch (error) {
@@ -91,6 +113,17 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
                 subscriptionEndsAt: newEnd,
                 active: true // Reactivate if was inactive
             });
+            
+            if (currentUser) {
+                await ActivityService.logAction({
+                    action: 'subscription_extended',
+                    targetUserId: userId,
+                    targetUserName: userMeta.displayName,
+                    adminId: currentUser.uid,
+                    adminName: currentUser.displayName || 'Admin',
+                    details: `Se extendió la suscripción por ${days} días.`
+                });
+            }
             
             toast.success(`Suscripción extendida por ${days} días`);
             loadUser();
@@ -128,6 +161,17 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
             await UserService.deleteUserMetadata(userId);
 
             // Inform the user since client-side cannot delete other's auth profiles
+            // Inform the user since client-side cannot delete other's auth profiles
+            if (currentUser) {
+                await ActivityService.logAction({
+                    action: 'user_deleted',
+                    targetUserId: userId,
+                    targetUserName: userMeta.displayName,
+                    adminId: currentUser.uid,
+                    adminName: currentUser.displayName || 'Admin',
+                    details: `Usuario eliminado permanentemente: ${userMeta.displayName} (${userMeta.email})`
+                });
+            }
             toast.success('Usuario y metadatos eliminados permanentemente del sistema');
             setDeleteModalVisible(false);
             router.push('/admin/users');
@@ -282,6 +326,49 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
                         </form>
                     </CardContent>
                 </Card>
+            </div>
+
+            {/* User Activity History */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3 px-2">
+                    <LayoutGrid className="text-accent-primary" size={20} />
+                    <h3 className="font-black text-ui-text uppercase tracking-widest text-sm">Historial de Actividad Administrativa</h3>
+                </div>
+
+                <div className="space-y-3">
+                    {history.length === 0 ? (
+                        <div className="p-12 text-center ui-card border border-dashed border-ui-border">
+                            <Clock className="mx-auto mb-4 opacity-10" size={40} />
+                            <p className="text-[10px] font-black text-ui-text-muted uppercase tracking-widest">No hay registros de actividad aún</p>
+                        </div>
+                    ) : (
+                        history.map((log) => (
+                            <div key={log.id} className="p-5 ui-card border border-ui-border hover:border-accent-primary/20 transition-all flex items-start gap-4">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0
+                                    ${log.action === 'user_created' ? 'bg-emerald-500/10 text-emerald-500' :
+                                      log.action === 'subscription_extended' ? 'bg-blue-500/10 text-blue-500' :
+                                      log.action === 'user_status_changed' ? 'bg-amber-500/10 text-amber-500' : 'bg-gray-500/10 text-gray-500'}
+                                `}>
+                                    {log.action === 'user_created' ? <Plus size={20} /> :
+                                     log.action === 'subscription_extended' ? <Calendar size={20} /> :
+                                     log.action === 'user_status_changed' ? <Shield size={20} /> : <Clock size={20} />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-ui-text leading-relaxed">{log.details}</p>
+                                    <div className="flex items-center gap-3 mt-2">
+                                        <div className="flex items-center gap-1.5 text-[9px] font-black text-ui-text-muted uppercase tracking-widest">
+                                            <UserIcon size={12} className="opacity-50" /> {log.adminName}
+                                        </div>
+                                        <div className="w-1 h-1 rounded-full bg-ui-border" />
+                                        <div className="flex items-center gap-1.5 text-[9px] font-bold text-ui-text-muted uppercase">
+                                            <Clock size={12} className="opacity-50" /> {new Date(log.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
 
             {/* Critical Actions */}
