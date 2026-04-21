@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⬛ Cuadra - Tu Negocio, Bajo Control
 
-## Getting Started
+**Cuadra** no es solo un software de ventas; es la mano derecha del comerciante moderno. Diseñada para ser rápida, visualmente impresionante y extremadamente fácil de usar, Cuadra transforma la gestión de tu inventario y tus ventas en una experiencia fluida y profesional.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🔥 ¿Para qué sirve Cuadra?
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Cuadra está destinada a pequeños y medianos comerciantes que necesitan:
+*   **Vender más rápido**: Un Punto de Venta (POS) optimizado para móviles y tablets.
+*   **No perder dinero**: Control total de inventario y alertas de stock bajo.
+*   **Gestionar deudas**: Un sistema de cobranzas integrado para saber quién te debe y cuánto.
+*   **Analizar el éxito**: Reportes visuales de ventas y ganancias en tiempo real.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📖 Instrucciones de Uso
 
-## Learn More
+### 1. Configuración Inicial
+Al entrar por primera vez, asegúrate de estar en el módulo de **Inventario** para cargar tus productos. 
+*   Define el nombre, precio en dólares y la cantidad disponible.
+*   Organiza todo por categorías para encontrarlos más rápido en el momento de la venta.
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Realizar una Venta (POS)
+Entra al módulo de **Venta**. Verás tus productos organizados por fotos o nombres.
+*   **Selecciona**: Toca los productos para añadirlos al carrito.
+*   **Moneda**: El sistema calcula automáticamente el total en **Dólares ($)** y **Bolívares (Bs)** usando la tasa del BCV del día.
+*   **Checkout**: Finaliza la venta eligiendo el método de pago (Efectivo, Pago Móvil, etc.).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Seguimiento de Cobranzas
+Si realizas una venta a crédito, aparecerá automáticamente en el módulo de **Cobranzas**.
+*   Podrás ver el historial de deudas por cliente.
+*   Registra abonos o pagos totales para mantener tus cuentas claras.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. Panel Administrativo (Master)
+Para los administradores del sistema, el **Panel Maestro** permite:
+*   Registrar nuevos dueños de negocios asignándoles días de suscripción.
+*   Ver las métricas globales de recaudación de la plataforma.
+*   Auditar todas las acciones del sistema en el historial de actividad.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛠 Instalación para Desarrolladores
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Si eres desarrollador y quieres montar tu propia instancia de Cuadra:
+
+1.  **Clona el repo** e instala dependencias con `npm install`.
+2.  **Seguridad**: Crea un archivo `.env.local` con tus llaves de Firebase (usa como guía el archivo `.env.example` o contacta al administrador).
+3.  **Ejecuta**: `npm run dev` para iniciar el entorno de desarrollo.
+
+---
+
+**Cuadra es el equilibrio perfecto entre diseño "Bento" y potencia administrativa. ¡Empieza a cuadrar tus cuentas hoy mismo!**

@@ -4,13 +4,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 export const firebaseConfig = {
-   apiKey: "AIzaSyD_jNJs7O6jevUsJiSg4cSD_WeaxS5NxVA",
-  authDomain: "cuadra-bf832.firebaseapp.com",
-  projectId: "cuadra-bf832",
-  storageBucket: "cuadra-bf832.firebasestorage.app",
-  messagingSenderId: "208847202044",
-  appId: "1:208847202044:web:46803c98dccdb5307d9979",
-  measurementId: "G-VKVPWXTJKZ"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 let app: FirebaseApp;
