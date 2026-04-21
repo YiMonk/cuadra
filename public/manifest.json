@@ -1,7 +1,7 @@
 {
-  "name": "Cookie PWA",
-  "short_name": "Cookie",
-  "description": "Cookie PWA Application",
+  "name": "Cuadra PWA",
+  "short_name": "Cuadra",
+  "description": "Cuadra PWA Application",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

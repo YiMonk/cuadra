@@ -4,8 +4,8 @@ import { Providers } from "./providers";
 import AppLayout from "@/components/layout/AppLayout";
 
 export const metadata: Metadata = {
-  title: "Cookie APP",
-  description: "Cookie PWA Web Application",
+  title: "Cuadra APP",
+  description: "Cuadra PWA Web Application",
   manifest: "/manifest.json",
 };
 
