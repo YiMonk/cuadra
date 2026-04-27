@@ -14,9 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { toast } from 'sonner';
-import { initializeApp, getApps, deleteApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { firebaseConfig } from '@/config/firebaseConfig';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 type AdminTab = 'team' | 'locations' | 'cashboxes';
 
@@ -71,11 +69,12 @@ export default function AdministrationScreen() {
             setLoading(false);
         });
 
-        const unsubLocations = LocationService.subscribeToLocations((data) => {
+        const ownerId = owner.ownerId || owner.uid || '';
+        const unsubLocations = LocationService.subscribeToLocations(ownerId, (data) => {
             setLocations(data);
         });
 
-        const unsubCashboxes = CashboxService.subscribeToCashboxes((data) => {
+        const unsubCashboxes = CashboxService.subscribeToCashboxes(ownerId, (data) => {
             setCashboxes(data);
         });
 
@@ -91,28 +90,26 @@ export default function AdministrationScreen() {
         e.preventDefault();
         if (!staffName || !staffEmail || !staffPassword) return;
         setIsSaving(true);
-        const secondaryAppName = `secondary-staff-${Date.now()}`;
-        let secondaryApp;
         try {
-            secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
-            const secondaryAuth = getAuth(secondaryApp);
-            const cred = await createUserWithEmailAndPassword(secondaryAuth, staffEmail.trim(), staffPassword);
-            await UserService.syncUserMetadata(cred.user.uid, {
-                id: cred.user.uid,
-                displayName: staffName,
+            // F1-04: Use Cloud Function to create staff — avoids signing out the owner
+            const fns = getFunctions();
+            const createStaffFn = httpsCallable(fns, 'createStaffMember');
+            await createStaffFn({
                 email: staffEmail.trim(),
-                role: 'staff',
-                active: true,
-                ownerId: owner!.uid,
-                createdAt: Date.now()
+                password: staffPassword,
+                displayName: staffName,
             });
             toast.success("Miembro creado");
             setStaffModalVisible(false);
             setStaffName(''); setStaffEmail(''); setStaffPassword('');
         } catch (error: any) {
-            toast.error("Error: " + (error.code === 'auth/email-already-in-use' ? "Correo en uso" : "No se pudo crear"));
+            const code = error?.code ?? '';
+            if (code.includes('already-in-use') || error?.message?.includes('already-in-use')) {
+                toast.error("Error: Correo ya en uso");
+            } else {
+                toast.error("Error: No se pudo crear el miembro");
+            }
         } finally {
-            if (secondaryApp) await deleteApp(secondaryApp);
             setIsSaving(false);
         }
     };
@@ -122,7 +119,8 @@ export default function AdministrationScreen() {
         if (!itemName) return;
         setIsSaving(true);
         try {
-            await LocationService.addLocation(itemName);
+            const ownerId = owner?.ownerId || owner?.uid || '';
+            await LocationService.addLocation(itemName, ownerId);
             toast.success("Sede agregada");
             setLocationModalVisible(false);
             setItemName('');
@@ -135,7 +133,8 @@ export default function AdministrationScreen() {
         if (!itemName) return;
         setIsSaving(true);
         try {
-            await CashboxService.addCashbox(itemName);
+            const ownerId = owner?.ownerId || owner?.uid || '';
+            await CashboxService.addCashbox(itemName, ownerId);
             toast.success("Caja agregada");
             setCashboxModalVisible(false);
             setItemName('');
@@ -151,8 +150,12 @@ export default function AdministrationScreen() {
         }
 
         try {
-            if (deleteConfirmModal.type === 'staff') await UserService.deleteUserMetadata(deleteConfirmModal.id);
-            else if (deleteConfirmModal.type === 'location') await LocationService.deleteLocation(deleteConfirmModal.id);
+            if (deleteConfirmModal.type === 'staff') {
+                // F1-04: Use Cloud Function to delete staff from Auth + Firestore
+                const fns = getFunctions();
+                const deleteStaffFn = httpsCallable(fns, 'deleteStaffMember');
+                await deleteStaffFn({ uid: deleteConfirmModal.id });
+            } else if (deleteConfirmModal.type === 'location') await LocationService.deleteLocation(deleteConfirmModal.id);
             else if (deleteConfirmModal.type === 'cashbox') await CashboxService.deleteCashbox(deleteConfirmModal.id);
             
             toast.success("Eliminado correctamente");

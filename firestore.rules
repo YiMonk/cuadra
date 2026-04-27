@@ -1,0 +1,137 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getRole() {
+      return getUserData().role;
+    }
+
+    function isAdminGod() {
+      return isAuthenticated() && getRole() == 'admingod';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getRole() in ['admingod', 'admin'];
+    }
+
+    function isOwner() {
+      return isAuthenticated() && getRole() == 'owner';
+    }
+
+    function getEffectiveOwnerId() {
+      let userData = getUserData();
+      return userData.role == 'owner' ? request.auth.uid : userData.ownerId;
+    }
+
+    function ownerIdMatches(docOwnerId) {
+      return isAuthenticated() && getEffectiveOwnerId() == docOwnerId;
+    }
+
+    function isNotChangingProtectedFields() {
+      return !request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasAny(['role', 'active', 'subscriptionEndsAt', 'subscriptionPrice']);
+    }
+
+    match /users/{userId} {
+      allow read: if isAdmin()
+        || request.auth.uid == userId
+        || (isAuthenticated() && resource.data.ownerId == getEffectiveOwnerId());
+      allow create: if (request.auth.uid == userId
+        && request.resource.data.role == 'owner'
+        && request.resource.data.active == true)
+        || isAdmin();
+      allow update: if (request.auth.uid == userId && isNotChangingProtectedFields())
+        || isAdmin();
+      allow delete: if isAdminGod();
+    }
+
+    match /products/{productId} {
+      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.ownerId)
+        && request.resource.data.price is number
+        && request.resource.data.price >= 0
+        && request.resource.data.stock is number
+        && request.resource.data.stock >= 0;
+      allow update: if ownerIdMatches(resource.data.ownerId)
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isOwner() && request.auth.uid == resource.data.ownerId;
+    }
+
+    match /sales/{saleId} {
+      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.ownerId)
+        && request.resource.data.total is number
+        && request.resource.data.total >= 0
+        && request.resource.data.status in ['paid', 'pending']
+        && request.resource.data.paymentMethod in ['cash', 'transfer', 'mobile_pay', 'credit'];
+      allow update: if ownerIdMatches(resource.data.ownerId)
+        && request.resource.data.ownerId == resource.data.ownerId
+        && !request.resource.data.diff(resource.data)
+            .affectedKeys().hasAny(['items', 'total', 'createdBy', 'ownerId']);
+      allow delete: if false;
+    }
+
+    match /clients/{clientId} {
+      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.ownerId);
+      allow update: if ownerIdMatches(resource.data.ownerId)
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isOwner() && request.auth.uid == resource.data.ownerId;
+    }
+
+    match /categories/{catId} {
+      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.ownerId);
+      allow update: if ownerIdMatches(resource.data.ownerId);
+      allow delete: if isOwner() && request.auth.uid == resource.data.ownerId;
+    }
+
+    match /cashboxes/{cashboxId} {
+      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow create: if isOwner()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isOwner()
+        && request.auth.uid == resource.data.ownerId;
+    }
+
+    match /locations/{locationId} {
+      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow create: if isOwner()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isOwner()
+        && request.auth.uid == resource.data.ownerId;
+    }
+
+    match /stock_movements/{movId} {
+      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.ownerId);
+      allow update, delete: if false;
+    }
+
+    match /admin_activities/{activityId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.adminId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /app_config/{docId} {
+      allow read: if docId == 'version' || isAdminGod();
+      allow write: if isAdminGod();
+    }
+  }
+}

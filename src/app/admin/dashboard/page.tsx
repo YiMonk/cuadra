@@ -14,10 +14,10 @@ import {
     ShoppingCart,
     Trash2,
     RefreshCw,
-    Settings,
-    UserPlus
+    UserPlus,
+    X,
+    AlertTriangle
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/Card';
 import { toast } from 'sonner';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sale } from '@/types/sales';
@@ -30,6 +30,8 @@ export default function AdminGodDashboardPage() {
     const [sales, setSales] = useState<Sale[]>([]);
     const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('7d');
     const [wiping, setWiping] = useState(false);
+    const [showWipeModal, setShowWipeModal] = useState(false);
+    const [wipeConfirmText, setWipeConfirmText] = useState('');
 
     useEffect(() => {
         loadData();
@@ -40,7 +42,7 @@ export default function AdminGodDashboardPage() {
         try {
             const [allUsers, allSales] = await Promise.all([
                 UserService.getUsers(),
-                SalesService.getAllSales ? SalesService.getAllSales() : []
+                SalesService.getAllSales(),
             ]);
             setUsers(allUsers);
             setSales(allSales as Sale[]);
@@ -51,32 +53,24 @@ export default function AdminGodDashboardPage() {
         }
     };
 
-    const handleWipeDatabase = async () => {
-        if (!user) return;
-        
-        toast.error('⚠️ LIMPIAR BASE DE DATOS', {
-            description: '¿Estás seguro de que quieres eliminar TODOS los datos? Esta acción NO se puede deshacer.',
-            action: {
-                label: 'Eliminar TODO',
-                onClick: async () => {
-                    setWiping(true);
-                    try {
-                        await DataManager.wipeDatabase(user.uid);
-                        toast.success('Base de datos limpiada con éxito');
-                        loadData();
-                    } catch (error) {
-                        toast.error('Error al limpiar la base de datos');
-                    } finally {
-                        setWiping(false);
-                    }
-                }
-            },
-            cancel: { label: 'Cancelar', onClick: () => {} }
-        });
+    const handleConfirmWipe = async () => {
+        if (!user || wipeConfirmText !== 'ELIMINAR TODO') return;
+        setWiping(true);
+        try {
+            await DataManager.wipeDatabase();
+            toast.success('Base de datos limpiada con éxito');
+            setShowWipeModal(false);
+            setWipeConfirmText('');
+            loadData();
+        } catch (error) {
+            toast.error('Error al limpiar la base de datos');
+        } finally {
+            setWiping(false);
+        }
     };
 
     const owners = useMemo(() => {
-        return users.filter(u => u.role === 'admin' && (!u.ownerId || u.ownerId === u.id));
+        return users.filter(u => u.role === 'owner' && (!u.ownerId || u.ownerId === u.id));
     }, [users]);
 
     const filteredData = useMemo(() => {
@@ -93,41 +87,24 @@ export default function AdminGodDashboardPage() {
 
     const chartData = useMemo(() => {
         const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 10;
-        const data: any[] = [];
 
         const interval = eachDayOfInterval({
             start: subDays(new Date(), days - 1),
             end: new Date()
         });
 
-        interval.forEach(day => {
+        return interval.map(day => {
             const dateStr = format(day, 'dd/MM', { locale: es });
-
             const daySales = filteredData.filteredSales.filter(s =>
-                isWithinInterval(new Date(s.createdAt), {
-                    start: startOfDay(day),
-                    end: endOfDay(day)
-                })
+                isWithinInterval(new Date(s.createdAt), { start: startOfDay(day), end: endOfDay(day) })
             );
-
             const dayUsers = filteredData.filteredUsers.filter(u =>
-                isWithinInterval(new Date(u.createdAt), {
-                    start: startOfDay(day),
-                    end: endOfDay(day)
-                })
+                isWithinInterval(new Date(u.createdAt), { start: startOfDay(day), end: endOfDay(day) })
             );
-
-            data.push({
-                name: dateStr,
-                ventas: daySales.length,
-                usuarios: dayUsers.length
-            });
+            return { name: dateStr, ventas: daySales.length, usuarios: dayUsers.length };
         });
-
-        return data;
     }, [filteredData, timeRange]);
 
-    const totalSalesVolume = filteredData.filteredSales.reduce((acc, s) => acc + (s.total || 0), 0);
     const totalSubscriptionRevenue = filteredData.filteredUsers.reduce((acc, u) => acc + (u.subscriptionPrice || 0), 0);
 
     if (loading) {
@@ -163,16 +140,18 @@ export default function AdminGodDashboardPage() {
                         onClick={loadData}
                         className="p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow hover:border-gray-300 dark:hover:border-gray-700 text-gray-600 dark:text-gray-400 transition"
                         title="Actualizar datos"
+                        aria-label="Actualizar datos"
                     >
                         <RefreshCw size={18} />
                     </button>
 
                     {(user?.role === 'admingod' || user?.role === 'admin') && (
                         <button
-                            onClick={handleWipeDatabase}
+                            onClick={() => setShowWipeModal(true)}
                             disabled={wiping}
                             className="p-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50 rounded-xl shadow-sm hover:shadow hover:border-red-200 dark:hover:border-red-900 transition disabled:opacity-50"
                             title="Limpiar Base de Datos"
+                            aria-label="Limpiar Base de Datos"
                         >
                             <Trash2 size={18} />
                         </button>
@@ -262,6 +241,68 @@ export default function AdminGodDashboardPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Wipe Confirmation Modal */}
+            {showWipeModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-labelledby="wipe-modal-title">
+                    <div className="ui-card w-full max-w-md border border-red-500/30 shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
+                        <div className="p-8">
+                            <div className="flex items-start justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500">
+                                        <AlertTriangle size={24} />
+                                    </div>
+                                    <div>
+                                        <h2 id="wipe-modal-title" className="text-xl font-black text-red-500 uppercase tracking-tight">Zona de Peligro</h2>
+                                        <p className="text-[11px] font-bold text-ui-text-muted uppercase tracking-widest mt-1">Acción Irreversible</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => { setShowWipeModal(false); setWipeConfirmText(''); }}
+                                    className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-ui-text-muted hover:text-ui-text transition-colors"
+                                    aria-label="Cerrar"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            <p className="text-sm text-ui-text-muted font-medium mb-6 leading-relaxed">
+                                Estás a punto de <strong className="text-red-500">eliminar TODOS los datos</strong> de ventas, productos, clientes y usuarios. Esta acción <strong>NO se puede deshacer</strong>.
+                            </p>
+
+                            <div className="space-y-3 mb-6">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted">
+                                    Escribe <span className="text-red-500 font-black">ELIMINAR TODO</span> para confirmar
+                                </label>
+                                <input
+                                    type="text"
+                                    value={wipeConfirmText}
+                                    onChange={(e) => setWipeConfirmText(e.target.value)}
+                                    placeholder="ELIMINAR TODO"
+                                    className="w-full h-12 px-4 rounded-xl bg-red-500/5 border border-red-500/20 focus:border-red-500/50 focus:ring-2 focus:ring-red-500/10 outline-none font-bold text-red-500 placeholder:text-red-500/30 transition-all"
+                                    autoComplete="off"
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => { setShowWipeModal(false); setWipeConfirmText(''); }}
+                                    className="flex-1 h-12 rounded-xl bg-black/5 dark:bg-white/5 font-black text-sm uppercase tracking-widest text-ui-text-muted hover:text-ui-text transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleConfirmWipe}
+                                    disabled={wipeConfirmText !== 'ELIMINAR TODO' || wiping}
+                                    className="flex-1 h-12 rounded-xl bg-red-500 text-white font-black text-sm uppercase tracking-widest hover:bg-red-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    {wiping ? 'Eliminando...' : 'Eliminar Todo'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
