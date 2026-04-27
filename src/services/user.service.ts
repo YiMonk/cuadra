@@ -76,10 +76,16 @@ export const UserService = {
     // Subscribe to users
     subscribeToUsers: (callback: (users: UserMetadata[]) => void) => {
         const q = query(collection(db, USERS_COLLECTION), orderBy('createdAt', 'desc'));
-        return onSnapshot(q, (snapshot: any) => {
-            const users = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as UserMetadata));
-            callback(users);
-        });
+        return onSnapshot(
+            q,
+            (snapshot) => {
+                const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserMetadata));
+                callback(users);
+            },
+            (error) => {
+                console.error('Error en subscribeToUsers:', error);
+            }
+        );
     },
 
     // Update user role or status
@@ -126,12 +132,18 @@ export const UserService = {
             where('ownerId', '==', ownerId),
             orderBy('createdAt', 'desc')
         );
-        return onSnapshot(q, (snapshot) => {
-            const members = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as UserMetadata));
-            callback(members);
-        });
+        return onSnapshot(
+            q,
+            (snapshot) => {
+                const members = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                } as UserMetadata));
+                callback(members);
+            },
+            (error) => {
+                console.error('Error en subscribeToTeam:', error);
+            }
+        );
     }
 };

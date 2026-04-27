@@ -26,12 +26,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             try {
                 if (firebaseUser) {
-                    console.log("Auth state: User logged in", firebaseUser.uid);
+                    if (process.env.NODE_ENV === 'development') console.log("Auth state: User logged in", firebaseUser.uid);
                     try {
                         let meta = await UserService.getUserById(firebaseUser.uid);
 
                         if (!meta) {
-                            console.log("No metadata found, initializing...");
+                            if (process.env.NODE_ENV === 'development') console.log("No metadata found, initializing...");
                             meta = {
                                 id: firebaseUser.uid,
                                 displayName: firebaseUser.displayName || 'Usuario',
@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         }
 
                         if (!meta.active) {
-                            console.warn("User inactive, signing out...");
+                            document.cookie = 'cuadra-session=; path=/; max-age=0';
                             await auth.signOut();
                             setUser(null);
                             setIsLoading(false);
@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         if (meta.role === 'staff' && meta.ownerId) {
                             const owner = await UserService.getUserById(meta.ownerId);
                             if (owner && (!owner.active || (owner.subscriptionEndsAt && owner.subscriptionEndsAt < Date.now()))) {
-                                console.warn("Owner inactive or expired, signing out staff...");
+                                document.cookie = 'cuadra-session=; path=/; max-age=0';
                                 await auth.signOut();
                                 setUser(null);
                                 setIsLoading(false);
@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                         // Check subscription for owners
                         if (meta.role === 'owner' && meta.subscriptionEndsAt && meta.subscriptionEndsAt < Date.now()) {
-                            console.warn("Subscription expired, signing out...");
+                            document.cookie = 'cuadra-session=; path=/; max-age=0';
                             await auth.signOut();
                             setUser(null);
                             setIsLoading(false);
@@ -90,19 +90,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         };
 
                         setUser(userProfile);
+                        // Set session cookie so Next.js middleware can protect routes
+                        document.cookie = 'cuadra-session=1; path=/; SameSite=Strict';
                     } catch (error) {
                         console.error("Critical: Error fetching metadata, clearing auth session:", error);
+                        document.cookie = 'cuadra-session=; path=/; max-age=0';
                         await auth.signOut();
                         setUser(null);
                     }
                 } else {
-                    console.log("-> Auth state: No Firebase user detected, setting profile to null");
                     setUser(null);
                 }
             } catch (globalError) {
-                console.error("-> Global error in auth listener:", globalError);
+                if (process.env.NODE_ENV === 'development') console.error("-> Global error in auth listener:", globalError);
             } finally {
-                console.log("-> Auth processing complete, setting isLoading: false");
                 setIsLoading(false);
                 isProcessingRef.current = false;
             }
@@ -110,10 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const timeout = setTimeout(() => {
             setIsLoading(prev => {
-                if (prev) {
-                    console.warn("Auth state change timed out, forcing load completion.");
-                    return false;
-                }
+                if (prev) return false;
                 return prev;
             });
         }, 5000);
@@ -126,6 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const signOut = async () => {
         try {
+            document.cookie = 'cuadra-session=; path=/; max-age=0';
             await auth.signOut();
         } catch (error) {
             console.error('Error signing out:', error);
@@ -134,28 +133,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const reloadUser = async () => {
         const currentUser = auth.currentUser;
-        if (currentUser) {
-            await currentUser.reload();
-            const updatedUser = auth.currentUser;
-            if (updatedUser) {
-                const userProfile: UserProfile = {
-                    uid: updatedUser.uid,
-                    email: updatedUser.email,
-                    displayName: updatedUser.displayName,
-                    photoURL: updatedUser.photoURL,
-                    role: user?.role || 'owner',
-                    createdAt: user?.createdAt || Date.now(),
-                    subscriptionEndsAt: user?.subscriptionEndsAt,
-                    ownerId: user?.ownerId,
-                };
-                setUser(userProfile);
-            }
-        }
+        if (!currentUser) return;
+        await currentUser.reload();
+        const updatedUser = auth.currentUser;
+        if (!updatedUser) return;
+        // Re-fetch metadata from Firestore so role/subscription changes are reflected
+        const meta = await UserService.getUserById(updatedUser.uid);
+        if (!meta) return;
+        const userProfile: UserProfile = {
+            uid: updatedUser.uid,
+            email: updatedUser.email,
+            displayName: updatedUser.displayName,
+            photoURL: updatedUser.photoURL,
+            role: meta.role,
+            ownerId: meta.ownerId,
+            createdAt: meta.createdAt || Date.now(),
+            subscriptionEndsAt: meta.subscriptionEndsAt,
+        };
+        setUser(userProfile);
     };
 
-    const signIn = () => {
-        console.log("Sign in placeholder");
-    }
+    const signIn = () => {}
 
     const value = {
         user,

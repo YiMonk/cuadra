@@ -24,7 +24,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useCart } from '@/context/CartContext';
 import { useCurrency } from '@/context/CurrencyContext';
-import { SalesService } from '@/services/sales.service';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -37,12 +37,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { currency, exchangeRate, toggleCurrency, isLoading: currencyLoading } = useCurrency();
     const cartItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
+    const isAuthRoute = pathname.startsWith('/auth');
+    const ownerId = (!isAuthRoute && user) ? (user.ownerId || user.uid) : null;
+    const { pendingClientsCount: pendingCollectionsCount } = useNotifications(ownerId);
+
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
-    const [pendingCollectionsCount, setPendingCollectionsCount] = useState(0);
     const notificationsRef = useRef<HTMLDivElement>(null);
-
-    const isAuthRoute = pathname.startsWith('/auth');
 
     useEffect(() => {
         // Notification outside click handler
@@ -58,14 +59,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!user || isAuthRoute) return;
 
-        let items: any[] = [];
+        const notifItems: any[] = [];
 
-        // 1. Subscription Notification
+        // Subscription Notification
         if (user.role === 'owner' && user.subscriptionEndsAt) {
             const timeDiff = user.subscriptionEndsAt - Date.now();
             if (timeDiff > 0 && timeDiff <= ONE_WEEK_MS) {
                 const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-                items.push({
+                notifItems.push({
                     id: 'sub',
                     type: 'alert',
                     title: 'Suscripción por Vencer',
@@ -73,7 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     icon: ShieldAlert
                 });
             } else if (timeDiff <= 0) {
-                items.push({
+                notifItems.push({
                     id: 'sub-exp',
                     type: 'danger',
                     title: 'Suscripción Vencida',
@@ -83,34 +84,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             }
         }
 
-        // 2. Load low inventory and debts if Owner/Admin/Staff
-        const loadOtherNotifications = async () => {
-            let temp = [...items];
-            
-            // Check debters
-            try {
-                const pendingSales = await SalesService.getPendingSales();
-                if (pendingSales.length > 0) {
-                    const uniqueClients = new Set(pendingSales.map(s => s.clientId).filter(Boolean));
-                    setPendingCollectionsCount(uniqueClients.size);
-                    if (uniqueClients.size > 0) {
-                        temp.push({
-                            id: 'debts',
-                            type: 'warning',
-                            title: 'Cobros Pendientes',
-                            desc: `Tienes deudas sin cobrar de ${uniqueClients.size} cliente(s).`,
-                            icon: DollarSign,
-                            link: '/collections'
-                        });
-                    }
-                }
-            } catch (e) { }
-
-            setNotifications(temp);
-        };
-
-        loadOtherNotifications();
+        setNotifications(notifItems);
     }, [user, isAuthRoute]);
+
+    // Sync real-time pending collections into notifications list
+    useEffect(() => {
+        setNotifications(prev => {
+            const withoutDebts = prev.filter(n => n.id !== 'debts');
+            if (pendingCollectionsCount > 0) {
+                return [...withoutDebts, {
+                    id: 'debts',
+                    type: 'warning',
+                    title: 'Cobros Pendientes',
+                    desc: `Tienes deudas sin cobrar de ${pendingCollectionsCount} cliente(s).`,
+                    icon: DollarSign,
+                    link: '/collections'
+                }];
+            }
+            return withoutDebts;
+        });
+    }, [pendingCollectionsCount]);
 
     useEffect(() => {
         if (!isLoading && !user && !isAuthRoute) {

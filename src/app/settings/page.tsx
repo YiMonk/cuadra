@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { APP_VERSION } from '@/config/version';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
 import { UserService } from '@/services/user.service';
@@ -210,7 +211,7 @@ export default function SettingsScreen() {
                                 <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-[0.1em]">Protección en tiempo real activa</p>
                             </div>
                         </div>
-                        <span className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.2em] opacity-40">Build v2.1.0</span>
+                        <span className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.2em] opacity-40">v{APP_VERSION}</span>
                     </div>
                 </div>
             </div>

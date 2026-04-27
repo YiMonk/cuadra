@@ -1,15 +1,16 @@
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  getDocs, 
-  query, 
-  orderBy, 
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  orderBy,
   onSnapshot,
   where,
-  getDoc
+  getDoc,
+  limit
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { Client } from '../types/client';
@@ -18,10 +19,11 @@ const CLIENTS_COLLECTION = 'clients';
 
 export const ClientService = {
   // Add a new client
-  addClient: async (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
+  addClient: async (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>, ownerId: string) => {
     try {
       const docRef = await addDoc(collection(db, CLIENTS_COLLECTION), {
         ...client,
+        ownerId,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -46,10 +48,24 @@ export const ClientService = {
     }
   },
 
-  // Delete a client
+  // Soft-delete a client — blocks if client has pending debts
   deleteClient: async (id: string) => {
     try {
-      await deleteDoc(doc(db, CLIENTS_COLLECTION, id));
+      const pendingQ = query(
+        collection(db, 'sales'),
+        where('clientId', '==', id),
+        where('status', '==', 'pending'),
+        limit(1)
+      );
+      const pending = await getDocs(pendingQ);
+      if (!pending.empty) {
+        throw new Error('No se puede eliminar un cliente con deudas pendientes. Salda la deuda primero.');
+      }
+      await updateDoc(doc(db, CLIENTS_COLLECTION, id), {
+        active: false,
+        deletedAt: Date.now(),
+        updatedAt: Date.now(),
+      });
     } catch (error) {
       console.error("Error deleting client: ", error);
       throw error;
@@ -71,15 +87,24 @@ export const ClientService = {
   },
 
   // Subscribe to clients list
-  subscribeToClients: (callback: (clients: Client[]) => void) => {
-    const q = query(collection(db, CLIENTS_COLLECTION), orderBy('name'));
-    return onSnapshot(q, (snapshot) => {
-      const clients = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Client));
-      callback(clients);
-    });
+  subscribeToClients: (ownerId: string, callback: (clients: Client[]) => void) => {
+    const q = query(
+      collection(db, CLIENTS_COLLECTION),
+      where('ownerId', '==', ownerId),
+      orderBy('name')
+    );
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const clients = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Client))
+          .filter(c => c.active !== false);
+        callback(clients);
+      },
+      (error) => {
+        console.error('Error en subscribeToClients:', error);
+      }
+    );
   },
 
   // Search clients by name (Simple client-side filter approximation for now or direct query)

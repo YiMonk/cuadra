@@ -5,8 +5,16 @@ import AppLayout from "@/components/layout/AppLayout";
 
 export const metadata: Metadata = {
   title: "Cuadra APP",
-  description: "Cuadra PWA Web Application",
+  description: "Cuadra — Sistema de Punto de Venta",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Cuadra",
+  },
+  icons: {
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {

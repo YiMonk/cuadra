@@ -75,8 +75,11 @@ export default function POSScreen() {
     const [clientModalVisible, setClientModalVisible] = useState(false);
 
     // Checkout State
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'credit'>('cash');
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'credit' | 'mobile_pay'>('cash');
     const [paymentNotes, setPaymentNotes] = useState('');
+    const [paymentReference, setPaymentReference] = useState('');
+    const [paymentBank, setPaymentBank] = useState('');
+    const [paymentDate, setPaymentDate] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     // Clients
@@ -115,14 +118,16 @@ export default function POSScreen() {
     const [cashboxes, setCashboxes] = useState<{id: string, name: string}[]>([]);
 
     useEffect(() => {
-        const unsubLoc = LocationService.subscribeToLocations(data => {
+        const ownerId = currentUser?.ownerId || currentUser?.uid || '';
+        if (!ownerId) return;
+        const unsubLoc = LocationService.subscribeToLocations(ownerId, data => {
             setLocations(data);
         });
-        const unsubBox = CashboxService.subscribeToCashboxes(data => {
+        const unsubBox = CashboxService.subscribeToCashboxes(ownerId, data => {
             setCashboxes(data);
         });
         return () => { unsubLoc(); unsubBox(); };
-    }, []);
+    }, [currentUser]);
 
     const handleEvidenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -148,11 +153,13 @@ export default function POSScreen() {
     }, []);
 
     useEffect(() => {
-        const unsubscribe = ProductService.subscribeToProducts((list) => {
+        const ownerId = currentUser?.ownerId || currentUser?.uid || '';
+        if (!ownerId) return;
+        const unsubscribe = ProductService.subscribeToProducts(ownerId, (list) => {
             setProducts(list);
             setLoading(false);
         });
-        const unsubscribeClients = ClientService.subscribeToClients((list) => {
+        const unsubscribeClients = ClientService.subscribeToClients(ownerId, (list) => {
             setClients(list);
         });
 
@@ -160,7 +167,7 @@ export default function POSScreen() {
             unsubscribe();
             unsubscribeClients();
         };
-    }, []);
+    }, [currentUser]);
 
     const categories = useMemo(() => {
         const cats = new Set<string>();
@@ -168,22 +175,40 @@ export default function POSScreen() {
         return Array.from(cats).sort();
     }, [products]);
 
+    const [variantModal, setVariantModal] = useState<Product | null>(null);
+
+    const hasAvailableStock = (p: Product) => {
+        if (p.variants && p.variants.length > 0) {
+            return p.variants.some(v => v.stock > 0);
+        }
+        return p.stock > 0;
+    };
+
+    const handleProductClick = (product: Product) => {
+        if (!hasAvailableStock(product)) return;
+        if (product.variants && product.variants.length > 0) {
+            setVariantModal(product);
+        } else {
+            addToCart(product);
+        }
+    };
+
     const filteredProducts = useMemo(() => {
-        let result = products.filter(p => p.stock > 0);
+        let result = products.filter(p => hasAvailableStock(p));
         if (searchQuery) result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
         if (selectedCategory) result = result.filter(p => p.category === selectedCategory);
-        
+
         // Filter by location if product has a location field
         if (selectedLocation !== 'all') {
             result = result.filter(p => (p as any).location === selectedLocation || !(p as any).location);
         }
-        
+
         return result;
     }, [products, searchQuery, selectedCategory, selectedLocation]);
 
     const filteredClients = useMemo(() => {
         if (!clientSearch) return clients;
-        return clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()) || c.phone.includes(clientSearch));
+        return clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()) || (c.phone ?? '').includes(clientSearch));
     }, [clients, clientSearch]);
 
     const handleConfirmSale = async (e: React.FormEvent) => {
@@ -206,10 +231,12 @@ export default function POSScreen() {
                 ? `[PAGO EN BS] Monto: Bs. ${(total * exchangeRate).toFixed(2)} (Tasa: ${exchangeRate}). ${paymentNotes}`
                 : paymentNotes;
 
+            const ownerId = currentUser?.ownerId || currentUser?.uid || '';
             await SalesService.createSale({
                 items: items as any,
                 total,
                 paymentMethod,
+                ownerId,
                 clientId: selectedClient?.id || null,
                 clientName: selectedClient?.name || null,
                 evidenceUrl,
@@ -218,10 +245,17 @@ export default function POSScreen() {
                 cashboxName: cashboxes.find(c => c.id === selectedCashbox)?.name || currentUser?.displayName || 'Cajero',
                 // @ts-ignore
                 locationId: selectedLocation !== 'all' ? selectedLocation : null,
-                locationName: selectedLocation !== 'all' ? locations.find(l => l.id === selectedLocation)?.name : null
-            });
+                locationName: selectedLocation !== 'all' ? locations.find(l => l.id === selectedLocation)?.name : null,
+                exchangeRateAtSale: exchangeRate,
+                paymentData: (paymentMethod === 'transfer' || paymentMethod === 'mobile_pay')
+                    ? { reference: paymentReference || undefined, bank: paymentBank || undefined, date: paymentDate || undefined }
+                    : undefined,
+            } as any);
             clearCart();
             setPaymentNotes('');
+            setPaymentReference('');
+            setPaymentBank('');
+            setPaymentDate('');
             setEvidenceFile(null);
             setEvidencePreview(null);
             setCheckoutModalVisible(false);
@@ -241,11 +275,12 @@ export default function POSScreen() {
         }
         setIsSavingClient(true);
         try {
+            const ownerId = currentUser?.ownerId || currentUser?.uid || '';
             const clientId = await ClientService.addClient({
                 name: newClientName,
                 phone: newClientPhone,
                 active: true,
-            });
+            }, ownerId);
             const newClient = { id: clientId, name: newClientName, phone: newClientPhone, active: true, createdAt: Date.now() };
             setSelectedClient(newClient);
             setIsCreatingClient(false);
@@ -336,19 +371,30 @@ export default function POSScreen() {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
                             {filteredProducts.map(product => {
-                                const isOutOfStock = product.stock === 0;
+                                const hasVariants = !!(product.variants && product.variants.length > 0);
+                                const isOutOfStock = !hasAvailableStock(product);
                                 const cartItem = items.find(i => i.id === product.id);
                                 const qtyInCart = cartItem ? cartItem.quantity : 0;
+                                const stockDisplay = hasVariants
+                                    ? `${product.variants!.reduce((s, v) => s + v.stock, 0)} un`
+                                    : `${product.stock} un`;
                                 return (
-                                    <div key={product.id} onClick={() => !isOutOfStock && addToCart(product)} className="ui-card ui-card-hover p-6 flex flex-col justify-between min-h-[220px] cursor-pointer group active:scale-95">
+                                    <div key={product.id} onClick={() => handleProductClick(product)} className="ui-card ui-card-hover p-6 flex flex-col justify-between min-h-[220px] cursor-pointer group active:scale-95">
                                         <div className="relative">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className={`p-3 rounded-2xl ${isOutOfStock ? 'bg-red-500/10 text-red-500' : 'bg-accent-primary/5 text-accent-primary'}`}>
                                                     {getCategoryIcon(product.category || 'General')}
                                                 </div>
-                                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${isOutOfStock ? 'bg-red-500 text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text'}`}>
-                                                    {isOutOfStock ? 'Agotado' : `${product.stock} un`}
-                                                </span>
+                                                <div className="flex flex-col items-end gap-1">
+                                                    {hasVariants && (
+                                                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-500">
+                                                            {product.variants!.length} vars
+                                                        </span>
+                                                    )}
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${isOutOfStock ? 'bg-red-500 text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text'}`}>
+                                                        {isOutOfStock ? 'Agotado' : stockDisplay}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <h3 className="font-black text-xl text-ui-text tracking-tight leading-[1.1] mb-2">{product.name}</h3>
                                             <p className="text-ui-text-muted text-xs font-bold uppercase tracking-widest">{product.category}</p>
@@ -525,6 +571,10 @@ export default function POSScreen() {
                                                 <span className="uppercase tracking-wide text-xs">{opt.label}</span>
                                             </button>
                                         ))}
+                                        <button type="button" onClick={() => setPaymentMethod('mobile_pay')} className={`col-span-2 p-4 rounded-xl transition-all flex items-center justify-center gap-3 font-bold border-2 active:scale-95 ${paymentMethod === 'mobile_pay' ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-transparent bg-black/5 dark:bg-white/5 text-ui-text-muted hover:bg-black/10 dark:hover:bg-white/10'}`}>
+                                            <Smartphone size={20} />
+                                            <span className="uppercase tracking-wide text-xs">Pago Móvil</span>
+                                        </button>
                                         <button type="button" onClick={() => setPaymentMethod('credit')} className={`col-span-2 p-4 rounded-xl transition-all flex items-center justify-center gap-3 font-bold border-2 active:scale-95 ${paymentMethod === 'credit' ? 'border-[#FF3B30] bg-[#FF3B30]/10 text-[#FF3B30]' : 'border-transparent bg-black/5 dark:bg-white/5 text-[#FF3B30]/80 hover:bg-black/10 dark:hover:bg-white/10'}`}>
                                             <span className="text-xl">📝</span>
                                             <span className="uppercase tracking-wide text-xs">Fiado / A Crédito</span>
@@ -556,6 +606,15 @@ export default function POSScreen() {
                                         ))}
                                     </div>
                                 </div>
+
+                                {(paymentMethod === 'transfer' || paymentMethod === 'mobile_pay') && (
+                                    <div className="space-y-3">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-ui-text-muted">Datos del Pago</p>
+                                        <Input label="REFERENCIA" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Nro. de referencia o confirmación" />
+                                        <Input label="BANCO" value={paymentBank} onChange={(e) => setPaymentBank(e.target.value)} placeholder="Banco emisor" />
+                                        <Input label="FECHA DEL PAGO" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+                                    </div>
+                                )}
 
                                 {paymentMethod === 'transfer' && (
                                     <div className="space-y-4">
@@ -703,6 +762,67 @@ export default function POSScreen() {
                         <div className="p-8 pt-0 mt-4 flex gap-3 border-t border-ui-border pt-6">
                             <button className="ui-btn ui-btn-secondary w-full" onClick={() => { setClientModalVisible(false); setIsCreatingClient(false); }}>
                                 Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Variant Selector Modal */}
+            {variantModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-label="Seleccionar variante">
+                    <div className="ui-card w-full max-w-sm border border-ui-border shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 className="text-lg font-black text-ui-text uppercase tracking-tight">{variantModal.name}</h2>
+                                    <p className="text-[10px] font-bold text-ui-text-muted uppercase tracking-widest mt-0.5">Selecciona una variante</p>
+                                </div>
+                                <button onClick={() => setVariantModal(null)} className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-ui-text-muted hover:text-ui-text transition-colors" aria-label="Cerrar">
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                {variantModal.variants!.map(variant => {
+                                    const isVariantOut = variant.stock <= 0;
+                                    const variantInCart = items.find(i => i.id === variantModal.id && i.variantId === variant.id);
+                                    return (
+                                        <button
+                                            key={variant.id}
+                                            onClick={() => {
+                                                if (!isVariantOut) {
+                                                    addToCart(variantModal, variant);
+                                                    setVariantModal(null);
+                                                }
+                                            }}
+                                            disabled={isVariantOut}
+                                            className={`w-full p-4 rounded-xl flex items-center justify-between transition-all active:scale-95 border-2 ${isVariantOut ? 'border-transparent bg-black/5 dark:bg-white/5 opacity-40 cursor-not-allowed' : 'border-transparent bg-black/5 dark:bg-white/5 hover:border-accent-primary hover:bg-accent-primary/5 text-ui-text'}`}
+                                        >
+                                            <div className="flex flex-col items-start gap-0.5">
+                                                <span className="font-black text-sm uppercase tracking-wide">{variant.name}</span>
+                                                <span className="text-[10px] font-bold text-ui-text-muted">{variant.stock} disponibles</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                {variantInCart && (
+                                                    <span className="w-6 h-6 rounded-full bg-accent-primary text-white text-[10px] font-black flex items-center justify-center">
+                                                        {variantInCart.quantity}
+                                                    </span>
+                                                )}
+                                                <span className="font-black text-lg text-ui-text">
+                                                    {formatPrice(variantModal.price + (variant.priceModifier || 0))}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <button
+                                onClick={() => setVariantModal(null)}
+                                className="w-full mt-4 h-11 rounded-xl bg-black/5 dark:bg-white/5 font-black text-sm uppercase tracking-widest text-ui-text-muted hover:text-ui-text transition-colors"
+                            >
+                                Cancelar
                             </button>
                         </div>
                     </div>

@@ -1,23 +1,16 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-export interface CartItem {
-    id: string;
-    name: string;
-    price: number;
-    stock: number;
-    quantity: number;
-    variantId?: string;
-    variantName?: string;
-}
+import React, { createContext, useContext, useState, useMemo } from 'react';
+import { CartItem } from '@/types/sales';
+import { Product, ProductVariant } from '@/types/inventory';
+import { Client } from '@/types/client';
 
 interface CartContextData {
     items: CartItem[];
     total: number;
-    selectedClient: any | null;
-    setSelectedClient: (client: any | null) => void;
-    addToCart: (product: any, variant?: any) => void;
+    selectedClient: Client | null;
+    setSelectedClient: (client: Client | null) => void;
+    addToCart: (product: Product, variant?: ProductVariant) => void;
     updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
     removeFromCart: (productId: string, variantId?: string) => void;
     clearCart: () => void;
@@ -27,37 +20,49 @@ const CartContext = createContext<CartContextData>({} as CartContextData);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [items, setItems] = useState<CartItem[]>([]);
-    const [total, setTotal] = useState(0);
-    const [selectedClient, setSelectedClient] = useState<any | null>(null);
+    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-    useEffect(() => {
-        const newTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        setTotal(newTotal);
-    }, [items]);
+    // Calculate total with useMemo to avoid stale state on rapid updates
+    const total = useMemo(
+        () => items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0),
+        [items]
+    );
 
-    const addToCart = (product: any, variant?: any) => {
+    const addToCart = (product: Product, variant?: ProductVariant) => {
         setItems(prev => {
             const existingIndex = prev.findIndex(i =>
                 i.id === product.id && i.variantId === variant?.id
             );
 
+            // Determine stock limit: use variant stock if variant selected
+            const stockLimit = variant ? variant.stock : product.stock;
+
             if (existingIndex >= 0) {
+                if (prev[existingIndex].quantity >= stockLimit) return prev;
                 const newItems = [...prev];
-                if (newItems[existingIndex].quantity >= newItems[existingIndex].stock) {
-                    return prev;
-                }
-                newItems[existingIndex].quantity += 1;
+                newItems[existingIndex] = {
+                    ...newItems[existingIndex],
+                    quantity: newItems[existingIndex].quantity + 1,
+                };
                 return newItems;
             }
 
-            if (product.stock <= 0) return prev;
+            if (stockLimit <= 0) return prev;
 
-            return [...prev, {
+            // finalPrice = base price + variant modifier (if any)
+            const finalPrice = product.price + (variant?.priceModifier || 0);
+
+            const newItem: CartItem = {
                 ...product,
                 quantity: 1,
                 variantId: variant?.id,
-                variantName: variant?.name
-            }];
+                variantName: variant?.name,
+                // Use variant stock as the effective stock limit for this cart line
+                stock: stockLimit,
+                finalPrice,
+            };
+
+            return [...prev, newItem];
         });
     };
 
@@ -68,8 +73,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             return prev.map(i => {
                 if (i.id === productId && i.variantId === variantId) {
-                    const boundedQuantity = Math.max(0, Math.min(quantity, i.stock));
-                    return { ...i, quantity: boundedQuantity };
+                    const bounded = Math.max(1, Math.min(quantity, i.stock));
+                    return { ...i, quantity: bounded };
                 }
                 return i;
             });
@@ -94,7 +99,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             addToCart,
             updateQuantity,
             removeFromCart,
-            clearCart
+            clearCart,
         }}>
             {children}
         </CartContext.Provider>

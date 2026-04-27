@@ -11,22 +11,19 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { Location } from '../types/location';
 
-export interface Location {
-  id: string;
-  name: string;
-  active: boolean;
-  createdAt: number;
-}
+export type { Location };
 
 const LOCATIONS_COLLECTION = 'locations';
 
 export const LocationService = {
   // Create a new location
-  addLocation: async (name: string) => {
+  addLocation: async (name: string, ownerId: string) => {
     try {
       const docRef = await addDoc(collection(db, LOCATIONS_COLLECTION), {
         name,
+        ownerId,
         active: true,
         createdAt: Date.now()
       });
@@ -64,9 +61,13 @@ export const LocationService = {
   },
 
   // Get all locations
-  getLocations: async () => {
+  getLocations: async (ownerId: string) => {
     try {
-      const q = query(collection(db, LOCATIONS_COLLECTION), orderBy('createdAt', 'desc'));
+      const q = query(
+        collection(db, LOCATIONS_COLLECTION),
+        where('ownerId', '==', ownerId),
+        orderBy('createdAt', 'desc')
+      );
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Location));
     } catch (error) {
@@ -76,8 +77,12 @@ export const LocationService = {
   },
 
   // Subscribe to locations
-  subscribeToLocations: (callback: (locations: Location[]) => void) => {
-    const q = query(collection(db, LOCATIONS_COLLECTION), orderBy('createdAt', 'desc'));
+  subscribeToLocations: (ownerId: string, callback: (locations: Location[]) => void) => {
+    const q = query(
+      collection(db, LOCATIONS_COLLECTION),
+      where('ownerId', '==', ownerId),
+      orderBy('createdAt', 'desc')
+    );
     return onSnapshot(q, (snapshot) => {
       const locations = snapshot.docs.map(doc => ({
         id: doc.id,

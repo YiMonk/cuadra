@@ -8,16 +8,9 @@ export interface CartItem extends Product {
   discountApplied?: string;
 }
 
-export interface PromoRule {
-  id: string;
-  name: string;
-  condition: (cart: CartItem[], paymentMethod: string) => boolean;
-  effect: (cart: CartItem[]) => CartItem[];
-  description: string;
-}
-
 export interface Sale {
   id?: string;
+  ownerId?: string;
   items: CartItem[];
   total: number;
   paymentMethod: 'cash' | 'transfer' | 'mobile_pay' | 'credit';
@@ -39,4 +32,5 @@ export interface Sale {
   notes?: string;
   cashboxId?: string | null;
   cashboxName?: string | null;
+  exchangeRateAtSale?: number;
 }

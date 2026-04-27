@@ -12,10 +12,12 @@ export function UpdateDetector() {
     const [needsUpdate, setNeedsUpdate] = useState(false);
     const [countdown, setCountdown] = useState(15);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [latestVersion, setLatestVersion] = useState('');
 
     useEffect(() => {
         // Monitor version in Firestore
         const unsubscribe = ConfigService.subscribeToVersion((latestVersion) => {
+            setLatestVersion(latestVersion);
             if (latestVersion !== APP_VERSION) {
                 console.log(`Update detected: Current(${APP_VERSION}) vs Latest(${latestVersion})`);
                 triggerUpdateFlow();
@@ -80,7 +82,7 @@ export function UpdateDetector() {
                     
                     <div className="flex items-center justify-center gap-2 mb-6">
                         <div className="h-1 w-8 bg-accent-primary rounded-full" />
-                        <p className="text-white/60 font-black uppercase tracking-[0.2em] text-[10px]">Cuadra v{APP_VERSION} → v1.0.x</p>
+                        <p className="text-white/60 font-black uppercase tracking-[0.2em] text-[10px]">Cuadra v{APP_VERSION} → v{latestVersion}</p>
                         <div className="h-1 w-8 bg-accent-primary rounded-full" />
                     </div>
 

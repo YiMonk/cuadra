@@ -44,12 +44,18 @@ export async function GET() {
     const dolarSection = html.match(/id="dolar"[\s\S]*?<strong>([\d,.]+)<\/strong>/i);
     
     if (dolarSection && dolarSection[1]) {
-      const bcvRate = parseFloat(dolarSection[1].replace(',', '.'));
-      console.log('BCV Rate scraped successfully:', bcvRate);
-      return NextResponse.json({ 
-        rate: bcvRate, 
+      // Handle both "92,50" and "1.092,50" (thousands separator + decimal comma)
+      const rawRate = dolarSection[1].replace(/\./g, '').replace(',', '.');
+      const bcvRate = parseFloat(rawRate);
+      if (isNaN(bcvRate) || bcvRate <= 0) {
+        throw new Error(`Tasa parseada inválida: "${dolarSection[1]}"`);
+      }
+      return NextResponse.json({
+        rate: bcvRate,
         date: new Date().toISOString(),
         source: 'scraping'
+      }, {
+        headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' }
       });
     }
 

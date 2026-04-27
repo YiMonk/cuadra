@@ -41,8 +41,9 @@ export default function ReportsScreen() {
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
+                const ownerId = user?.ownerId || user?.uid || '';
                 const [salesData, cashiersData] = await Promise.all([
-                    SalesService.getAllSales(),
+                    SalesService.getAllSales(ownerId),
                     UserService.getUsers()
                 ]);
                 setAllSales(salesData);
@@ -88,71 +89,34 @@ export default function ReportsScreen() {
     }, [allSales, selectedCashier]);
 
     const processStats = (data: Sale[]) => {
-        const rev = data.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-        const pend = data.filter(s => s.status === 'pending').reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-
+        const summary = SalesService.computeSummary(data);
         setMetrics({
-            revenue: rev,
-            pending: pend,
-            count: data.length,
-            average: data.length > 0 ? rev / data.length : 0
+            revenue: summary.revenue,
+            pending: summary.pending,
+            count: summary.count,
+            average: summary.average,
         });
 
-        // Line Chart Data
+        // Line Chart Data — last 7 sales in chronological order
         const last7 = data.slice(0, 7).reverse();
-        const cData = last7.map(s => {
+        setChartData(last7.map(s => {
             const time = typeof s.createdAt === 'number' ? s.createdAt : (s.createdAt as any)?.toDate?.()?.getTime() || 0;
             return {
                 name: time ? new Date(time).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '?',
-                total: Number(s.total) || 0
+                total: Number(s.total) || 0,
             };
-        });
-        setChartData(cData);
+        }));
 
-        // Pie Chart Data
-        const methods: Record<string, number> = {};
+        // Pie Chart Data — payment method distribution
+        const methodLabels: Record<string, string> = { cash: 'Efectivo', transfer: 'Transf.', credit: 'Crédito', mobile_pay: 'Pago Móvil' };
+        const byCount: Record<string, number> = {};
         data.forEach(s => {
-            const m = s.paymentMethod === 'cash' ? 'Efectivo' :
-                s.paymentMethod === 'transfer' ? 'Transf.' :
-                    s.paymentMethod === 'credit' ? 'Crédito' : 'Otro';
-            methods[m] = (methods[m] || 0) + 1;
+            const label = methodLabels[s.paymentMethod] || 'Otro';
+            byCount[label] = (byCount[label] || 0) + 1;
         });
+        setPieData(Object.entries(byCount).map(([name, value], idx) => ({ name, value, color: COLORS[idx % COLORS.length] })));
 
-        setPieData(Object.entries(methods).map(([name, value], idx) => ({
-            name,
-            value,
-            color: COLORS[idx % COLORS.length]
-        })));
-
-        // Cashbox Metrics
-        const boxSummary: Record<string, any> = {};
-        data.forEach(s => {
-            if (s.status === 'cancelled') return;
-
-            const bId = s.cashboxId || 'unknown';
-            const bName = s.cashboxName || 'Sin Caja';
-            const cId = s.createdBy || 'unknown';
-            const cName = s.creatorName || 'Desconocido';
-            const amount = Number(s.total) || 0;
-
-            if (!boxSummary[cId]) {
-                boxSummary[cId] = { id: cId, name: cName, real: 0, teorico: 0, salesCount: 0 };
-            }
-            boxSummary[cId].teorico += amount;
-            boxSummary[cId].salesCount += 1;
-
-            if (s.status === 'paid') {
-                const effectiveBId = bId === 'unknown' ? 'sincaja' : bId;
-                const effectiveBName = bId === 'unknown' ? 'Sin Caja Asignada' : bName;
-                if (!boxSummary[effectiveBId]) {
-                    boxSummary[effectiveBId] = { id: effectiveBId, name: effectiveBName, real: 0, teorico: 0, salesCount: 0 };
-                }
-                boxSummary[effectiveBId].real += amount;
-            }
-        });
-
-        const summaryList = Object.values(boxSummary).sort((a, b) => b.real - a.real || b.teorico - a.teorico);
-        setCashboxMetrics(summaryList);
+        setCashboxMetrics(summary.byCashbox);
     };
 
     const exportToExcel = () => {

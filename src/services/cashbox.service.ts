@@ -1,31 +1,29 @@
-import { 
-  collection, 
-  addDoc, 
-  doc, 
-  updateDoc, 
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
   deleteDoc,
   query,
   getDocs,
   orderBy,
-  onSnapshot
+  onSnapshot,
+  where
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { Cashbox } from '../types/cashbox';
 
-export interface Cashbox {
-  id: string;
-  name: string;
-  active: boolean;
-  createdAt: number;
-}
+export type { Cashbox };
 
 const CASHBOXES_COLLECTION = 'cashboxes';
 
 export const CashboxService = {
   // Create a new cashbox
-  addCashbox: async (name: string) => {
+  addCashbox: async (name: string, ownerId: string) => {
     try {
       const docRef = await addDoc(collection(db, CASHBOXES_COLLECTION), {
         name,
+        ownerId,
         active: true,
         createdAt: Date.now()
       });
@@ -63,9 +61,13 @@ export const CashboxService = {
   },
 
   // Get all cashboxes
-  getCashboxes: async () => {
+  getCashboxes: async (ownerId: string) => {
     try {
-      const q = query(collection(db, CASHBOXES_COLLECTION), orderBy('createdAt', 'desc'));
+      const q = query(
+        collection(db, CASHBOXES_COLLECTION),
+        where('ownerId', '==', ownerId),
+        orderBy('createdAt', 'desc')
+      );
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cashbox));
     } catch (error) {
@@ -75,14 +77,49 @@ export const CashboxService = {
   },
 
   // Subscribe to cashboxes
-  subscribeToCashboxes: (callback: (cashboxes: Cashbox[]) => void) => {
-    const q = query(collection(db, CASHBOXES_COLLECTION), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snapshot) => {
-      const cashboxes = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Cashbox));
-      callback(cashboxes);
-    });
+  subscribeToCashboxes: (ownerId: string, callback: (cashboxes: Cashbox[]) => void) => {
+    const q = query(
+      collection(db, CASHBOXES_COLLECTION),
+      where('ownerId', '==', ownerId),
+      orderBy('createdAt', 'desc')
+    );
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const cashboxes = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Cashbox));
+        callback(cashboxes);
+      },
+      (error) => {
+        console.error('Error en subscribeToCashboxes:', error);
+      }
+    );
+  },
+
+  // Get cashbox balance for a date range
+  getCashboxBalance: async (cashboxId: string, startDate: number, endDate: number) => {
+    try {
+      const q = query(
+        collection(db, 'sales'),
+        where('cashboxId', '==', cashboxId),
+        where('status', '==', 'paid'),
+        where('createdAt', '>=', startDate),
+        where('createdAt', '<=', endDate)
+      );
+      const snapshot = await getDocs(q);
+      const sales = snapshot.docs.map(d => d.data());
+      const total = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+      const byMethod = sales.reduce((acc, s) => {
+        const m = s.paymentMethod as string;
+        acc[m] = (acc[m] || 0) + (Number(s.total) || 0);
+        return acc;
+      }, {} as Record<string, number>);
+      return { total, count: sales.length, byPaymentMethod: byMethod };
+    } catch (error) {
+      console.error('Error getting cashbox balance:', error);
+      throw error;
+    }
   }
 };

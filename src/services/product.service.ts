@@ -1,15 +1,15 @@
-import { 
-  collection, 
-  addDoc, 
-  doc, 
-  updateDoc, 
-  deleteDoc, 
-  onSnapshot, 
-  query, 
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  onSnapshot,
+  query,
   orderBy,
+  where,
   runTransaction,
   getDocs
-} from 'firebase/firestore';         
+} from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { Product } from '../types/inventory';
 
@@ -17,10 +17,11 @@ const PRODUCTS_COLLECTION = 'products';
 
 export const ProductService = {
   // Add a new product
-  addProduct: async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
+  addProduct: async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>, ownerId: string) => {
     try {
       const docRef = await addDoc(collection(db, PRODUCTS_COLLECTION), {
         ...product,
+        ownerId,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -40,12 +41,19 @@ export const ProductService = {
               const productDoc = await transaction.get(productRef);
               if (!productDoc.exists()) throw new Error("Product not found");
 
-              const newStock = (productDoc.data().stock || 0) + adjustment;
-              
+              const currentStock = productDoc.data().stock || 0;
+              const newStock = currentStock + adjustment;
+
+              if (newStock < 0) {
+                  throw new Error(
+                      `Ajuste inválido: el stock resultante sería ${newStock}. Stock actual: ${currentStock}`
+                  );
+              }
+
               // 1. Update Product Stock
-              transaction.update(productRef, { 
+              transaction.update(productRef, {
                   stock: newStock,
-                  updatedAt: Date.now() 
+                  updatedAt: Date.now()
               });
 
               // 2. Log Movement (Optional but recommended for traceability)
@@ -79,10 +87,14 @@ export const ProductService = {
     }
   },
 
-  // Delete a product
+  // Soft-delete a product
   deleteProduct: async (id: string) => {
     try {
-      await deleteDoc(doc(db, PRODUCTS_COLLECTION, id));
+      await updateDoc(doc(db, PRODUCTS_COLLECTION, id), {
+        active: false,
+        deletedAt: Date.now(),
+        updatedAt: Date.now(),
+      });
     } catch (error) {
       console.error("Error deleting product: ", error);
       throw error;
@@ -90,21 +102,34 @@ export const ProductService = {
   },
 
   // Subscribe to products list (Real-time)
-  subscribeToProducts: (callback: (products: Product[]) => void) => {
-    const q = query(collection(db, PRODUCTS_COLLECTION), orderBy('name'));
-    return onSnapshot(q, (snapshot) => {
-      const products = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Product));
-      callback(products);
-    });
+  subscribeToProducts: (ownerId: string, callback: (products: Product[]) => void) => {
+    const q = query(
+      collection(db, PRODUCTS_COLLECTION),
+      where('ownerId', '==', ownerId),
+      orderBy('name')
+    );
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const products = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Product))
+          .filter(p => p.active !== false);
+        callback(products);
+      },
+      (error) => {
+        console.error('Error en subscribeToProducts:', error);
+      }
+    );
   },
 
   // Fetch all products (One-time)
-  getProducts: async (): Promise<Product[]> => {
+  getProducts: async (ownerId: string): Promise<Product[]> => {
     try {
-      const q = query(collection(db, PRODUCTS_COLLECTION), orderBy('name'));
+      const q = query(
+        collection(db, PRODUCTS_COLLECTION),
+        where('ownerId', '==', ownerId),
+        orderBy('name')
+      );
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({
         id: doc.id,

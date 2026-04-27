@@ -47,13 +47,15 @@ export default function ClientListScreen() {
     }, [user, authLoading, router]);
 
     useEffect(() => {
-        const unsubscribe = ClientService.subscribeToClients((updatedClients) => {
+        const ownerId = user?.ownerId || user?.uid || '';
+        if (!ownerId) return;
+        const unsubscribe = ClientService.subscribeToClients(ownerId, (updatedClients) => {
             setClients(updatedClients);
             setFilteredClients(updatedClients);
             setLoading(false);
         });
         return () => unsubscribe();
-    }, []);
+    }, [user]);
 
     const onChangeSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const query = e.target.value;
@@ -73,7 +75,8 @@ export default function ClientListScreen() {
         if (!newName || !newPhone) return;
         setIsSaving(true);
         try {
-            await ClientService.addClient({ name: newName, phone: newPhone } as any);
+            const ownerId = user?.ownerId || user?.uid || '';
+            await ClientService.addClient({ name: newName, phone: newPhone } as any, ownerId);
             setModalVisible(false);
             setNewName('');
             setNewPhone('');

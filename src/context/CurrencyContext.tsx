@@ -20,7 +20,7 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrencyState] = useState<Currency>('USD');
-  const [exchangeRate, setExchangeRate] = useState<number>(1);
+  const [exchangeRate, setExchangeRate] = useState<number>(92.50);
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize from localStorage
@@ -32,19 +32,31 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     fetchRate();
   }, []);
 
+  const CACHE_KEY = 'bcv-rate-cache';
+  const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
   const fetchRate = async () => {
     try {
+      // Check sessionStorage cache first
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { rate, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < CACHE_TTL) {
+          setExchangeRate(rate);
+          setIsLoading(false);
+          return;
+        }
+      }
       const response = await fetch('/api/bcv');
       const data = await response.json();
       if (data.rate && typeof data.rate === 'number') {
-        console.log('BCV Exchange rate loaded:', data.rate);
         setExchangeRate(data.rate);
-      } else {
-        console.error('Invalid rate received:', data);
-        setExchangeRate(480.50); // Hardcoded fallback if API fails
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ rate: data.rate, timestamp: Date.now() }));
       }
     } catch (error) {
-      console.error('Error fetching rate:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching BCV rate:', error);
+      }
     } finally {
       setIsLoading(false);
     }

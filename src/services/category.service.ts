@@ -1,12 +1,13 @@
-import { 
-  collection, 
-  addDoc, 
-  doc, 
-  updateDoc, 
-  deleteDoc, 
-  onSnapshot, 
-  query, 
-  orderBy, 
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  where,
   getDocs
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
@@ -17,10 +18,11 @@ const CATEGORIES_COLLECTION = 'categories';
 export const CategoryService = {
   
   // Add Category
-  addCategory: async (category: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
+  addCategory: async (category: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>, ownerId: string) => {
     try {
       const docRef = await addDoc(collection(db, CATEGORIES_COLLECTION), {
         ...category,
+        ownerId,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -56,21 +58,35 @@ export const CategoryService = {
   },
 
   // Get Categories (Real-time)
-  subscribeToCategories: (callback: (categories: Category[]) => void) => {
-    const q = query(collection(db, CATEGORIES_COLLECTION), orderBy('name'));
-    return onSnapshot(q, (snapshot) => {
-      const categories = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Category));
-      callback(categories);
-    });
+  subscribeToCategories: (ownerId: string, callback: (categories: Category[]) => void) => {
+    const q = query(
+      collection(db, CATEGORIES_COLLECTION),
+      where('ownerId', '==', ownerId),
+      orderBy('name')
+    );
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const categories = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Category));
+        callback(categories);
+      },
+      (error) => {
+        console.error('Error en subscribeToCategories:', error);
+      }
+    );
   },
 
   // Get Categories (One-time)
-  getCategories: async (): Promise<Category[]> => {
+  getCategories: async (ownerId: string): Promise<Category[]> => {
     try {
-      const q = query(collection(db, CATEGORIES_COLLECTION), orderBy('name'));
+      const q = query(
+        collection(db, CATEGORIES_COLLECTION),
+        where('ownerId', '==', ownerId),
+        orderBy('name')
+      );
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({
         id: doc.id,

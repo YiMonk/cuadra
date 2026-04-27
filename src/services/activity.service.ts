@@ -59,15 +59,21 @@ export const ActivityService = {
     // Subscribe to real-time global activities
     subscribeToGlobalLog: (callback: (logs: ActivityLog[]) => void) => {
         const q = query(
-            collection(db, ACTIVITIES_COLLECTION), 
+            collection(db, ACTIVITIES_COLLECTION),
             orderBy('createdAt', 'desc')
         );
-        return onSnapshot(q, (snapshot) => {
-            const logs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as ActivityLog));
-            callback(logs);
-        });
+        return onSnapshot(
+            q,
+            (snapshot) => {
+                const logs = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                } as ActivityLog));
+                callback(logs);
+            },
+            (error) => {
+                console.error('Error en subscribeToGlobalLog:', error);
+            }
+        );
     }
 };

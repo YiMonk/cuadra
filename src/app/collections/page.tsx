@@ -3,26 +3,44 @@
 import React, { useEffect, useState } from 'react';
 import { SalesService } from '@/services/sales.service';
 import { ClientService } from '@/services/client.service';
-import { Search, Clock, FileText, ChevronRight, MessageCircle } from 'lucide-react';
+import { Search, Clock, FileText, MessageCircle, DollarSign, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrency } from '@/context/CurrencyContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CollectionsScreen() {
     const router = useRouter();
     const { formatPrice } = useCurrency();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [clients, setClients] = useState<any[]>([]);
     const [debtors, setDebtors] = useState<any[]>([]);
     const [filteredDebtors, setFilteredDebtors] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<'debt' | 'date'>('debt');
     const [reminderModal, setReminderModal] = useState<{client: any, debt: number} | null>(null);
+    const [payModal, setPayModal] = useState<{client: any, sales: any[], debt: number} | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mobile_pay'>('cash');
+    const [isPaying, setIsPaying] = useState(false);
 
     useEffect(() => {
-        const unsubscribe = SalesService.subscribeToPendingSales(async (pendingSales: any[]) => {
+        const ownerId = user?.ownerId || user?.uid || '';
+        if (!ownerId) return;
+        const unsubClients = ClientService.subscribeToClients(ownerId, (list) => {
+            setClients(list);
+        });
+
+        return () => unsubClients();
+    }, [user]);
+
+    useEffect(() => {
+        const ownerId = user?.ownerId || user?.uid || '';
+        if (!ownerId) return;
+        const unsubscribe = SalesService.subscribeToPendingSales(ownerId, (pendingSales: any[]) => {
             try {
                 const uniqueClientIds = Array.from(new Set(pendingSales.map((s: any) => s.clientId).filter(Boolean))) as string[];
                 const debtorsMap: Record<string, { debt: number, sales: any[], lastDate: number }> = {};
@@ -42,7 +60,7 @@ export default function CollectionsScreen() {
 
                 const debtorsList: any[] = [];
                 for (const clientId of uniqueClientIds) {
-                    const client = await ClientService.getClientById(clientId);
+                    const client = clients.find(c => c.id === clientId);
                     if (client) {
                         debtorsList.push({
                             client,
@@ -61,7 +79,7 @@ export default function CollectionsScreen() {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [clients, user]);
 
     useEffect(() => {
         let filtered = debtors.filter((d: any) =>
@@ -96,6 +114,20 @@ export default function CollectionsScreen() {
         const whatsappUrl = `https://wa.me/${reminderModal.client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
         setReminderModal(null);
+    };
+
+    const handlePayAll = async () => {
+        if (!payModal) return;
+        setIsPaying(true);
+        try {
+            await SalesService.payAllDebts(payModal.client.id, { paymentMethod });
+            toast.success(`Deuda de ${payModal.client.name} cobrada con éxito`);
+            setPayModal(null);
+        } catch (error: any) {
+            toast.error(error.message || 'Error al registrar el cobro');
+        } finally {
+            setIsPaying(false);
+        }
     };
 
     const totalDebt = debtors.reduce((sum, d) => sum + d.debt, 0);
@@ -186,10 +218,20 @@ export default function CollectionsScreen() {
                                             onClick={(e) => { e.stopPropagation(); handleRemindClick(item.client, item.debt); }}
                                             className="w-11 h-11 flex items-center justify-center text-green-500 bg-green-500/5 hover:bg-green-500/10 border border-green-500/10 rounded-2xl transition-all active:scale-90"
                                             title="Recordar Cobro"
+                                            aria-label="Enviar recordatorio"
                                         >
                                             <MessageCircle size={20} strokeWidth={2.5} />
                                         </button>
-                                        
+
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setPaymentMethod('cash'); setPayModal({ client: item.client, sales: item.sales, debt: item.debt }); }}
+                                            className="h-11 px-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2"
+                                            title="Registrar cobro"
+                                        >
+                                            <DollarSign size={14} />
+                                            Cobrar
+                                        </button>
+
                                         <Button
                                             onClick={() => router.push(`/clients/${item.client.id}`)}
                                             className="h-11 px-5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
@@ -204,6 +246,50 @@ export default function CollectionsScreen() {
                     ))
                 )}
             </div>
+
+            {payModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200" role="dialog" aria-modal="true">
+                    <div className="ui-card w-full max-w-sm border border-ui-border shadow-2xl animate-in zoom-in-95 duration-300 p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 className="text-xl font-black text-ui-text uppercase tracking-tight">Registrar Cobro</h2>
+                                <p className="text-[11px] font-bold text-ui-text-muted mt-1 uppercase tracking-widest">{payModal.client.name}</p>
+                            </div>
+                            <button onClick={() => setPayModal(null)} className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-ui-text-muted hover:text-ui-text" aria-label="Cerrar">
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <div className="ui-input-box px-6 py-4 mb-6 flex justify-between items-center">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted">Total a Cobrar</span>
+                            <span className="text-2xl font-black text-red-500">{formatPrice(payModal.debt)}</span>
+                        </div>
+
+                        <div className="space-y-3 mb-6">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted">Método de Pago</p>
+                            {([
+                                { id: 'cash', emoji: '💵', label: 'Efectivo' },
+                                { id: 'transfer', emoji: '📲', label: 'Transferencia' },
+                                { id: 'mobile_pay', emoji: '📱', label: 'Pago Móvil' },
+                            ] as const).map(opt => (
+                                <button key={opt.id} onClick={() => setPaymentMethod(opt.id)} className={`w-full p-3 rounded-xl flex items-center gap-3 font-bold border-2 transition-all active:scale-95 ${paymentMethod === opt.id ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-transparent bg-black/5 dark:bg-white/5 text-ui-text-muted hover:bg-black/10'}`}>
+                                    <span className="text-lg">{opt.emoji}</span>
+                                    <span className="uppercase tracking-wide text-xs">{opt.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={() => setPayModal(null)} className="flex-1 h-12 rounded-xl bg-black/5 dark:bg-white/5 font-black text-sm uppercase tracking-widest text-ui-text-muted hover:text-ui-text transition-colors">
+                                Cancelar
+                            </button>
+                            <button onClick={handlePayAll} disabled={isPaying} className="flex-1 h-12 rounded-xl bg-emerald-500 text-white font-black text-sm uppercase tracking-widest hover:bg-emerald-600 transition-colors disabled:opacity-50">
+                                {isPaying ? 'Procesando...' : 'Confirmar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {reminderModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 transition-all animate-in fade-in duration-200">

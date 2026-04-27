@@ -61,14 +61,16 @@ export default function InventoryScreen() {
     const [locations, setLocations] = useState<{id: string, name: string}[]>([]);
     
     useEffect(() => {
-        const unsub = LocationService.subscribeToLocations(data => {
+        const ownerId = user?.ownerId || user?.uid || '';
+        if (!ownerId) return;
+        const unsub = LocationService.subscribeToLocations(ownerId, data => {
             setLocations(data);
             if (data.length > 0 && !selectedLocation) {
                 setSelectedLocation(data[0].id);
             }
         });
         return () => unsub();
-    }, []);
+    }, [user]);
 
     // Form State (Stock Adjustment)
     const [adjustmentQuantity, setAdjustmentQuantity] = useState('');
@@ -77,18 +79,20 @@ export default function InventoryScreen() {
     const [isSavingStock, setIsSavingStock] = useState(false);
 
     useEffect(() => {
-        loadCategories();
-        const unsubscribe = ProductService.subscribeToProducts((updatedProducts) => {
+        const ownerId = user?.ownerId || user?.uid || '';
+        if (!ownerId) return;
+        loadCategories(ownerId);
+        const unsubscribe = ProductService.subscribeToProducts(ownerId, (updatedProducts) => {
             setProducts(updatedProducts);
             setLoading(false);
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [user]);
 
-    const loadCategories = async () => {
+    const loadCategories = async (ownerId: string) => {
         try {
-            const data = await CategoryService.getCategories();
+            const data = await CategoryService.getCategories(ownerId);
             setCategories(data);
         } catch (e) {
             console.error(e);
@@ -180,15 +184,19 @@ export default function InventoryScreen() {
             const priceNum = parseFloat(price);
             const priceInUSD = priceCurrency === 'VES' ? toUSD(priceNum, 'VES') : priceNum;
 
+            const ownerId = user?.ownerId || user?.uid || '';
             if (editingProduct) {
-                await ProductService.updateProduct(editingProduct.id!, {
+                const updatePayload: any = {
                     name,
                     price: priceInUSD,
-                    stock: stockVal,
                     minStockAlert: parseInt(minStock) || 5,
                     category: selectedCategory || 'General',
                     location: selectedLocation
-                });
+                };
+                if (stock.trim() !== '') {
+                    updatePayload.stock = stockVal;
+                }
+                await ProductService.updateProduct(editingProduct.id!, updatePayload);
             } else {
                 await ProductService.addProduct({
                     name,
@@ -198,7 +206,7 @@ export default function InventoryScreen() {
                     category: selectedCategory || 'General',
                     description: '',
                     location: selectedLocation
-                });
+                } as any, ownerId);
             }
             setProductModalVisible(false);
             toast.success(`¡Producto ${editingProduct ? 'actualizado' : 'registrado'} con éxito!`);
