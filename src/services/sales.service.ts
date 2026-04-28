@@ -103,7 +103,7 @@ export const SalesService = {
 
         // 3. EXECUTE WRITES
         for (const update of inventoryUpdates) {
-          transaction.update(update.ref as any, update.data);
+          transaction.update(update.ref as any, update.data as any);
         }
         for (const mov of movementLogs) {
           transaction.set(mov.ref as any, mov.data);
@@ -401,7 +401,7 @@ export const SalesService = {
         }
 
         for (const update of inventoryUpdates) {
-          transaction.update(update.ref as any, update.data);
+          transaction.update(update.ref as any, update.data as any);
         }
         for (const mov of movementLogs) {
           transaction.set(mov.ref as any, mov.data);

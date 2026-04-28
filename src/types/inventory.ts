@@ -14,6 +14,9 @@ export interface Product {
   updatedAt: number;
   variants?: ProductVariant[];
   location?: string;
+  active?: boolean;
+  deletedAt?: number;
+  ownerId?: string;
 }
 
 export interface ProductVariant {

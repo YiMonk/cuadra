@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { PlusCircle, Loader2, Contact2 } from 'lucide-react';
 import { useContactPicker } from '@/hooks/useContactPicker';
 import { useCurrency } from '@/context/CurrencyContext';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 // Icon mapping for categories
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -47,7 +48,7 @@ const getCategoryIcon = (name: string) => {
     return CATEGORY_ICONS[name] || <Tag size={16} />;
 };
 
-export default function POSScreen() {
+function POSScreen() {
     const router = useRouter();
     const { user: currentUser, isLoading: authLoading } = useAuth();
     const { items, total, selectedClient, setSelectedClient, addToCart, updateQuantity, clearCart } = useCart();
@@ -281,7 +282,7 @@ export default function POSScreen() {
                 phone: newClientPhone,
                 active: true,
             }, ownerId);
-            const newClient = { id: clientId, name: newClientName, phone: newClientPhone, active: true, createdAt: Date.now() };
+            const newClient = { id: clientId, name: newClientName, phone: newClientPhone, active: true, createdAt: Date.now(), updatedAt: Date.now() };
             setSelectedClient(newClient);
             setIsCreatingClient(false);
             setNewClientName('');
@@ -829,5 +830,13 @@ export default function POSScreen() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function Page() {
+    return (
+        <ErrorBoundary label="Punto de Venta">
+            <POSScreen />
+        </ErrorBoundary>
     );
 }

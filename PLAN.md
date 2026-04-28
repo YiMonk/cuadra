@@ -1291,49 +1291,49 @@ F1-01 (índices), F4-01, F6-01, F6-02, F6-06
 
 | ID | Descripción | Fase | Área | Prioridad | Estado |
 |----|-------------|------|------|-----------|--------|
-| F1-01 | Multi-tenancy: `ownerId` en todas las colecciones | 1 | Backend | CRÍTICO | ⬜ Pendiente |
-| F1-02 | Firebase Security Rules versionadas | 1 | Backend | CRÍTICO | ⬜ Pendiente |
-| F1-03 | `wipeDatabase` a Cloud Function | 1 | Backend | CRÍTICO | ⬜ Pendiente |
-| F1-04 | Crear staff con Cloud Function | 1 | Backend | CRÍTICO | ⬜ Pendiente |
-| F2-01 | Descuento correcto de stock de variantes | 2 | Backend | CRÍTICO | ⬜ Pendiente |
-| F2-02 | Validar stock no negativo en `adjustStock` | 2 | Backend | CRÍTICO | ⬜ Pendiente |
-| F2-03 | `writeBatch` en `payAllDebts`/`paySpecificDebts` | 2 | Backend | CRÍTICO | ⬜ Pendiente |
-| F2-04 | Proteger `deleteClient` con verificación de deudas | 2 | Backend | ALTO | ⬜ Pendiente |
-| F2-05 | `getSaleById` usar `getDoc` | 2 | Backend | ALTO | ⬜ Pendiente |
-| F2-06 | `stock_movements` en ventas y cancelaciones | 2 | Backend | MEDIO | ⬜ Pendiente |
-| F2-07 | Guardar tasa BCV en cada venta | 2 | Backend | MEDIO | ⬜ Pendiente |
-| F3-01 | Agregar `mobile_pay` en el POS | 3 | Frontend | CRÍTICO | ⬜ Pendiente |
-| F3-02 | Bug stock a 0 al editar producto | 3 | Frontend | CRÍTICO | ⬜ Pendiente |
-| F3-03 | Filtro incorrecto de owners en admin | 3 | Frontend | ALTO | ⬜ Pendiente |
-| F3-04 | `reloadUser` re-fetch Firestore | 3 | Frontend | ALTO | ⬜ Pendiente |
-| F3-05 | N+1 query en Cobranzas | 3 | Frontend | ALTO | ⬜ Pendiente |
-| F3-06 | `c.phone` optional chaining | 3 | Frontend | ALTO | ⬜ Pendiente |
-| F3-07 | Versión hardcodeada en Settings/UpdateDetector | 3 | Frontend | ALTO | ⬜ Pendiente |
-| F3-08 | `exchangeRate` inicial con fallback real | 3 | Frontend | MEDIO | ⬜ Pendiente |
-| F3-09 | Excluir canceladas de métricas de reportes | 3 | Frontend | BAJO | ⬜ Pendiente |
-| F4-01 | Next.js Middleware para rutas | 4 | Arquitectura | ALTO | ⬜ Pendiente |
-| F4-02 | Firebase Custom Claims para roles | 4 | Backend | ALTO | ⬜ Pendiente |
-| F4-03 | Paginación en `getAllSales` | 4 | Backend | ALTO | ⬜ Pendiente |
-| F4-04 | Error Boundaries en zonas críticas | 4 | Frontend | ALTO | ⬜ Pendiente |
-| F4-05 | Hook `useNotifications` desde AppLayout | 4 | Frontend | MEDIO | ⬜ Pendiente |
-| F4-06 | Unificar tipo `CartItem` | 4 | Frontend | ALTO | ⬜ Pendiente |
-| F4-07 | Caché de tasa BCV en `sessionStorage` | 4 | Frontend | MEDIO | ⬜ Pendiente |
-| F4-08 | `onError` en subscripciones Firestore | 4 | Backend | MEDIO | ⬜ Pendiente |
-| F4-09 | Crear `firestore.indexes.json` | 4 | Backend | MEDIO | ⬜ Pendiente |
-| F4-10 | Mover interfaces `Cashbox`/`Location` a `/types` | 4 | Arquitectura | BAJO | ⬜ Pendiente |
-| F5-01 | Capturar `paymentData` en checkout POS | 5 | Frontend | MEDIO | ⬜ Pendiente |
-| F5-02 | Selector de variantes en catálogo POS | 5 | Frontend | MEDIO | ⬜ Pendiente |
-| F5-03 | Balance de caja en `CashboxService` | 5 | Backend | MEDIO | ⬜ Pendiente |
-| F5-04 | Pagar deuda directamente en Cobranzas | 5 | Frontend | MEDIO | ⬜ Pendiente |
-| F5-05 | Confirmación por texto para wipe | 5 | Frontend | MEDIO | ⬜ Pendiente |
-| F5-06 | Servicio de resumen de reportes | 5 | Backend | MEDIO | ⬜ Pendiente |
-| F5-07 | Soft delete en productos y clientes | 5 | Backend | MEDIO | ⬜ Pendiente |
-| F6-01 | Corregir manifest.json e iconos PWA | 6 | Config | ALTO | ⬜ Pendiente |
-| F6-02 | Estrategia offline en Service Worker | 6 | Config | MEDIO | ⬜ Pendiente |
-| F6-03 | Eliminar console.log en producción | 6 | Frontend | BAJO | ⬜ Pendiente |
-| F6-04 | Atributos ARIA en botones y modales | 6 | Frontend | BAJO | ⬜ Pendiente |
-| F6-05 | Regex BCV para números con miles | 6 | Backend | MEDIO | ⬜ Pendiente |
-| F6-06 | Eliminar o implementar `PromoRule` | 6 | Arquitectura | BAJO | ⬜ Pendiente |
+| F1-01 | Multi-tenancy: `ownerId` en todas las colecciones | 1 | Backend | CRÍTICO | ✅ Completado |
+| F1-02 | Firebase Security Rules versionadas | 1 | Backend | CRÍTICO | ✅ Completado |
+| F1-03 | `wipeDatabase` a Cloud Function | 1 | Backend | CRÍTICO | ✅ Completado |
+| F1-04 | Crear staff con Cloud Function | 1 | Backend | CRÍTICO | ✅ Completado |
+| F2-01 | Descuento correcto de stock de variantes | 2 | Backend | CRÍTICO | ✅ Completado |
+| F2-02 | Validar stock no negativo en `adjustStock` | 2 | Backend | CRÍTICO | ✅ Completado |
+| F2-03 | `writeBatch` en `payAllDebts`/`paySpecificDebts` | 2 | Backend | CRÍTICO | ✅ Completado |
+| F2-04 | Proteger `deleteClient` con verificación de deudas | 2 | Backend | ALTO | ✅ Completado |
+| F2-05 | `getSaleById` usar `getDoc` | 2 | Backend | ALTO | ✅ Completado |
+| F2-06 | `stock_movements` en ventas y cancelaciones | 2 | Backend | MEDIO | ✅ Completado |
+| F2-07 | Guardar tasa BCV en cada venta | 2 | Backend | MEDIO | ✅ Completado |
+| F3-01 | Agregar `mobile_pay` en el POS | 3 | Frontend | CRÍTICO | ✅ Completado |
+| F3-02 | Bug stock a 0 al editar producto | 3 | Frontend | CRÍTICO | ✅ Completado |
+| F3-03 | Filtro incorrecto de owners en admin | 3 | Frontend | ALTO | ✅ Completado |
+| F3-04 | `reloadUser` re-fetch Firestore | 3 | Frontend | ALTO | ✅ Completado |
+| F3-05 | N+1 query en Cobranzas | 3 | Frontend | ALTO | ✅ Completado |
+| F3-06 | `c.phone` optional chaining | 3 | Frontend | ALTO | ✅ Completado |
+| F3-07 | Versión hardcodeada en Settings/UpdateDetector | 3 | Frontend | ALTO | ✅ Completado |
+| F3-08 | `exchangeRate` inicial con fallback real | 3 | Frontend | MEDIO | ✅ Completado |
+| F3-09 | Excluir canceladas de métricas de reportes | 3 | Frontend | BAJO | ✅ Completado |
+| F4-01 | Next.js Middleware para rutas | 4 | Arquitectura | ALTO | ✅ Completado |
+| F4-02 | Firebase Custom Claims para roles | 4 | Backend | ALTO | ✅ Completado |
+| F4-03 | Paginación en `getAllSales` | 4 | Backend | ALTO | ✅ Completado |
+| F4-04 | Error Boundaries en zonas críticas | 4 | Frontend | ALTO | ✅ Completado |
+| F4-05 | Hook `useNotifications` desde AppLayout | 4 | Frontend | MEDIO | ✅ Completado |
+| F4-06 | Unificar tipo `CartItem` | 4 | Frontend | ALTO | ✅ Completado |
+| F4-07 | Caché de tasa BCV en `sessionStorage` | 4 | Frontend | MEDIO | ✅ Completado |
+| F4-08 | `onError` en subscripciones Firestore | 4 | Backend | MEDIO | ✅ Completado |
+| F4-09 | Crear `firestore.indexes.json` | 4 | Backend | MEDIO | ✅ Completado |
+| F4-10 | Mover interfaces `Cashbox`/`Location` a `/types` | 4 | Arquitectura | BAJO | ✅ Completado |
+| F5-01 | Capturar `paymentData` en checkout POS | 5 | Frontend | MEDIO | ✅ Completado |
+| F5-02 | Selector de variantes en catálogo POS | 5 | Frontend | MEDIO | ✅ Completado |
+| F5-03 | Balance de caja en `CashboxService` | 5 | Backend | MEDIO | ✅ Completado |
+| F5-04 | Pagar deuda directamente en Cobranzas | 5 | Frontend | MEDIO | ✅ Completado |
+| F5-05 | Confirmación por texto para wipe | 5 | Frontend | MEDIO | ✅ Completado |
+| F5-06 | Servicio de resumen de reportes | 5 | Backend | MEDIO | ✅ Completado |
+| F5-07 | Soft delete en productos y clientes | 5 | Backend | MEDIO | ✅ Completado |
+| F6-01 | Corregir manifest.json e iconos PWA | 6 | Config | ALTO | 🔶 Parcial (faltan PNGs) |
+| F6-02 | Estrategia offline en Service Worker + IndexedDB persistence | 6 | Config | MEDIO | ✅ Completado |
+| F6-03 | Eliminar console.log en producción | 6 | Frontend | BAJO | ✅ Completado |
+| F6-04 | Atributos ARIA en botones y modales | 6 | Frontend | BAJO | ✅ Completado |
+| F6-05 | Regex BCV para números con miles | 6 | Backend | MEDIO | ✅ Completado |
+| F6-06 | Eliminar o implementar `PromoRule` | 6 | Arquitectura | BAJO | ✅ Completado |
 
 ---
 

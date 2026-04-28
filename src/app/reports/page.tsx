@@ -18,10 +18,11 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
 
-export default function ReportsScreen() {
+function ReportsScreen() {
     const router = useRouter();
     const { user, isLoading: authLoading } = useAuth();
     const { formatPrice, fromUSD, currency } = useCurrency();
@@ -423,5 +424,13 @@ export default function ReportsScreen() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function Page() {
+    return (
+        <ErrorBoundary label="Reportes">
+            <ReportsScreen />
+        </ErrorBoundary>
     );
 }

@@ -212,12 +212,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 // @ts-ignore
                                 item.onClick ? (
                                     // @ts-ignore
-                                    <button key={item.name} onClick={item.onClick} title={item.name} className="contents">
+                                    <button key={item.name} onClick={item.onClick} title={item.name} aria-label={item.name} className="contents">
                                         {content}
                                     </button>
                                 ) : (
                                     // @ts-ignore
-                                    <Link key={item.name} href={item.href} title={item.name} className="contents">
+                                    <Link key={item.name} href={item.href} title={item.name} aria-label={item.name} className="contents">
                                         {content}
                                     </Link>
                                 )
@@ -230,15 +230,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <button
                             onClick={toggleTheme}
                             className="w-12 h-12 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-90"
+                            aria-label={isDarkTheme ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                            title={isDarkTheme ? 'Modo Claro' : 'Modo Oscuro'}
                         >
                             {isDarkTheme ? <Moon size={22} /> : <Sun size={22} />}
                         </button>
 
-                        <div className="w-10 h-10 rounded-full border-2 border-white/20 p-0.5 relative group cursor-pointer overflow-hidden active:scale-95 transition-transform" onClick={() => router.push('/settings')}>
+                        <button
+                            className="w-10 h-10 rounded-full border-2 border-white/20 p-0.5 relative group cursor-pointer overflow-hidden active:scale-95 transition-transform"
+                            onClick={() => router.push('/settings')}
+                            aria-label={`Perfil de ${user?.displayName || 'usuario'}. Ir a configuración`}
+                            title="Configuración"
+                        >
                             <div className="w-full h-full bg-accent-primary rounded-full flex items-center justify-center text-[10px] font-black italic group-hover:bg-accent-secondary transition-colors text-white">
                                 {user?.displayName?.[0] || 'U'}
                             </div>
-                        </div>
+                        </button>
                     </div>
                 </div>
             </aside>
@@ -257,6 +264,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                         onClick={toggleCurrency}
                                         className="relative h-12 md:h-14 px-2.5 md:px-4 rounded-xl md:rounded-2xl ui-glass-card border border-ui-border/50 hover:border-accent-primary/50 hover:bg-accent-primary/5 transition-all duration-300 active:scale-90 flex items-center gap-2 md:gap-3 shadow-premium group overflow-hidden"
                                         title={`Cambiar a ${currency === 'USD' ? 'Bolívares (Bs.)' : 'Dólares ($)'}`}
+                                        aria-label={`Cambiar a ${currency === 'USD' ? 'Bolívares' : 'Dólares'}. Tasa BCV: ${exchangeRate.toFixed(2)}`}
                                     >
                                         <div className="absolute inset-0 bg-accent-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         <div className={`w-8 md:w-9 h-8 md:h-9 rounded-full flex items-center justify-center transition-all duration-500 font-black text-xs shrink-0 ${currency === 'USD' ? 'bg-accent-primary text-white' : 'bg-orange-500 text-white rotate-[360deg]'}`}>
@@ -271,7 +279,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     </button>
 
                                     {/* Cart Toggle Button */}
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             if (pathname !== '/pos') {
                                                 router.push('/pos');
@@ -281,6 +289,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                         }}
                                         className="relative w-12 md:w-14 h-12 md:h-14 rounded-xl md:rounded-2xl ui-glass-card border border-ui-border/50 hover:border-accent-primary/50 hover:bg-accent-primary/5 transition-all duration-300 active:scale-90 flex items-center justify-center shadow-premium group"
                                         title="Ver Carrito"
+                                        aria-label={`Ver carrito${cartItemsCount > 0 ? `, ${cartItemsCount} producto(s)` : ''}`}
                                     >
                                         <div className="absolute inset-0 bg-accent-primary/5 opacity-0 group-hover:opacity-100 rounded-2xl blur-xl transition-opacity" />
                                         <ShoppingCart size={24} className="text-ui-text-muted group-hover:text-accent-primary transition-colors relative z-10" />
@@ -293,8 +302,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
                                     {/* Notifications Button */}
                                     <div className="relative">
-                                        <button 
+                                        <button
                                             onClick={() => setNotificationsOpen(!notificationsOpen)}
+                                            aria-label={`Notificaciones${notifications.length > 0 ? `, ${notifications.length} nueva(s)` : ''}`}
+                                            aria-expanded={notificationsOpen}
+                                            aria-haspopup="true"
                                             className={`relative w-12 md:w-14 h-12 md:h-14 rounded-xl md:rounded-2xl transition-all duration-300 border flex items-center justify-center group active:scale-90 shadow-premium ${notificationsOpen ? 'bg-accent-primary/10 border-accent-primary text-accent-primary' : 'ui-glass-card border-ui-border/50 text-ui-text-muted hover:border-accent-primary/50 hover:text-accent-primary'}`}
                                         >
                                             <Bell size={24} className="transition-transform group-hover:rotate-12" />
@@ -412,7 +424,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         return (
                             // @ts-ignore
                             item.onClick ? (
-                                <button key={item.name} onClick={item.onClick} className="flex-1 h-full">
+                                <button key={item.name} onClick={item.onClick} aria-label={item.name} className="flex-1 h-full">
                                     {content}
                                 </button>
                             ) : (
@@ -421,6 +433,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     key={item.name}
                                     // @ts-ignore
                                     href={item.href}
+                                    aria-label={item.name}
                                     className="flex-1 h-full"
                                 >
                                     {content}

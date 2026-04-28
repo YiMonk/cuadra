@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 export const firebaseConfig = {
@@ -27,3 +27,16 @@ if (getApps().length === 0) {
 export { auth };
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Enable offline persistence (IndexedDB) — runs only once in browser context
+if (typeof window !== 'undefined') {
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (process.env.NODE_ENV === 'development') {
+            if (err.code === 'failed-precondition') {
+                console.warn('Firestore persistence unavailable: multiple tabs open');
+            } else if (err.code === 'unimplemented') {
+                console.warn('Firestore persistence not supported in this browser');
+            }
+        }
+    });
+}

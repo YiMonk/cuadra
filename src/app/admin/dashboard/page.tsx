@@ -22,8 +22,9 @@ import { toast } from 'sonner';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sale } from '@/types/sales';
 import { Select } from '@/components/ui/Select';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
-export default function AdminGodDashboardPage() {
+function AdminGodDashboardPage() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState<UserMetadata[]>([]);
@@ -304,5 +305,13 @@ export default function AdminGodDashboardPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function Page() {
+    return (
+        <ErrorBoundary label="Panel Admin">
+            <AdminGodDashboardPage />
+        </ErrorBoundary>
     );
 }
