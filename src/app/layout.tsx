@@ -20,7 +20,8 @@ export const metadata: Metadata = {
     title: "Cuadra",
   },
   icons: {
-    apple: "/icon-192.png",
+    icon: "/icon.svg",
+    apple: "/icon.svg",
   },
 };
 
