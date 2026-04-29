@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Zap, Shield, BarChart3 } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -102,7 +102,7 @@ export default function LoginPage() {
         } catch (error: any) {
             let message = 'No se pudo enviar el correo de recuperación';
             if (error.code === 'auth/user-not-found') {
-                // For security, some apps don't reveal if user exists. 
+                // For security, some apps don't reveal if user exists.
                 // But the user requested "if registered", so we can be explicit or followed standard.
                 // However Firebase often returns success even if user not found to prevent user enumeration.
                 message = 'Si el correo está registrado, recibirás las instrucciones en breve.';
@@ -113,137 +113,238 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-[#050505] relative overflow-hidden">
-            {/* Ambient Background Glows */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/20 dark:bg-blue-500/10 blur-[120px] rounded-full" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-500/20 dark:bg-teal-500/10 blur-[120px] rounded-full" />
-            
-            <div className="w-full max-w-md relative z-10">
-                <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-linear-to-tr from-blue-600 to-teal-400 rounded-2xl mx-auto mb-4 flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-blue-500/20">
-                        C
-                    </div>
-                    <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase">Cuadra</h1>
-                    <p className="text-gray-600 dark:text-ui-text-muted mt-3 font-bold uppercase tracking-widest text-[11px] opacity-80 italic">Gestiona tus ventas de forma simple</p>
-                </div>
+        <div className="min-h-screen w-full bg-[#080808] relative overflow-hidden flex items-center justify-center">
+            {/* Animated Background Gradients */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '8s' }} />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-teal-500/15 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
+                <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-blue-400/10 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
+            </div>
 
-                <Card className="overflow-hidden border border-black/5 dark:border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] bg-white/80 dark:bg-black/40 backdrop-blur-2xl rounded-[40px] animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                    <CardContent className="pt-10 p-8">
-                        {view === 'login' ? (
-                            <form onSubmit={handleLogin} className="space-y-4 animate-in slide-in-from-left duration-300">
-                                <Input
-                                    label="Correo Electrónico"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="ejemplo@correo.com"
-                                    required
-                                />
+            {/* Grid Pattern Overlay */}
+            <div className="absolute inset-0 opacity-[0.02]" style={{
+                backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(59, 130, 246, .1) 25%, rgba(59, 130, 246, .1) 26%, transparent 27%, transparent 74%, rgba(59, 130, 246, .1) 75%, rgba(59, 130, 246, .1) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(59, 130, 246, .1) 25%, rgba(59, 130, 246, .1) 26%, transparent 27%, transparent 74%, rgba(59, 130, 246, .1) 75%, rgba(59, 130, 246, .1) 76%, transparent 77%, transparent)',
+                backgroundSize: '50px 50px'
+            }} />
 
-                                <Input
-                                    label="Contraseña"
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    required
-                                    rightIcon={
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="focus:outline-none hover:text-ui-text transition-colors"
-                                        >
-                                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                        </button>
-                                    }
-                                />
-
-                                {errorMsg && (
-                                    <div className="p-4 rounded-2xl bg-red-500/10 text-red-500 text-xs font-bold border border-red-500/20 animate-shake">
-                                        {errorMsg}
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                    {/* Left Column - Brand & Features */}
+                    <div className="hidden lg:flex flex-col justify-between h-full py-12">
+                        <div className="animate-in fade-in slide-in-from-left duration-1000">
+                            {/* Brand Logo & Name */}
+                            <div className="mb-12">
+                                <div className="relative inline-block">
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-teal-400 rounded-[24px] blur-xl opacity-50" />
+                                    <div className="relative w-20 h-20 bg-gradient-to-tr from-blue-600 to-teal-400 rounded-[24px] flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-blue-500/40">
+                                        C
                                     </div>
-                                )}
-
-                                <div className="flex justify-end">
-                                    <button
-                                        type="button"
-                                        onClick={() => setView('forgot')}
-                                        className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition"
-                                    >
-                                        ¿Olvidaste tu contraseña?
-                                    </button>
                                 </div>
-
-                                <Button type="submit" className="w-full mt-2 bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-xl shadow-blue-500/20" size="lg" isLoading={loading}>
-                                    Iniciar Sesión
-                                </Button>
-                            </form>
-                        ) : (
-                            <form onSubmit={handleResetPassword} className="space-y-5 animate-in slide-in-from-right duration-300">
-                                <div className="text-center mb-2">
-                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recuperar Acceso</h2>
-                                    <p className="text-sm text-gray-500 mt-1">Ingresa tu correo y te enviaremos instrucciones.</p>
-                                </div>
-
-                                <Input
-                                    label="Correo Electrónico"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="ejemplo@correo.com"
-                                    required
-                                />
-
-                                {errorMsg && (
-                                    <div className="p-4 rounded-2xl bg-red-500/10 text-red-500 text-xs font-bold border border-red-500/20">
-                                        {errorMsg}
-                                    </div>
-                                )}
-
-                                {successMsg && (
-                                    <div className="p-5 rounded-2xl bg-emerald-500/10 text-emerald-500 text-xs font-bold border border-emerald-500/20 leading-relaxed shadow-lg shadow-emerald-500/5 transition-all">
-                                        <div className="flex items-center gap-2 mb-1 text-[10px] uppercase tracking-widest">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                            Enviado correctamente
-                                        </div>
-                                        {successMsg}
-                                    </div>
-                                )}
-
-                                <Button type="submit" className="w-full" size="lg" isLoading={loading} disabled={!!successMsg}>
-                                    Enviar Instrucciones
-                                </Button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => { setView('login'); setSuccessMsg(''); setErrorMsg(''); }}
-                                    className="w-full text-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
-                                >
-                                    Volver al inicio de sesión
-                                </button>
-                            </form>
-                        )}
-
-                        <div className="mt-10">
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-white/5" />
-                                </div>
-                                <div className="relative flex justify-center text-[10px] font-black tracking-widest uppercase">
-                                    <span className="px-4 bg-white dark:bg-[#0a0a0a] text-ui-text-muted rounded-full transition-colors">¿No tienes una cuenta?</span>
-                                </div>
+                                <h1 className="text-5xl font-black tracking-[0.05em] text-white mt-6 uppercase">CUADRA</h1>
+                                <p className="text-teal-400 font-bold uppercase tracking-[0.15em] text-sm mt-3">Punto de Venta Inteligente</p>
                             </div>
 
-                            <div className="mt-6">
-                                <Link href="/auth/register" className="block">
-                                    <Button variant="outline" className="w-full" size="md">
-                                        Crear una cuenta
-                                    </Button>
-                                </Link>
+                            {/* Features */}
+                            <div className="space-y-6">
+                                <div className="flex gap-4 items-start group">
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center group-hover:bg-blue-500/30 transition-all duration-300">
+                                        <Zap size={24} className="text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-white font-bold text-sm uppercase tracking-wider">Gestión Rápida</h3>
+                                        <p className="text-gray-400 text-xs mt-1 leading-relaxed">Procesa ventas y reportes en segundos</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 items-start group">
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center group-hover:bg-teal-500/30 transition-all duration-300">
+                                        <Shield size={24} className="text-teal-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-white font-bold text-sm uppercase tracking-wider">Seguridad Total</h3>
+                                        <p className="text-gray-400 text-xs mt-1 leading-relaxed">Protección empresarial para tus datos</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 items-start group">
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center group-hover:bg-purple-500/30 transition-all duration-300">
+                                        <BarChart3 size={24} className="text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-white font-bold text-sm uppercase tracking-wider">Análisis Profundo</h3>
+                                        <p className="text-gray-400 text-xs mt-1 leading-relaxed">Metricas en tiempo real de tu negocio</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+
+                        {/* Bottom Text */}
+                        <div className="animate-in fade-in duration-1000 delay-500">
+                            <p className="text-gray-500 text-xs font-medium uppercase tracking-widest">
+                                Confían en nosotros más de <span className="text-blue-400 font-bold">500 comerciantes</span> en Venezuela
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Right Column - Form */}
+                    <div className="w-full max-w-md mx-auto lg:mx-0 animate-in fade-in slide-in-from-right duration-1000">
+                        {/* Mobile Brand - Only visible on mobile */}
+                        <div className="lg:hidden text-center mb-8">
+                            <div className="relative inline-block">
+                                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-teal-400 rounded-[20px] blur-xl opacity-50" />
+                                <div className="relative w-16 h-16 bg-gradient-to-tr from-blue-600 to-teal-400 rounded-[20px] flex items-center justify-center text-white text-2xl font-black shadow-2xl shadow-blue-500/40 mx-auto">
+                                    C
+                                </div>
+                            </div>
+                            <h1 className="text-3xl font-black tracking-[0.05em] text-white mt-4 uppercase">CUADRA</h1>
+                        </div>
+
+                        {/* Glassmorphic Card */}
+                        <Card className="overflow-hidden border border-white/10 bg-white/5 backdrop-blur-2xl rounded-[32px] shadow-2xl shadow-black/40 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+                            <CardContent className="pt-12 px-8 pb-10">
+                                {view === 'login' ? (
+                                    <form onSubmit={handleLogin} className="space-y-5 animate-in slide-in-from-left duration-300">
+                                        {/* Form Title */}
+                                        <div className="mb-8">
+                                            <h2 className="text-2xl font-black text-white uppercase tracking-tight">Inicia Sesión</h2>
+                                            <p className="text-gray-400 text-xs mt-2 font-medium uppercase tracking-widest">Accede a tu punto de venta</p>
+                                        </div>
+
+                                        {/* Email Input */}
+                                        <Input
+                                            label="Correo Electrónico"
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="ejemplo@correo.com"
+                                            required
+                                            leftIcon={<Mail size={18} />}
+                                        />
+
+                                        {/* Password Input */}
+                                        <Input
+                                            label="Contraseña"
+                                            type={showPassword ? "text" : "password"}
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            required
+                                            leftIcon={<Lock size={18} />}
+                                            rightIcon={
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="focus:outline-none hover:text-white transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                </button>
+                                            }
+                                        />
+
+                                        {/* Error Message */}
+                                        {errorMsg && (
+                                            <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wider animate-in pulse duration-300">
+                                                {errorMsg}
+                                            </div>
+                                        )}
+
+                                        {/* Forgot Password Link */}
+                                        <div className="flex justify-end pt-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setView('forgot')}
+                                                className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-wider"
+                                            >
+                                                ¿Olvidaste tu contraseña?
+                                            </button>
+                                        </div>
+
+                                        {/* Submit Button */}
+                                        <Button type="submit" className="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300" size="lg" isLoading={loading}>
+                                            Iniciar Sesión
+                                        </Button>
+                                    </form>
+                                ) : (
+                                    <form onSubmit={handleResetPassword} className="space-y-5 animate-in slide-in-from-right duration-300">
+                                        {/* Form Title */}
+                                        <div className="text-center mb-8">
+                                            <h2 className="text-2xl font-black text-white uppercase tracking-tight">Recuperar Acceso</h2>
+                                            <p className="text-gray-400 text-xs mt-2 font-medium uppercase tracking-widest">Te enviaremos instrucciones por correo</p>
+                                        </div>
+
+                                        {/* Email Input */}
+                                        <Input
+                                            label="Correo Electrónico"
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="ejemplo@correo.com"
+                                            required
+                                            leftIcon={<Mail size={18} />}
+                                        />
+
+                                        {/* Error Message */}
+                                        {errorMsg && (
+                                            <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wider">
+                                                {errorMsg}
+                                            </div>
+                                        )}
+
+                                        {/* Success Message */}
+                                        {successMsg && (
+                                            <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider leading-relaxed">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                                    Éxito
+                                                </div>
+                                                {successMsg}
+                                            </div>
+                                        )}
+
+                                        {/* Submit Button */}
+                                        <Button type="submit" className="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300" size="lg" isLoading={loading} disabled={!!successMsg}>
+                                            Enviar Instrucciones
+                                        </Button>
+
+                                        {/* Back Button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => { setView('login'); setSuccessMsg(''); setErrorMsg(''); }}
+                                            className="w-full text-center text-xs font-bold text-gray-400 hover:text-gray-300 transition-colors uppercase tracking-wider pt-2"
+                                        >
+                                            Volver al Inicio de Sesión
+                                        </button>
+                                    </form>
+                                )}
+
+                                {/* Divider */}
+                                {view === 'login' && (
+                                    <>
+                                        <div className="mt-10">
+                                            <div className="relative">
+                                                <div className="absolute inset-0 flex items-center">
+                                                    <div className="w-full border-t border-white/10" />
+                                                </div>
+                                                <div className="relative flex justify-center text-[10px] font-black tracking-widest uppercase">
+                                                    <span className="px-4 bg-white/5 text-gray-500 rounded-full transition-colors">¿No tienes una cuenta?</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Register Link */}
+                                            <div className="mt-6">
+                                                <Link href="/auth/register" className="block">
+                                                    <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10 font-black text-sm uppercase tracking-widest" size="md">
+                                                        Crear una Cuenta
+                                                    </Button>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
             </div>
         </div>
     );

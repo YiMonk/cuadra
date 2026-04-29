@@ -58,7 +58,7 @@ function AdminGodDashboardPage() {
         if (!user || wipeConfirmText !== 'ELIMINAR TODO') return;
         setWiping(true);
         try {
-            await DataManager.wipeDatabase();
+            await DataManager.wipeDatabase(user.uid);
             toast.success('Base de datos limpiada con éxito');
             setShowWipeModal(false);
             setWipeConfirmText('');

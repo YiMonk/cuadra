@@ -14,7 +14,10 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { toast } from 'sonner';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut as firebaseSignOut } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { firebaseConfig, db } from '@/config/firebaseConfig';
 
 type AdminTab = 'team' | 'locations' | 'cashboxes';
 
@@ -90,26 +93,39 @@ export default function AdministrationScreen() {
         e.preventDefault();
         if (!staffName || !staffEmail || !staffPassword) return;
         setIsSaving(true);
+
+        // Secondary Firebase app — creates the Auth user without signing out the owner
+        const secondaryApp = initializeApp(firebaseConfig, `staff-${Date.now()}`);
+        const secondaryAuth = getAuth(secondaryApp);
+
         try {
-            // F1-04: Use Cloud Function to create staff — avoids signing out the owner
-            const fns = getFunctions();
-            const createStaffFn = httpsCallable(fns, 'createStaffMember');
-            await createStaffFn({
+            const credential = await createUserWithEmailAndPassword(secondaryAuth, staffEmail.trim(), staffPassword);
+            await updateProfile(credential.user, { displayName: staffName });
+
+            // Owner writes the staff Firestore document from the primary app context
+            await setDoc(doc(db, 'users', credential.user.uid), {
+                id: credential.user.uid,
                 email: staffEmail.trim(),
-                password: staffPassword,
                 displayName: staffName,
+                role: 'staff',
+                ownerId: owner!.uid,
+                active: true,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
             });
+
             toast.success("Miembro creado");
             setStaffModalVisible(false);
             setStaffName(''); setStaffEmail(''); setStaffPassword('');
         } catch (error: any) {
-            const code = error?.code ?? '';
-            if (code.includes('already-in-use') || error?.message?.includes('already-in-use')) {
-                toast.error("Error: Correo ya en uso");
+            if (error?.code === 'auth/email-already-in-use') {
+                toast.error("Ese correo ya está registrado");
             } else {
-                toast.error("Error: No se pudo crear el miembro");
+                toast.error("No se pudo crear el miembro");
             }
         } finally {
+            await firebaseSignOut(secondaryAuth).catch(() => {});
+            await deleteApp(secondaryApp).catch(() => {});
             setIsSaving(false);
         }
     };
@@ -151,10 +167,9 @@ export default function AdministrationScreen() {
 
         try {
             if (deleteConfirmModal.type === 'staff') {
-                // F1-04: Use Cloud Function to delete staff from Auth + Firestore
-                const fns = getFunctions();
-                const deleteStaffFn = httpsCallable(fns, 'deleteStaffMember');
-                await deleteStaffFn({ uid: deleteConfirmModal.id });
+                // Soft-delete: desactiva la cuenta. El login rechaza usuarios inactivos.
+                // (La cuenta de Auth sigue existiendo pero no puede acceder a la app)
+                await UserService.updateUser(deleteConfirmModal.id, { active: false, updatedAt: Date.now() });
             } else if (deleteConfirmModal.type === 'location') await LocationService.deleteLocation(deleteConfirmModal.id);
             else if (deleteConfirmModal.type === 'cashbox') await CashboxService.deleteCashbox(deleteConfirmModal.id);
             

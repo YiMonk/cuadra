@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { Rubik } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import AppLayout from "@/components/layout/AppLayout";
+
+const rubik = Rubik({
+  subsets: ["latin"],
+  variable: "--font-rubik",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Cuadra APP",
@@ -32,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="antialiased font-sans">
+      <body className={`${rubik.variable} antialiased font-sans`}>
         <Providers>
           <AppLayout>
             {children}

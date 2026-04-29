@@ -2,17 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Use JWT Custom Claims (set by syncUserClaims Cloud Function) — no extra reads needed
+    // Reads role from Firestore document (no Cloud Functions / Custom Claims needed on Spark plan)
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
     function getRole() {
-      return request.auth.token.get('role', null);
+      return getUserData().role;
     }
 
-    function getTokenOwnerId() {
-      return request.auth.token.get('ownerId', request.auth.uid);
+    function getEffectiveOwnerId() {
+      return getRole() == 'owner' ? request.auth.uid : getUserData().ownerId;
     }
 
     function isAdminGod() {
@@ -25,10 +29,6 @@ service cloud.firestore {
 
     function isOwner() {
       return isAuthenticated() && getRole() == 'owner';
-    }
-
-    function getEffectiveOwnerId() {
-      return getRole() == 'owner' ? request.auth.uid : getTokenOwnerId();
     }
 
     function ownerIdMatches(docOwnerId) {
@@ -45,9 +45,16 @@ service cloud.firestore {
       allow read: if isAdmin()
         || request.auth.uid == userId
         || (isAuthenticated() && resource.data.ownerId == getEffectiveOwnerId());
-      allow create: if (request.auth.uid == userId
-        && request.resource.data.role == 'owner'
-        && request.resource.data.active == true)
+      allow create: if
+        // Self-registration as owner
+        (request.auth.uid == userId
+          && request.resource.data.role == 'owner'
+          && request.resource.data.active == true)
+        // Owner creating a staff document via secondary Firebase app (Spark plan workaround)
+        || (isOwner()
+          && request.resource.data.role == 'staff'
+          && request.resource.data.ownerId == request.auth.uid
+          && request.resource.data.active == true)
         || isAdmin();
       allow update: if (request.auth.uid == userId && isNotChangingProtectedFields())
         || isAdmin();
@@ -55,7 +62,7 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
       allow create: if isAuthenticated()
         && ownerIdMatches(request.resource.data.ownerId)
         && request.resource.data.price is number
@@ -64,11 +71,11 @@ service cloud.firestore {
         && request.resource.data.stock >= 0;
       allow update: if ownerIdMatches(resource.data.ownerId)
         && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if isOwner() && request.auth.uid == resource.data.ownerId;
+      allow delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
     }
 
     match /sales/{saleId} {
-      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
       allow create: if isAuthenticated()
         && ownerIdMatches(request.resource.data.ownerId)
         && request.resource.data.total is number
@@ -79,47 +86,45 @@ service cloud.firestore {
         && request.resource.data.ownerId == resource.data.ownerId
         && !request.resource.data.diff(resource.data)
             .affectedKeys().hasAny(['items', 'total', 'createdBy', 'ownerId']);
-      allow delete: if false;
+      allow delete: if isAdminGod();
     }
 
     match /clients/{clientId} {
-      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
       allow create: if isAuthenticated()
         && ownerIdMatches(request.resource.data.ownerId);
       allow update: if ownerIdMatches(resource.data.ownerId)
         && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if isOwner() && request.auth.uid == resource.data.ownerId;
+      allow delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
     }
 
     match /categories/{catId} {
-      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
       allow create: if isAuthenticated()
         && ownerIdMatches(request.resource.data.ownerId);
       allow update: if ownerIdMatches(resource.data.ownerId);
-      allow delete: if isOwner() && request.auth.uid == resource.data.ownerId;
+      allow delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
     }
 
     match /cashboxes/{cashboxId} {
-      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
       allow create: if isOwner()
         && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isOwner()
-        && request.auth.uid == resource.data.ownerId;
+      allow update, delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
     }
 
     match /locations/{locationId} {
-      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
       allow create: if isOwner()
         && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isOwner()
-        && request.auth.uid == resource.data.ownerId;
+      allow update, delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
     }
 
     match /stock_movements/{movId} {
-      allow read: if ownerIdMatches(resource.data.ownerId);
+      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
       allow create: if isAuthenticated()
         && ownerIdMatches(request.resource.data.ownerId);
-      allow update, delete: if false;
+      allow update, delete: if isAdminGod();
     }
 
     match /admin_activities/{activityId} {

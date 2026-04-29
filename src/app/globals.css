@@ -61,7 +61,7 @@
   --color-accent-primary: var(--accent-primary);
   --color-accent-danger: var(--accent-danger);
   
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-rubik), "Helvetica Neue", Arial, sans-serif;
   
   --color-ios-blue: #007AFF;
   --color-ios-red: #FF3B30;

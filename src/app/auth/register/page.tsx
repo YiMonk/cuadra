@@ -9,7 +9,7 @@ import { UserService } from '@/services/user.service';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterPage() {
@@ -76,115 +76,162 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-950">
-            <div className="w-full max-w-md">
+        <div className="min-h-screen w-full bg-[#080808] relative overflow-hidden flex items-center justify-center">
+            {/* Animated Background Gradients */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '8s' }} />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-teal-500/15 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
+                <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-blue-400/10 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
+            </div>
 
-                <div className="mb-6">
-                    <Link href="/auth/login" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 dark:hover:text-white transition group">
-                        <ArrowLeft size={16} className="mr-2 transform group-hover:-translate-x-1 transition" />
-                        Volver
-                    </Link>
-                </div>
+            {/* Grid Pattern Overlay */}
+            <div className="absolute inset-0 opacity-[0.02]" style={{
+                backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(59, 130, 246, .1) 25%, rgba(59, 130, 246, .1) 26%, transparent 27%, transparent 74%, rgba(59, 130, 246, .1) 75%, rgba(59, 130, 246, .1) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(59, 130, 246, .1) 25%, rgba(59, 130, 246, .1) 26%, transparent 27%, transparent 74%, rgba(59, 130, 246, .1) 75%, rgba(59, 130, 246, .1) 76%, transparent 77%, transparent)',
+                backgroundSize: '50px 50px'
+            }} />
 
-                <div className="mb-8">
-                    <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">Crear Cuenta</h1>
-                    <p className="text-gray-500 mt-2 font-medium">Únete a la plataforma para gestionar tu negocio</p>
-                </div>
+            <div className="relative z-10 w-full max-w-2xl mx-auto px-4 py-8">
+                <div className="w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                    {/* Back Button */}
+                    <div className="mb-8">
+                        <Link href="/auth/login" className="inline-flex items-center text-xs font-bold text-gray-400 hover:text-gray-200 transition-colors group uppercase tracking-wider">
+                            <ArrowLeft size={16} className="mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" />
+                            Volver
+                        </Link>
+                    </div>
 
-                <Card>
-                    <CardContent className="pt-6">
-                        <form onSubmit={handleRegister} className="space-y-4">
-                            <Input
-                                label="Nombre Completo"
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="Juan Pérez"
-                                required
-                            />
-
-                            <Input
-                                label="Correo Electrónico"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="ejemplo@correo.com"
-                                required
-                            />
-
-                             <Input
-                                label="Contraseña"
-                                type={showPassword ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                required
-                                rightIcon={
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="focus:outline-none hover:text-ui-text transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                    </button>
-                                }
-                            />
-
-                            <Input
-                                label="Confirmar Contraseña"
-                                type={showPassword ? "text" : "password"}
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="••••••••"
-                                required
-                                rightIcon={
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="focus:outline-none hover:text-ui-text transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                    </button>
-                                }
-                            />
-
-                            {errorMsg && (
-                                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium border border-red-100 dark:border-red-900/50">
-                                    {errorMsg}
-                                </div>
-                            )}
-
-                            <Button type="submit" className="w-full mt-4" size="lg" isLoading={loading}>
-                                Completar Registro
-                            </Button>
-                        </form>
-
-                        <div className="mt-8">
+                    {/* Brand Section */}
+                    <div className="mb-10 animate-in fade-in slide-in-from-top duration-700">
+                        <div className="inline-block">
                             <div className="relative">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-200 dark:border-gray-800" />
+                                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-teal-400 rounded-[20px] blur-xl opacity-50" />
+                                <div className="relative w-16 h-16 bg-gradient-to-tr from-blue-600 to-teal-400 rounded-[20px] flex items-center justify-center text-white text-2xl font-black shadow-2xl shadow-blue-500/40">
+                                    C
                                 </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-3 bg-white dark:bg-gray-900 text-gray-500">O regístrate con</span>
-                                </div>
-                            </div>
-
-                            <div className="mt-6 text-center">
-                                <Button type="button" variant="outline" className="w-full" size="md">
-                                    Google
-                                </Button>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                        <h1 className="text-3xl font-black tracking-[0.05em] text-white mt-4 uppercase">Crear Cuenta</h1>
+                        <p className="text-gray-400 mt-2 font-medium text-sm">Únete a CUADRA y gestiona tu negocio de forma inteligente</p>
+                    </div>
 
-                <div className="mt-8 text-center text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">¿Ya tienes una cuenta? </span>
-                    <Link href="/auth/login" className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 transition">
-                        Iniciar Sesión
-                    </Link>
+                    {/* Glassmorphic Card */}
+                    <Card className="overflow-hidden border border-white/10 bg-white/5 backdrop-blur-2xl rounded-[32px] shadow-2xl shadow-black/40 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+                        <CardContent className="pt-12 px-8 pb-10">
+                            <form onSubmit={handleRegister} className="space-y-5 animate-in slide-in-from-left duration-500">
+                                {/* Form Title */}
+                                <div className="mb-8">
+                                    <h2 className="text-2xl font-black text-white uppercase tracking-tight">Registro</h2>
+                                    <p className="text-gray-400 text-xs mt-2 font-medium uppercase tracking-widest">Completa tus datos para empezar</p>
+                                </div>
+
+                                {/* Name Input */}
+                                <Input
+                                    label="Nombre Completo"
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Juan Pérez"
+                                    required
+                                    leftIcon={<User size={18} />}
+                                />
+
+                                {/* Email Input */}
+                                <Input
+                                    label="Correo Electrónico"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="ejemplo@correo.com"
+                                    required
+                                    leftIcon={<Mail size={18} />}
+                                />
+
+                                {/* Password Input */}
+                                <Input
+                                    label="Contraseña"
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                    leftIcon={<Lock size={18} />}
+                                    rightIcon={
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="focus:outline-none hover:text-white transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    }
+                                />
+
+                                {/* Confirm Password Input */}
+                                <Input
+                                    label="Confirmar Contraseña"
+                                    type={showPassword ? "text" : "password"}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                    leftIcon={<Lock size={18} />}
+                                    rightIcon={
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="focus:outline-none hover:text-white transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    }
+                                />
+
+                                {/* Error Message */}
+                                {errorMsg && (
+                                    <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wider animate-in pulse duration-300">
+                                        {errorMsg}
+                                    </div>
+                                )}
+
+                                {/* Password Requirements */}
+                                <div className="pt-2 pb-4 px-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-bold uppercase tracking-wider">
+                                    Mínimo 6 caracteres para tu contraseña
+                                </div>
+
+                                {/* Submit Button */}
+                                <Button type="submit" className="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300" size="lg" isLoading={loading}>
+                                    Crear Cuenta
+                                </Button>
+                            </form>
+
+                            {/* Divider */}
+                            <div className="mt-10">
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-white/10" />
+                                    </div>
+                                    <div className="relative flex justify-center text-[10px] font-black tracking-widest uppercase">
+                                        <span className="px-4 bg-white/5 text-gray-500 rounded-full transition-colors">¿Ya tienes una cuenta?</span>
+                                    </div>
+                                </div>
+
+                                {/* Login Link */}
+                                <div className="mt-6">
+                                    <Link href="/auth/login" className="block">
+                                        <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10 font-black text-sm uppercase tracking-widest" size="md">
+                                            Inicia Sesión
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Footer Text */}
+                    <div className="mt-8 text-center text-xs text-gray-500 font-medium uppercase tracking-widest">
+                        Al registrarte aceptas nuestros <Link href="#" className="text-blue-400 hover:text-blue-300 transition-colors font-bold">Términos de Servicio</Link>
+                    </div>
                 </div>
-
             </div>
         </div>
     );
