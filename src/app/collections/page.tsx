@@ -22,7 +22,7 @@ export default function CollectionsScreen() {
     const [filteredDebtors, setFilteredDebtors] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<'debt' | 'date'>('debt');
-    const [reminderModal, setReminderModal] = useState<{client: any, debt: number} | null>(null);
+    const [reminderModal, setReminderModal] = useState<{client: any, debt: number, sales: any[]} | null>(null);
     const [payModal, setPayModal] = useState<{client: any, sales: any[], debt: number} | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mobile_pay'>('cash');
     const [isPaying, setIsPaying] = useState(false);
@@ -125,13 +125,11 @@ export default function CollectionsScreen() {
 
             const logo = await loadImage('/Logotipo.svg').catch(() => null);
 
-            // Collect items if details requested
             const allItems: any[] = [];
             if (includeDetails) {
                 reminderModal.sales.forEach((s: any) => allItems.push(...s.items));
             }
 
-            // Dynamic height calculation
             const itemLineHeight = 35;
             const detailHeight = includeDetails ? allItems.length * itemLineHeight : 0;
             const baseHeight = includeDetails ? 500 : 450;
@@ -148,24 +146,20 @@ export default function CollectionsScreen() {
                 if (ctx.roundRect) {
                     ctx.roundRect(x, y, w, h, r);
                 } else {
-                    // Fallback to basic rect if roundRect is not supported
                     ctx.rect(x, y, w, h);
                 }
             };
 
-            // 1. Background
             drawRoundedRect(0, 0, 400, totalHeight, radius);
             ctx.clip();
             ctx.fillStyle = '#0D0B1F'; 
             ctx.fillRect(0, 0, 400, totalHeight);
 
-            // 2. Border
             ctx.strokeStyle = '#7C3AED'; 
             ctx.lineWidth = 14;
             drawRoundedRect(7, 7, 386, totalHeight - 14, radius);
             ctx.stroke();
 
-            // 3. Logo
             if (logo) {
                 const logoWidth = 220;
                 const logoHeight = (logoWidth * logo.height) / logo.width;
@@ -179,7 +173,6 @@ export default function CollectionsScreen() {
                 ctx.fillText('SISTEMA DE GESTIÓN', 200, 55 + logoHeight);
             }
 
-            // 4. Client Info
             ctx.fillStyle = 'rgba(255,255,255,0.5)';
             ctx.font = 'bold 10px Inter, sans-serif';
             ctx.textAlign = 'left';
@@ -190,7 +183,6 @@ export default function CollectionsScreen() {
 
             let currentY = 195;
 
-            // 5. Product Breakdown Section (Conditional)
             if (includeDetails && allItems.length > 0) {
                 ctx.fillStyle = 'rgba(255,255,255,0.3)';
                 ctx.font = 'black 10px Inter, sans-serif';
@@ -222,7 +214,6 @@ export default function CollectionsScreen() {
                 currentY += 20;
             }
 
-            // 6. Summary Footer
             const summaryY = Math.max(currentY, totalHeight - 180);
             ctx.strokeStyle = '#7C3AED';
             ctx.lineWidth = 2;
@@ -241,7 +232,6 @@ export default function CollectionsScreen() {
             ctx.font = 'bold 10px Inter, sans-serif';
             ctx.fillText(`TASA BCV: Bs. ${exchangeRate.toFixed(2)}`, 45, vesY + 20);
 
-            // Footer Link
             ctx.fillStyle = 'rgba(255,255,255,0.2)';
             ctx.textAlign = 'center';
             ctx.font = '900 10px Inter, sans-serif';
@@ -328,7 +318,6 @@ export default function CollectionsScreen() {
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500 pb-24">
 
-            {/* Header bento */}
             <div className="liquid-glass rounded-[24px] p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
                 <div className="text-center md:text-left">
                     <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Cobranzas</h1>
