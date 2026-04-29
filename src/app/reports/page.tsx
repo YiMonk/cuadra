@@ -10,7 +10,7 @@ import { UserService } from '@/services/user.service';
 import { Sale } from '@/types/sales';
 import { UserMetadata } from '@/services/user.service';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet } from 'lucide-react';
+import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet, Eye, Info, AlertCircle, X, Clock, CreditCard, Wallet, Banknote } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -38,6 +38,13 @@ function ReportsScreen() {
     const [chartData, setChartData] = useState<any[]>([]);
     const [pieData, setPieData] = useState<any[]>([]);
     const [cashboxMetrics, setCashboxMetrics] = useState<any[]>([]);
+    
+    // Modal State
+    const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditingPayment, setIsEditingPayment] = useState(false);
+    const [tempPaymentData, setTempPaymentData] = useState({ reference: '', bank: '', date: '' });
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -218,11 +225,49 @@ function ReportsScreen() {
     if (loading || authLoading || (user?.role === 'staff' || user?.role === 'admin' || user?.role === 'admingod')) {
         return (
             <div className="flex justify-center items-center h-[80vh]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-500 font-medium tracking-wide">Calculando reportes...</span>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary"></div>
+                <span className="ml-3 text-ui-text-muted font-black uppercase tracking-widest text-[10px]">Calculando reportes...</span>
             </div>
         );
     }
+
+    const openSaleDetails = (sale: Sale) => {
+        setSelectedSale(sale);
+        setTempPaymentData({
+            reference: sale.paymentData?.reference || '',
+            bank: sale.paymentData?.bank || '',
+            date: sale.paymentData?.date || ''
+        });
+        setIsEditingPayment(false);
+        setIsModalOpen(true);
+    };
+
+    const handleUpdatePaymentData = async () => {
+        if (!selectedSale?.id) return;
+        setIsSavingEdit(true);
+        try {
+            await SalesService.updateSale(selectedSale.id, {
+                paymentData: {
+                    ...selectedSale.paymentData,
+                    ...tempPaymentData
+                }
+            });
+            toast.success('Datos de pago actualizados');
+            
+            // Update local state
+            const updatedSale = { 
+                ...selectedSale, 
+                paymentData: { ...selectedSale.paymentData, ...tempPaymentData } 
+            };
+            setSelectedSale(updatedSale);
+            setAllSales(prev => prev.map(s => s.id === selectedSale.id ? updatedSale : s));
+            setIsEditingPayment(false);
+        } catch (error) {
+            toast.error('Error al actualizar datos');
+        } finally {
+            setIsSavingEdit(false);
+        }
+    };
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -424,6 +469,318 @@ function ReportsScreen() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Sales History Table */}
+            <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+                <CardContent className="p-0">
+                    <div className="p-6 border-b border-ui-border flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-fuchsia-500/20 p-2 rounded-lg">
+                                <FileText size={18} className="text-fuchsia-500" />
+                            </div>
+                            <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Historial de Ventas</h2>
+                        </div>
+                        <p className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">{filteredSales.length} Registros</p>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-ui-bg/50 text-[10px] uppercase tracking-[0.2em] text-ui-text-muted font-black border-b border-ui-border">
+                                    <th className="p-5">Fecha / Hora</th>
+                                    <th className="p-5">Cliente</th>
+                                    <th className="p-5">Cajero</th>
+                                    <th className="p-5 text-center">Método</th>
+                                    <th className="p-5 text-right">Total</th>
+                                    <th className="p-5 text-center">Detalles</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-ui-border/30">
+                                {filteredSales.length === 0 ? (
+                                    <tr><td colSpan={6} className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">No hay ventas registradas.</td></tr>
+                                ) : (
+                                    filteredSales.map(sale => {
+                                        const time = typeof sale.createdAt === 'number' ? sale.createdAt : (sale.createdAt as any)?.toDate?.()?.getTime() || 0;
+                                        const hasPriceMod = sale.items.some(it => it.finalPrice !== it.price);
+                                        
+                                        return (
+                                            <tr key={sale.id} className="hover:bg-accent-primary/[0.02] transition-colors group cursor-pointer" onClick={() => openSaleDetails(sale)}>
+                                                <td className="p-5">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-black text-ui-text uppercase tracking-tight text-xs">{new Date(time).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                                        <span className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">{new Date(time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-5">
+                                                    <div className="font-black text-ui-text uppercase tracking-tight text-xs">{sale.clientName || 'Cliente General'}</div>
+                                                </td>
+                                                <td className="p-5">
+                                                    <div className="font-bold text-ui-text-muted uppercase tracking-widest text-[10px]">{sale.creatorName || 'N/A'}</div>
+                                                </td>
+                                                <td className="p-5 text-center">
+                                                    <div className="inline-flex items-center px-2.5 py-1 rounded-lg bg-ui-bg text-[9px] font-black uppercase tracking-widest border border-ui-border/50 text-ui-text-muted">
+                                                        {sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod === 'transfer' ? 'Transf.' : sale.paymentMethod === 'mobile_pay' ? 'P. Móvil' : 'Crédito'}
+                                                    </div>
+                                                </td>
+                                                <td className="p-5 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {hasPriceMod && (
+                                                            <div className="text-accent-secondary animate-pulse" title="Precio Modificado">
+                                                                <AlertCircle size={14} />
+                                                            </div>
+                                                        )}
+                                                        <span className="font-black text-ui-text text-sm tracking-tighter">{formatPrice(sale.total)}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-5 text-center">
+                                                    <button className="p-2 rounded-xl bg-accent-primary/10 text-accent-primary hover:bg-accent-primary hover:text-white transition-all">
+                                                        <Eye size={16} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Sale Detail Modal */}
+            {isModalOpen && selectedSale && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="w-full max-w-2xl bg-ui-surface backdrop-blur-2xl border border-ui-border rounded-[2.5rem] shadow-float overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-400">
+                        {/* Header */}
+                        <div className="p-8 border-b border-ui-border flex items-center justify-between bg-accent-primary/5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-accent-primary flex items-center justify-center text-white shadow-lg shadow-accent-primary/30">
+                                    <ShoppingCart size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-ui-text uppercase tracking-tighter leading-none">Detalle de Venta</h2>
+                                    <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-[0.2em] mt-1">ID: {selectedSale.id?.substring(0, 12)}</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setIsModalOpen(false)}
+                                className="w-10 h-10 rounded-full bg-ui-bg border border-ui-border flex items-center justify-center text-ui-text-muted hover:text-accent-danger hover:bg-accent-danger/10 transition-all"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                            {/* Top Info Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-ui-bg/50 p-4 rounded-2xl border border-ui-border/50">
+                                    <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Fecha</p>
+                                    <p className="text-xs font-black text-ui-text uppercase">{new Date(selectedSale.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <div className="bg-ui-bg/50 p-4 rounded-2xl border border-ui-border/50">
+                                    <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Hora</p>
+                                    <p className="text-xs font-black text-ui-text uppercase">{new Date(selectedSale.createdAt).toLocaleTimeString()}</p>
+                                </div>
+                                <div className="bg-ui-bg/50 p-4 rounded-2xl border border-ui-border/50">
+                                    <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Estado</p>
+                                    <div className="inline-flex items-center px-2 py-0.5 rounded-lg bg-accent-success/10 text-accent-success text-[9px] font-black uppercase tracking-widest border border-accent-success/20">
+                                        {selectedSale.status === 'paid' ? 'Pagado' : selectedSale.status === 'pending' ? 'Pendiente' : 'Cancelado'}
+                                    </div>
+                                </div>
+                                <div className="bg-ui-bg/50 p-4 rounded-2xl border border-ui-border/50">
+                                    <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Cajero</p>
+                                    <p className="text-xs font-black text-ui-text uppercase tracking-tighter truncate">{selectedSale.creatorName || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            {/* Client & Payment */}
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <h3 className="text-[10px] font-black text-accent-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <UserIcon size={14} /> Información del Cliente
+                                    </h3>
+                                    <div className="bg-ui-bg/30 p-5 rounded-3xl border border-ui-border flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-ui-bg flex items-center justify-center text-ui-text-muted">
+                                            <UserIcon size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-black text-ui-text uppercase tracking-tight">{selectedSale.clientName || 'Consumidor Final'}</p>
+                                            <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Cliente Registrado</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <h3 className="text-[10px] font-black text-accent-primary uppercase tracking-[0.2em] flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <CreditCard size={14} /> Método de Pago
+                                        </div>
+                                        {(selectedSale.paymentMethod === 'transfer' || selectedSale.paymentMethod === 'mobile_pay') && !isEditingPayment && (
+                                            <button 
+                                                onClick={() => setIsEditingPayment(true)}
+                                                className="text-[9px] font-black text-accent-primary hover:underline"
+                                            >
+                                                Editar Datos
+                                            </button>
+                                        )}
+                                    </h3>
+                                    <div className="bg-ui-bg/30 p-5 rounded-3xl border border-ui-border space-y-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center text-accent-primary">
+                                                {selectedSale.paymentMethod === 'cash' ? <Banknote size={20} /> : selectedSale.paymentMethod === 'transfer' ? <Info size={20} /> : <Wallet size={20} />}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-black text-ui-text uppercase tracking-tight">
+                                                    {selectedSale.paymentMethod === 'cash' ? 'Efectivo' : selectedSale.paymentMethod === 'transfer' ? 'Transferencia' : selectedSale.paymentMethod === 'mobile_pay' ? 'Pago Móvil' : 'Crédito'}
+                                                </p>
+                                                {!isEditingPayment && (
+                                                    <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">
+                                                        {selectedSale.paymentData?.bank ? `${selectedSale.paymentData.bank} - Ref: ${selectedSale.paymentData.reference}` : 'Sin datos de referencia'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {isEditingPayment && (
+                                            <div className="pt-2 space-y-3 animate-in slide-in-from-top-2">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest">Referencia</label>
+                                                        <input 
+                                                            className="w-full bg-ui-bg/50 border border-ui-border rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary text-ui-text"
+                                                            value={tempPaymentData.reference}
+                                                            onChange={e => setTempPaymentData(prev => ({ ...prev, reference: e.target.value }))}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest">Banco</label>
+                                                        <input 
+                                                            className="w-full bg-ui-bg/50 border border-ui-border rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary text-ui-text"
+                                                            value={tempPaymentData.bank}
+                                                            onChange={e => setTempPaymentData(prev => ({ ...prev, bank: e.target.value }))}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1 col-span-2">
+                                                        <label className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest">Fecha del Pago</label>
+                                                        <input 
+                                                            type="date"
+                                                            className="w-full bg-ui-bg/50 border border-ui-border rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary text-ui-text"
+                                                            value={tempPaymentData.date}
+                                                            onChange={e => setTempPaymentData(prev => ({ ...prev, date: e.target.value }))}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button 
+                                                        disabled={isSavingEdit}
+                                                        onClick={handleUpdatePaymentData}
+                                                        className="flex-1 bg-accent-primary text-white text-[9px] font-black uppercase tracking-widest py-2 rounded-lg hover:bg-accent-primary/90 disabled:opacity-50"
+                                                    >
+                                                        {isSavingEdit ? 'Guardando...' : 'Guardar'}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setIsEditingPayment(false)}
+                                                        className="px-4 bg-ui-bg text-ui-text-muted text-[9px] font-black uppercase tracking-widest py-2 rounded-lg hover:bg-ui-border"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Items Table */}
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-black text-accent-primary uppercase tracking-[0.2em]">Productos en Orden</h3>
+                                <div className="bg-ui-bg/20 rounded-[2rem] border border-ui-border overflow-hidden">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-ui-bg/50 text-[9px] uppercase tracking-widest text-ui-text-muted font-black">
+                                                <th className="p-4">Producto</th>
+                                                <th className="p-4 text-center">Cant.</th>
+                                                <th className="p-4 text-right">Precio Un.</th>
+                                                <th className="p-4 text-right">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-ui-border/50">
+                                            {selectedSale.items.map((item, idx) => {
+                                                const isModified = item.finalPrice !== item.price;
+                                                return (
+                                                    <tr key={idx}>
+                                                        <td className="p-4">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-black text-ui-text uppercase tracking-tight leading-tight">{item.name}</span>
+                                                                {isModified && (
+                                                                    <span className="text-[8px] font-bold text-accent-secondary uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                                                                        <AlertCircle size={8} /> Precio ajustado (Original: {formatPrice(item.price)})
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4 text-center text-xs font-black text-ui-text">x{item.quantity}</td>
+                                                        <td className="p-4 text-right text-xs font-black text-ui-text">{formatPrice(item.finalPrice)}</td>
+                                                        <td className="p-4 text-right text-xs font-black text-accent-primary">{formatPrice(item.finalPrice * item.quantity)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Notes Section */}
+                            {(selectedSale.notes || selectedSale.discountReason) && (
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {selectedSale.notes && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-[10px] font-black text-accent-secondary uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <Info size={14} /> Notas Adicionales
+                                            </h3>
+                                            <div className="bg-accent-secondary/5 p-5 rounded-3xl border border-accent-secondary/20 relative">
+                                                <p className="text-xs font-bold text-ui-text italic leading-relaxed">
+                                                    "{selectedSale.notes}"
+                                                </p>
+                                                <div className="absolute top-[-8px] right-4 bg-accent-secondary text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">
+                                                    Nota del Cajero
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {selectedSale.discountReason && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <AlertCircle size={14} /> Motivo del Ajuste
+                                            </h3>
+                                            <div className="bg-amber-500/5 p-5 rounded-3xl border border-amber-500/20 relative">
+                                                <p className="text-xs font-bold text-ui-text italic leading-relaxed">
+                                                    "{selectedSale.discountReason}"
+                                                </p>
+                                                <div className="absolute top-[-8px] right-4 bg-amber-500 text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">
+                                                    Precio Modificado
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer - Total */}
+                        <div className="p-8 bg-ui-bg/50 border-t border-ui-border flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Clock size={16} className="text-ui-text-muted" />
+                                <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Resumen Final</span>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.3em] mb-1">Total Pagado</p>
+                                <h3 className="text-4xl font-black text-ui-text tracking-tighter leading-none">{formatPrice(selectedSale.total)}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

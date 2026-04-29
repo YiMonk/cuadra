@@ -277,6 +277,17 @@ export const SalesService = {
     }
   },
 
+  updateSale: async (saleId: string, updates: Partial<Sale>) => {
+    try {
+      const docRef = doc(db, SALES_COLLECTION, saleId);
+      await updateDoc(docRef, { ...updates, updatedAt: Date.now() });
+      return true;
+    } catch (error) {
+      console.error('Error updating sale: ', error);
+      throw error;
+    }
+  },
+
   // F2-03: use writeBatch for atomicity
   payAllDebts: async (clientId: string, updates: Partial<Sale>) => {
     try {
