@@ -189,7 +189,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <div className={`relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-400 group active:scale-95
                                     ${isActive
                                         ? (isDarkTheme ? 'bg-white text-black shadow-[0_8px_30px_rgba(255,255,255,0.3)]' : 'bg-black text-white shadow-float')
-                                        : (isDarkTheme ? 'text-white/40 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-black hover:bg-black/5')
+                                        : 'text-ui-text-muted hover:text-ui-text hover:bg-black/5 dark:hover:bg-white/10'
                                     }`}
                                 >
                                     <Icon size={24} strokeWidth={isActive ? 3 : 2} />
@@ -399,7 +399,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
                         const content = (
                             <div className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 relative
-                                ${isActive ? 'text-black dark:text-white' : 'text-slate-500 dark:text-white/40'}
+                                ${isActive ? 'text-ui-text' : 'text-ui-text-muted'}
                             `}>
                                 <div className={`p-1.5 md:p-2 rounded-2xl transition-all duration-500 ${isActive ? 'bg-black/5 dark:bg-white/10 scale-110' : ''}`}>
                                     <Icon size={22} strokeWidth={isActive ? 3 : 2} />
