@@ -190,19 +190,19 @@ export default function AdministrationScreen() {
     }
 
     return (
-        <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
+        <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700 pb-24 md:pb-8">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tighter text-ui-text uppercase leading-none">Administración</h1>
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-ui-text uppercase leading-none">Administración</h1>
                     <div className="flex items-center gap-2 mt-3">
                         <div className="h-1 w-8 bg-accent-primary rounded-full" />
                         <p className="text-ui-text-muted font-black uppercase tracking-[0.2em] text-[10px]">Gestión Global del Negocio</p>
                     </div>
                 </div>
                 
-                {/* Tabs Selector */}
-                <div className="ui-input-box p-1.5 flex gap-1 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10">
+                {/* Tabs Selector - Scrollable on mobile */}
+                <div className="ui-input-box p-1 md:p-1.5 flex gap-1 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 overflow-x-auto hide-scrollbar w-full lg:w-auto">
                     {[
                         { id: 'team', label: 'Equipo', icon: Users },
                         { id: 'locations', label: 'Sedes', icon: Home },
@@ -211,7 +211,7 @@ export default function AdministrationScreen() {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as AdminTab)}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                            className={`flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex-1 lg:flex-none
                                 ${activeTab === tab.id ? 'bg-white text-black shadow-lg scale-[1.02]' : 'text-ui-text-muted hover:text-ui-text hover:bg-white/5'}
                             `}
                         >
@@ -227,10 +227,12 @@ export default function AdministrationScreen() {
                 {activeTab === 'team' && (
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-black uppercase tracking-tight text-ui-text">Personal Autorizado</h2>
-                            <Button onClick={() => setStaffModalVisible(true)} size="sm" className="gap-2">
-                                <UserPlus size={16} /> Agregar
+                        <div className="flex justify-between items-center gap-4">
+                            <h2 className="text-lg md:text-xl font-black uppercase tracking-tight text-ui-text">Personal Autorizado</h2>
+                            <Button onClick={() => setStaffModalVisible(true)} size="sm" className="gap-2 h-10 px-4 md:px-6 text-[10px] md:text-xs">
+                                <UserPlus size={16} /> <span className="hidden sm:inline">Agregar</span><span className="sm:hidden">Nuevo</span>
                             </Button>
+                        </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {team.map(member => (
@@ -260,10 +262,10 @@ export default function AdministrationScreen() {
 
                 {activeTab === 'locations' && (
                     <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-black uppercase tracking-tight text-ui-text">Sedes y Almacenes</h2>
-                            <Button onClick={() => setLocationModalVisible(true)} size="sm" className="gap-2">
-                                <Plus size={16} /> Nueva Sede
+                        <div className="flex justify-between items-center gap-4">
+                            <h2 className="text-lg md:text-xl font-black uppercase tracking-tight text-ui-text">Sedes y Almacenes</h2>
+                            <Button onClick={() => setLocationModalVisible(true)} size="sm" className="gap-2 h-10 px-4 md:px-6 text-[10px] md:text-xs">
+                                <Plus size={16} /> <span className="hidden sm:inline">Nueva Sede</span><span className="sm:hidden">Nueva</span>
                             </Button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -295,10 +297,10 @@ export default function AdministrationScreen() {
 
                 {activeTab === 'cashboxes' && (
                     <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-black uppercase tracking-tight text-ui-text">Cajas Receptoras</h2>
-                            <Button onClick={() => setCashboxModalVisible(true)} size="sm" className="gap-2">
-                                <Plus size={16} /> Nueva Caja
+                        <div className="flex justify-between items-center gap-4">
+                            <h2 className="text-lg md:text-xl font-black uppercase tracking-tight text-ui-text">Cajas Receptoras</h2>
+                            <Button onClick={() => setCashboxModalVisible(true)} size="sm" className="gap-2 h-10 px-4 md:px-6 text-[10px] md:text-xs">
+                                <Plus size={16} /> <span className="hidden sm:inline">Nueva Caja</span><span className="sm:hidden">Nueva</span>
                             </Button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

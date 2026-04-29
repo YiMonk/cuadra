@@ -276,3 +276,10 @@ input.liquid-glass, .ui-input-box.liquid-glass {
   h1 { font-size: 1.75rem !important; font-weight: 900; }
   h2 { font-size: 1.25rem !important; font-weight: 800; }
 }
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

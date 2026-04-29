@@ -270,7 +270,7 @@ function ReportsScreen() {
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500 pb-24 md:pb-8">
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
                 <div>
                     <h1 className="text-3xl md:text-[40px] font-black tracking-tighter text-ui-text uppercase leading-none">Métricas</h1>
@@ -305,51 +305,51 @@ function ReportsScreen() {
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 <Card className="border-0 shadow-lg shadow-violet-500/10 bg-linear-to-br from-violet-500/10 to-transparent dark:from-violet-600/20">
-                    <CardContent className="p-6 h-full flex flex-col justify-between">
-                        <div className="bg-violet-600 shadow-lg shadow-violet-600/20 p-3 rounded-2xl w-fit">
-                            <DollarSign className="text-white" size={24} strokeWidth={2.5} />
+                    <CardContent className="p-4 md:p-6 h-full flex flex-col justify-between">
+                        <div className="bg-violet-600 shadow-lg shadow-violet-600/20 p-2.5 md:p-3 rounded-xl md:rounded-2xl w-fit">
+                            <DollarSign className="text-white" size={22} strokeWidth={2.5} />
                         </div>
-                        <div className="mt-6">
-                            <p className="text-[10px] font-black text-violet-600 dark:text-violet-400 uppercase tracking-[0.2em] mb-1">Ingresos Reales</p>
-                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(metrics.revenue)}</h3>
+                        <div className="mt-4 md:mt-6">
+                            <p className="text-[8px] md:text-[10px] font-black text-violet-600 dark:text-violet-400 uppercase tracking-[0.2em] mb-1">Ingresos</p>
+                            <h3 className="text-xl md:text-3xl font-black text-ui-text tracking-tighter leading-none">{formatPrice(metrics.revenue)}</h3>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="border-0 shadow-lg shadow-fuchsia-500/10 bg-linear-to-br from-fuchsia-500/10 to-transparent dark:from-fuchsia-600/20">
-                    <CardContent className="p-6 h-full flex flex-col justify-between">
-                        <div className="bg-fuchsia-500 shadow-lg shadow-fuchsia-500/20 p-3 rounded-2xl w-fit">
-                            <FileText className="text-white" size={24} strokeWidth={2.5} />
+                    <CardContent className="p-4 md:p-6 h-full flex flex-col justify-between">
+                        <div className="bg-fuchsia-500 shadow-lg shadow-fuchsia-500/20 p-2.5 md:p-3 rounded-xl md:rounded-2xl w-fit">
+                            <FileText className="text-white" size={22} strokeWidth={2.5} />
                         </div>
-                        <div className="mt-6">
-                            <p className="text-[10px] font-black text-fuchsia-500 dark:text-fuchsia-400 uppercase tracking-[0.2em] mb-1">Cuentas por Cobrar</p>
-                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(metrics.pending)}</h3>
+                        <div className="mt-4 md:mt-6">
+                            <p className="text-[8px] md:text-[10px] font-black text-fuchsia-500 dark:text-fuchsia-400 uppercase tracking-[0.2em] mb-1">Cuentas</p>
+                            <h3 className="text-xl md:text-3xl font-black text-ui-text tracking-tighter leading-none">{formatPrice(metrics.pending)}</h3>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="border-0 shadow-lg shadow-indigo-500/10 bg-linear-to-br from-indigo-500/10 to-transparent dark:from-indigo-600/20">
-                    <CardContent className="p-6 h-full flex flex-col justify-between">
-                        <div className="bg-indigo-500 shadow-lg shadow-indigo-500/20 p-3 rounded-2xl w-fit">
-                            <ShoppingCart className="text-white" size={24} strokeWidth={2.5} />
+                    <CardContent className="p-4 md:p-6 h-full flex flex-col justify-between">
+                        <div className="bg-indigo-500 shadow-lg shadow-indigo-500/20 p-2.5 md:p-3 rounded-xl md:rounded-2xl w-fit">
+                            <ShoppingCart className="text-white" size={22} strokeWidth={2.5} />
                         </div>
-                        <div className="mt-6">
-                            <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] mb-1">Total Ventas</p>
-                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">{metrics.count} <span className="text-xs font-bold opacity-60">Transacciones</span></h3>
+                        <div className="mt-4 md:mt-6">
+                            <p className="text-[8px] md:text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] mb-1">Ventas</p>
+                            <h3 className="text-xl md:text-3xl font-black text-ui-text tracking-tighter leading-none">{metrics.count} <span className="text-[10px] md:text-xs font-bold opacity-60">Tx</span></h3>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="border-0 shadow-lg shadow-purple-500/10 bg-linear-to-br from-purple-500/10 to-transparent dark:from-purple-600/20">
-                    <CardContent className="p-6 h-full flex flex-col justify-between">
-                        <div className="bg-purple-500 shadow-lg shadow-purple-500/20 p-3 rounded-2xl w-fit">
-                            <TrendingUp className="text-white" size={24} strokeWidth={2.5} />
+                    <CardContent className="p-4 md:p-6 h-full flex flex-col justify-between">
+                        <div className="bg-purple-500 shadow-lg shadow-purple-500/20 p-2.5 md:p-3 rounded-xl md:rounded-2xl w-fit">
+                            <TrendingUp className="text-white" size={22} strokeWidth={2.5} />
                         </div>
-                        <div className="mt-6">
-                            <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.2em] mb-1">Ticket Promedio</p>
-                            <h3 className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(metrics.average)}</h3>
+                        <div className="mt-4 md:mt-6">
+                            <p className="text-[8px] md:text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.2em] mb-1">Ticket Prom.</p>
+                            <h3 className="text-xl md:text-3xl font-black text-ui-text tracking-tighter leading-none">{formatPrice(metrics.average)}</h3>
                         </div>
                     </CardContent>
                 </Card>
@@ -431,7 +431,9 @@ function ReportsScreen() {
                         <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Rendimiento por Cajero</h2>
                         <div className="h-1 w-12 bg-accent-primary rounded-full" />
                     </div>
-                    <div className="overflow-x-auto">
+                    
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-accent-primary/10 text-[10px] uppercase tracking-[0.2em] text-accent-primary font-black">
@@ -467,6 +469,34 @@ function ReportsScreen() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden divide-y divide-ui-border/30">
+                        {cashboxMetrics.length === 0 ? (
+                            <div className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">Sin datos en caja.</div>
+                        ) : (
+                            cashboxMetrics.map(box => (
+                                <div key={box.id} className="p-5 space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-black text-ui-text uppercase tracking-tight text-sm">{box.name}</span>
+                                        <span className="px-3 py-1 bg-ui-bg text-[9px] font-black uppercase tracking-[0.2em] rounded-full text-ui-text-muted">
+                                            {box.salesCount} Transacciones
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/5 dark:bg-black/20 p-3 rounded-xl border border-ui-border/30">
+                                            <p className="text-[8px] font-black text-accent-primary uppercase tracking-widest mb-1">Ingreso Real</p>
+                                            <p className="text-sm font-black text-ui-text">{formatPrice(box.real)}</p>
+                                        </div>
+                                        <div className="bg-white/5 dark:bg-black/20 p-3 rounded-xl border border-ui-border/30">
+                                            <p className="text-[8px] font-black text-accent-secondary uppercase tracking-widest mb-1">Teórico</p>
+                                            <p className="text-sm font-black text-ui-text opacity-70">{formatPrice(box.teorico)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -480,9 +510,11 @@ function ReportsScreen() {
                             </div>
                             <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Historial de Ventas</h2>
                         </div>
-                        <p className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">{filteredSales.length} Registros</p>
+                        <p className="hidden sm:block text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">{filteredSales.length} Registros</p>
                     </div>
-                    <div className="overflow-x-auto">
+
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-ui-bg/50 text-[10px] uppercase tracking-[0.2em] text-ui-text-muted font-black border-b border-ui-border">
@@ -542,6 +574,46 @@ function ReportsScreen() {
                                 )}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden divide-y divide-ui-border/30">
+                        {filteredSales.length === 0 ? (
+                            <div className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">No hay ventas registradas.</div>
+                        ) : (
+                            filteredSales.map(sale => {
+                                const time = typeof sale.createdAt === 'number' ? sale.createdAt : (sale.createdAt as any)?.toDate?.()?.getTime() || 0;
+                                const hasPriceMod = sale.items.some(it => it.finalPrice !== it.price);
+                                
+                                return (
+                                    <div key={sale.id} className="p-5 hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer" onClick={() => openSaleDetails(sale)}>
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">
+                                                    {new Date(time).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} • {new Date(time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                <span className="text-sm font-black text-ui-text uppercase tracking-tight mt-0.5">{sale.clientName || 'Consumidor Final'}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-lg font-black text-ui-text tracking-tighter block">{formatPrice(sale.total)}</span>
+                                                <div className="inline-flex items-center gap-1 mt-1">
+                                                    {hasPriceMod && <AlertCircle size={10} className="text-accent-secondary" />}
+                                                    <span className="text-[8px] font-black uppercase tracking-widest text-ui-text-muted">
+                                                        {sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod === 'transfer' ? 'Transf.' : 'P. Móvil'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between pt-2 border-t border-ui-border/20">
+                                            <span className="text-[8px] font-bold text-ui-text-muted uppercase tracking-widest">Atendido por: {sale.creatorName || 'N/A'}</span>
+                                            <span className="text-accent-primary font-black text-[9px] uppercase tracking-widest flex items-center gap-1">
+                                                Ver Detalles <Eye size={12} />
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 </CardContent>
             </Card>

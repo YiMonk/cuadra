@@ -379,15 +379,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </div>
                         </div>
 
-                        {/* Main Title Area (Now Below) */}
-                        <div className="animate-in fade-in slide-in-from-left-8 duration-1000 ease-out px-2 md:px-0">
-                            <h2 className="text-3xl md:text-7xl font-black tracking-tighter text-ui-text drop-shadow-sm uppercase">
-                                {navItems.find(n => pathname.startsWith(n.href))?.name || 'Dashboard'}
-                            </h2>
-                            <div className="flex items-center gap-4 mt-4">
-                                <div className="h-[2px] w-12 bg-accent-primary rounded-full" />
-                            </div>
-                        </div>
+                        {/* Page Header spacing fix */}
+                        <div className="mt-8"></div>
                     </div>
 
                     <div className="animate-in fade-in zoom-in-95 duration-700">
@@ -406,9 +399,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
                         const content = (
                             <div className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 relative
-                                ${isActive ? 'text-white dark:text-black' : 'text-white/60 dark:text-black/60'}
+                                ${isActive ? 'text-black dark:text-white' : 'text-slate-500 dark:text-white/40'}
                             `}>
-                                <div className={`p-1.5 md:p-2 rounded-2xl transition-all duration-500 ${isActive ? 'bg-white/10 dark:bg-black/10 scale-110' : ''}`}>
+                                <div className={`p-1.5 md:p-2 rounded-2xl transition-all duration-500 ${isActive ? 'bg-black/5 dark:bg-white/10 scale-110' : ''}`}>
                                     <Icon size={22} strokeWidth={isActive ? 3 : 2} />
                                 </div>
                                 {item.name === 'Venta' && cartItemsCount > 0 && (

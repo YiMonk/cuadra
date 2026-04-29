@@ -7,8 +7,7 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { UserService } from '@/services/user.service';
 import { auth } from '@/config/firebaseConfig';
 import { updateProfile, verifyBeforeUpdateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight, DatabaseZap } from 'lucide-react';
-import { stampLegacyDocuments } from '@/services/migration.service';
+import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -69,7 +68,6 @@ export default function SettingsScreen() {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [updating, setUpdating] = useState(false);
-    const [migrating, setMigrating] = useState(false);
 
     const handleLogout = () => {
         toast.custom((t) => (
@@ -276,42 +274,25 @@ export default function SettingsScreen() {
                                 <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Desconectar cuenta actual</p>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Legacy Data Migration */}
-                    <div className="ui-card border border-ui-border p-6 flex items-center justify-between gap-4 shadow-soft">
-                        <div className="flex items-center gap-4 min-w-0">
-                            <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
-                                <DatabaseZap className="text-amber-500" size={18} />
+                        {/* Administration Access - Mobile Shortcut */}
+                        {(user?.role === 'admin' || user?.role === 'admingod' || (user?.uid && !user?.ownerId)) && (
+                            <div className="md:col-span-2 ui-card border border-ui-border p-8 flex flex-col justify-between group hover:border-accent-primary/30 transition-all shadow-premium cursor-pointer bg-linear-to-br from-accent-primary/5 to-transparent" onClick={() => router.push('/team')}>
+                                <div className="flex justify-between items-start mb-8">
+                                    <div className="p-4 bg-accent-primary/10 rounded-2xl text-accent-primary group-hover:scale-110 transition-transform duration-500">
+                                        <Users size={28} />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-accent-primary opacity-0 group-hover:opacity-100 transition-opacity">Gestionar</span>
+                                        <ChevronRight size={20} className="text-accent-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-ui-text uppercase tracking-tight text-xl mb-1">Administración de Equipo</h3>
+                                    <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Sedes, Cajas y Personal Autorizado</p>
+                                </div>
                             </div>
-                            <div className="min-w-0">
-                                <p className="text-[10px] font-black text-ui-text uppercase tracking-widest">Migrar Datos Antiguos</p>
-                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-[0.1em]">Vincula registros sin propietario a tu cuenta</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={async () => {
-                                if (!user?.uid) return;
-                                setMigrating(true);
-                                try {
-                                    const results = await stampLegacyDocuments(user.uid);
-                                    const total = results.reduce((s, r) => s + r.stamped, 0);
-                                    if (total === 0) {
-                                        toast.success('No hay datos antiguos pendientes de migrar');
-                                    } else {
-                                        toast.success(`${total} registros migrados correctamente`);
-                                    }
-                                } catch (e: any) {
-                                    toast.error('Error al migrar: ' + (e.message || 'Error desconocido'));
-                                } finally {
-                                    setMigrating(false);
-                                }
-                            }}
-                            disabled={migrating}
-                            className="shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition-all"
-                        >
-                            {migrating ? 'Migrando...' : 'Migrar'}
-                        </button>
+                        )}
                     </div>
 
                     {/* Build Info */}
