@@ -11,6 +11,7 @@ import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, Chevr
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 const CountdownCircle = ({ seconds: initialSeconds }: { seconds: number }) => {
@@ -59,6 +60,7 @@ const CountdownCircle = ({ seconds: initialSeconds }: { seconds: number }) => {
 };
 
 export default function SettingsScreen() {
+    const router = useRouter();
     const { user, signOut, isLoading, reloadUser } = useAuth();
     const { isDarkTheme, toggleTheme } = useAppTheme();
 
