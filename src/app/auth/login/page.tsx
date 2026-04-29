@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
@@ -134,14 +135,15 @@ export default function LoginPage() {
                         <div className="animate-in fade-in slide-in-from-left duration-1000">
                             {/* Brand Logo & Name */}
                             <div className="mb-12">
-                                <div className="relative inline-block">
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-teal-400 rounded-[24px] blur-xl opacity-50" />
-                                    <div className="relative w-20 h-20 bg-gradient-to-tr from-blue-600 to-teal-400 rounded-[24px] flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-blue-500/40">
-                                        C
-                                    </div>
-                                </div>
-                                <h1 className="text-5xl font-black tracking-[0.05em] text-white mt-6 uppercase">CUADRA</h1>
-                                <p className="text-teal-400 font-bold uppercase tracking-[0.15em] text-sm mt-3">Punto de Venta Inteligente</p>
+                                <Image
+                                    src="/Logotipo2.svg"
+                                    alt="Cuadra"
+                                    width={340}
+                                    height={263}
+                                    className="[filter:brightness(0)_invert(1)] w-full max-w-[340px]"
+                                    priority
+                                />
+                                <p className="text-teal-400 font-bold uppercase tracking-[0.15em] text-sm mt-4">Punto de Venta Inteligente</p>
                             </div>
 
                             {/* Features */}
@@ -190,13 +192,14 @@ export default function LoginPage() {
                     <div className="w-full max-w-md mx-auto lg:mx-0 animate-in fade-in slide-in-from-right duration-1000">
                         {/* Mobile Brand - Only visible on mobile */}
                         <div className="lg:hidden text-center mb-8">
-                            <div className="relative inline-block">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-teal-400 rounded-[20px] blur-xl opacity-50" />
-                                <div className="relative w-16 h-16 bg-gradient-to-tr from-blue-600 to-teal-400 rounded-[20px] flex items-center justify-center text-white text-2xl font-black shadow-2xl shadow-blue-500/40 mx-auto">
-                                    C
-                                </div>
-                            </div>
-                            <h1 className="text-3xl font-black tracking-[0.05em] text-white mt-4 uppercase">CUADRA</h1>
+                            <Image
+                                src="/Logotipo2.svg"
+                                alt="Cuadra"
+                                width={220}
+                                height={170}
+                                className="[filter:brightness(0)_invert(1)] mx-auto"
+                                priority
+                            />
                         </div>
 
                         {/* Glassmorphic Card */}

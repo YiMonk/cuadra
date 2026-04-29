@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -102,14 +103,14 @@ export default function RegisterPage() {
 
                     {/* Brand Section */}
                     <div className="mb-10 animate-in fade-in slide-in-from-top duration-700">
-                        <div className="inline-block">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-teal-400 rounded-[20px] blur-xl opacity-50" />
-                                <div className="relative w-16 h-16 bg-gradient-to-tr from-blue-600 to-teal-400 rounded-[20px] flex items-center justify-center text-white text-2xl font-black shadow-2xl shadow-blue-500/40">
-                                    C
-                                </div>
-                            </div>
-                        </div>
+                        <Image
+                            src="/icono.svg"
+                            alt="Cuadra"
+                            width={56}
+                            height={43}
+                            className="[filter:brightness(0)_invert(1)]"
+                            priority
+                        />
                         <h1 className="text-3xl font-black tracking-[0.05em] text-white mt-4 uppercase">Crear Cuenta</h1>
                         <p className="text-gray-400 mt-2 font-medium text-sm">Únete a CUADRA y gestiona tu negocio de forma inteligente</p>
                     </div>

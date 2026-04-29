@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -167,8 +168,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     {/* Logo Section */}
                     <div className="mb-10 relative group">
                         <div className="absolute -inset-2 bg-gradient-to-tr from-accent-primary to-accent-secondary opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-700" />
-                        <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors ${isDarkTheme ? 'bg-white text-black' : 'bg-black text-white'}`}>
-                            <span className="text-xl font-black italic">C</span>
+                        <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors overflow-hidden ${isDarkTheme ? 'bg-white' : 'bg-black'}`}>
+                            <Image
+                                src="/icono.svg"
+                                alt="Cuadra"
+                                width={34}
+                                height={26}
+                                className={isDarkTheme ? '' : '[filter:brightness(0)_invert(1)]'}
+                            />
                         </div>
                     </div>
 
