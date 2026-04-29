@@ -12,7 +12,7 @@ const rubik = Rubik({
 
 export const metadata: Metadata = {
   title: "Cuadra APP",
-  description: "Cuadra — Sistema de Punto de Venta",
+  description: "Cuadra — Herramienta de gestión empresarial, inventario y análisis operacional",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

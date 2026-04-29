@@ -27,6 +27,8 @@ import { useCart } from '@/context/CartContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { BRAND_ASSETS } from '@/config/brand';
+import { DisclaimerBanner } from '@/components/DisclaimerBanner';
+import { TermsAcceptanceModal } from '@/components/TermsAcceptanceModal';
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -46,6 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
     const notificationsRef = useRef<HTMLDivElement>(null);
+    const [showTermsModal, setShowTermsModal] = useState(false);
 
     useEffect(() => {
         // Notification outside click handler
@@ -107,6 +110,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         });
     }, [pendingCollectionsCount]);
 
+    // Show terms modal if user hasn't accepted them yet
+    useEffect(() => {
+        if (user && !isAuthRoute && !user.termsAcceptedAt) {
+            setShowTermsModal(true);
+        }
+    }, [user, isAuthRoute]);
+
+    const handleAcceptTerms = async () => {
+        if (user) {
+            try {
+                const response = await fetch('/api/users/accept-terms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.uid })
+                });
+                if (response.ok) {
+                    setShowTermsModal(false);
+                }
+            } catch (error) {
+                console.error('Error accepting terms:', error);
+            }
+        }
+    };
+
     useEffect(() => {
         if (!isLoading && !user && !isAuthRoute) {
             router.push('/auth/login');
@@ -161,6 +188,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex h-screen bg-ui-bg transition-colors duration-500 font-sans overflow-hidden md:overflow-visible">
+            <TermsAcceptanceModal isOpen={showTermsModal} onAccept={handleAcceptTerms} />
 
             {/* Desktop Floating Sidebar Pill */}
             <aside className="hidden md:flex flex-col h-full py-8 pl-8 shrink-0 z-50">
@@ -384,6 +412,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </div>
 
                     <div className="animate-in fade-in zoom-in-95 duration-700">
+                        <DisclaimerBanner />
                         {children}
                     </div>
                 </div>

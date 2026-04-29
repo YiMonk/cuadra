@@ -7,6 +7,7 @@ export interface UserProfile {
   ownerId?: string;
   createdAt: number;
   subscriptionEndsAt?: number;
+  termsAcceptedAt?: number; // Timestamp when user accepted terms
 }
 
 export interface AuthState {
