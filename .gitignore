@@ -4,6 +4,19 @@
 /node_modules
 functions/node_modules
 functions/lib
+
+# extras (dev docs, planning)
+/extras
+
+# logs
+*.log
+
+# typescript incremental build cache
+tsconfig.tsbuildinfo
+
+# PWA generated files (rebuilt on each build)
+public/sw.js
+public/workbox-*.js
 /.pnp
 .pnp.*
 .yarn/*
