@@ -26,6 +26,7 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { useCart } from '@/context/CartContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { BRAND_ASSETS } from '@/config/brand';
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -169,12 +170,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <div className="mb-10 relative group">
                         <div className="absolute -inset-2 bg-gradient-to-tr from-accent-primary to-accent-secondary opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-700" />
                         <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors overflow-hidden ${isDarkTheme ? 'bg-white' : 'bg-black'}`}>
-                            <Image
-                                src="/icono.svg"
+                            <img
+                                src={BRAND_ASSETS.logo_icon}
                                 alt="Cuadra"
-                                width={34}
-                                height={26}
-                                className={isDarkTheme ? '' : '[filter:brightness(0)_invert(1)]'}
+                                className={`w-[34px] h-[26px] ${isDarkTheme ? '' : 'brightness-0 invert'}`}
                             />
                         </div>
                     </div>
@@ -236,11 +235,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <div className="mt-auto flex flex-col items-center gap-6">
                         <button
                             onClick={toggleTheme}
-                            className="w-12 h-12 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-90"
+                            className="w-12 h-12 rounded-2xl bg-slate-200/50 dark:bg-white/5 flex items-center justify-center text-slate-600 dark:text-white/40 hover:text-accent-primary dark:hover:text-white hover:bg-white dark:hover:bg-white/10 shadow-sm transition-all active:scale-90"
                             aria-label={isDarkTheme ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
                             title={isDarkTheme ? 'Modo Claro' : 'Modo Oscuro'}
                         >
-                            {isDarkTheme ? <Moon size={22} /> : <Sun size={22} />}
+                            {isDarkTheme ? <Moon size={22} /> : <Sun size={22} className="text-accent-primary" />}
                         </button>
 
                         <button

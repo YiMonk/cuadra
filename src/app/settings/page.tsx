@@ -7,11 +7,57 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { UserService } from '@/services/user.service';
 import { auth } from '@/config/firebaseConfig';
 import { updateProfile, verifyBeforeUpdateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight } from 'lucide-react';
+import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight, DatabaseZap } from 'lucide-react';
+import { stampLegacyDocuments } from '@/services/migration.service';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'sonner';
+
+const CountdownCircle = ({ seconds: initialSeconds }: { seconds: number }) => {
+    const [timeLeft, setTimeLeft] = React.useState(initialSeconds);
+    
+    React.useEffect(() => {
+        if (timeLeft <= 0) return;
+        const timer = setInterval(() => {
+            setTimeLeft(prev => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [timeLeft]);
+
+    const percentage = (timeLeft / initialSeconds) * 100;
+    const strokeDasharray = 150.8; // 2 * PI * 24
+    const strokeDashoffset = strokeDasharray - (strokeDasharray * percentage) / 100;
+
+    return (
+        <div className="relative flex items-center justify-center shrink-0">
+            <svg className="w-14 h-14 -rotate-90">
+                <circle
+                    cx="28"
+                    cy="28"
+                    r="24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    className="text-ui-bg dark:text-white/5"
+                />
+                <circle
+                    cx="28"
+                    cy="28"
+                    r="24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    strokeDasharray={strokeDasharray}
+                    strokeDashoffset={strokeDashoffset}
+                    className="text-red-500 transition-all duration-1000 ease-linear"
+                    strokeLinecap="round"
+                />
+            </svg>
+            <span className="absolute text-sm font-black text-ui-text">{timeLeft}</span>
+        </div>
+    );
+};
 
 export default function SettingsScreen() {
     const { user, signOut, isLoading, reloadUser } = useAuth();
@@ -23,14 +69,46 @@ export default function SettingsScreen() {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [updating, setUpdating] = useState(false);
+    const [migrating, setMigrating] = useState(false);
 
     const handleLogout = () => {
-        toast.warning('¿Estás seguro que deseas salir?', {
-            action: {
-                label: 'Cerrar Sesión',
-                onClick: () => signOut()
-            },
-            cancel: { label: 'Cancelar', onClick: () => {} }
+        toast.custom((t) => (
+            <div className={`${isDarkTheme ? 'dark' : ''} w-full`}>
+                <div className="w-full max-w-[350px] bg-ui-surface backdrop-blur-2xl border border-ui-border rounded-[2rem] p-6 shadow-float animate-in fade-in slide-in-from-right-8 duration-500">
+                    <div className="flex items-center gap-6">
+                        {/* Circular Timer Component */}
+                        <CountdownCircle seconds={5} />
+
+                        <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-black text-ui-text uppercase tracking-tight">¿Cerrar Sesión?</h4>
+                            <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest mt-1 opacity-70">
+                                Saliendo automáticamente...
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 mt-6">
+                        <button
+                            onClick={() => toast.dismiss(t)}
+                            className="flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest bg-ui-bg hover:bg-ui-surface-hover transition-colors text-ui-text-muted border border-ui-border"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={() => {
+                                toast.dismiss(t);
+                                signOut();
+                            }}
+                            className="flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-500 text-white shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all active:scale-95"
+                        >
+                            Salir Ahora
+                        </button>
+                    </div>
+                </div>
+            </div>
+        ), {
+            duration: 5000,
+            onAutoClose: () => signOut()
         });
     };
 
@@ -198,6 +276,42 @@ export default function SettingsScreen() {
                                 <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Desconectar cuenta actual</p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Legacy Data Migration */}
+                    <div className="ui-card border border-ui-border p-6 flex items-center justify-between gap-4 shadow-soft">
+                        <div className="flex items-center gap-4 min-w-0">
+                            <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
+                                <DatabaseZap className="text-amber-500" size={18} />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-black text-ui-text uppercase tracking-widest">Migrar Datos Antiguos</p>
+                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-[0.1em]">Vincula registros sin propietario a tu cuenta</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={async () => {
+                                if (!user?.uid) return;
+                                setMigrating(true);
+                                try {
+                                    const results = await stampLegacyDocuments(user.uid);
+                                    const total = results.reduce((s, r) => s + r.stamped, 0);
+                                    if (total === 0) {
+                                        toast.success('No hay datos antiguos pendientes de migrar');
+                                    } else {
+                                        toast.success(`${total} registros migrados correctamente`);
+                                    }
+                                } catch (e: any) {
+                                    toast.error('Error al migrar: ' + (e.message || 'Error desconocido'));
+                                } finally {
+                                    setMigrating(false);
+                                }
+                            }}
+                            disabled={migrating}
+                            className="shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition-all"
+                        >
+                            {migrating ? 'Migrando...' : 'Migrar'}
+                        </button>
                     </div>
 
                     {/* Build Info */}

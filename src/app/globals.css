@@ -11,13 +11,13 @@
   --ui-text-muted: #8E8E93;
   --ui-text-inverse: #FFFFFF;
   
-  /* Accents - Keeping a refined version of your current blue */
-  --accent-primary: #007AFF; 
-  --accent-secondary: #5856D6;
-  --accent-success: #34C759;
-  --accent-danger: #FF3B30;
-  --accent-warning: #EA580C;
-  --accent-info: #0891B2;
+  /* Accents - Premium Violet/Purple Palette */
+  --accent-primary: #7C3AED; 
+  --accent-secondary: #C026D3;
+  --accent-success: #10B981;
+  --accent-danger: #EF4444;
+  --accent-warning: #F59E0B;
+  --accent-info: #6366F1;
   
   /* Bento Shadows - Soft & Organic */
   --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
@@ -36,11 +36,11 @@
 }
 
 .dark {
-  /* Dark Palette - Glass Bento */
-  --ui-bg: #2d303a; /* Much deeper black for better contrast */
-  --ui-surface: rgba(30, 32, 40, 0.8); /* Much more solid glass base */
-  --ui-surface-hover: rgba(40, 42, 50, 0.9);
-  --ui-border: rgba(255, 255, 255, 0.15); /* Stronger border */
+  /* Dark Palette - Deep Midnight Violet */
+  --ui-bg: #0D0B1F; 
+  --ui-surface: rgba(22, 20, 44, 0.85); 
+  --ui-surface-hover: rgba(32, 28, 64, 0.9);
+  --ui-border: rgba(139, 92, 246, 0.2); /* Violet border */
   
   --ui-text: #FFFFFF;
   --ui-text-muted: #8E8E93;
@@ -63,9 +63,9 @@
   
   --font-sans: var(--font-rubik), "Helvetica Neue", Arial, sans-serif;
   
-  --color-ios-blue: #007AFF;
-  --color-ios-red: #FF3B30;
-  --color-ios-green: #34C759;
+  --color-ios-blue: #7C3AED;
+  --color-ios-red: #EF4444;
+  --color-ios-green: #10B981;
 }
 
 * {
@@ -156,8 +156,8 @@ input.liquid-glass, .ui-input-box.liquid-glass {
 }
 
 .dark body {
-  background-image: radial-gradient(circle at 10% 10%, rgba(0, 122, 255, 0.12), transparent 50%),
-                    radial-gradient(circle at 90% 90%, rgba(88, 86, 214, 0.08), transparent 50%);
+  background-image: radial-gradient(circle at 10% 10%, rgba(124, 58, 237, 0.15), transparent 50%),
+                    radial-gradient(circle at 90% 90%, rgba(192, 38, 211, 0.1), transparent 50%);
 }
 
 /* Inputs & Containers */

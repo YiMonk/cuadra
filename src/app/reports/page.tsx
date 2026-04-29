@@ -20,7 +20,7 @@ import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
+const COLORS = ['#7C3AED', '#C026D3', '#8B5CF6', '#D946EF', '#6366F1'];
 
 function ReportsScreen() {
     const router = useRouter();
@@ -261,49 +261,49 @@ function ReportsScreen() {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="border-0 shadow-lg shadow-blue-500/10 bg-linear-to-br from-blue-500/10 to-transparent dark:from-blue-600/20">
+                <Card className="border-0 shadow-lg shadow-violet-500/10 bg-linear-to-br from-violet-500/10 to-transparent dark:from-violet-600/20">
                     <CardContent className="p-6 h-full flex flex-col justify-between">
-                        <div className="bg-blue-600 shadow-lg shadow-blue-600/20 p-3 rounded-2xl w-fit">
+                        <div className="bg-violet-600 shadow-lg shadow-violet-600/20 p-3 rounded-2xl w-fit">
                             <DollarSign className="text-white" size={24} strokeWidth={2.5} />
                         </div>
                         <div className="mt-6">
-                            <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] mb-1">Ingresos Reales</p>
+                            <p className="text-[10px] font-black text-violet-600 dark:text-violet-400 uppercase tracking-[0.2em] mb-1">Ingresos Reales</p>
                             <h3 className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(metrics.revenue)}</h3>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-lg shadow-red-500/10 bg-linear-to-br from-red-500/10 to-transparent dark:from-red-600/20">
+                <Card className="border-0 shadow-lg shadow-fuchsia-500/10 bg-linear-to-br from-fuchsia-500/10 to-transparent dark:from-fuchsia-600/20">
                     <CardContent className="p-6 h-full flex flex-col justify-between">
-                        <div className="bg-red-500 shadow-lg shadow-red-500/20 p-3 rounded-2xl w-fit">
+                        <div className="bg-fuchsia-500 shadow-lg shadow-fuchsia-500/20 p-3 rounded-2xl w-fit">
                             <FileText className="text-white" size={24} strokeWidth={2.5} />
                         </div>
                         <div className="mt-6">
-                            <p className="text-[10px] font-black text-red-500 dark:text-red-400 uppercase tracking-[0.2em] mb-1">Cuentas por Cobrar</p>
+                            <p className="text-[10px] font-black text-fuchsia-500 dark:text-fuchsia-400 uppercase tracking-[0.2em] mb-1">Cuentas por Cobrar</p>
                             <h3 className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(metrics.pending)}</h3>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-lg shadow-green-500/10 bg-linear-to-br from-green-500/10 to-transparent dark:from-green-600/20">
+                <Card className="border-0 shadow-lg shadow-indigo-500/10 bg-linear-to-br from-indigo-500/10 to-transparent dark:from-indigo-600/20">
                     <CardContent className="p-6 h-full flex flex-col justify-between">
-                        <div className="bg-green-500 shadow-lg shadow-green-500/20 p-3 rounded-2xl w-fit">
+                        <div className="bg-indigo-500 shadow-lg shadow-indigo-500/20 p-3 rounded-2xl w-fit">
                             <ShoppingCart className="text-white" size={24} strokeWidth={2.5} />
                         </div>
                         <div className="mt-6">
-                            <p className="text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-[0.2em] mb-1">Total Ventas</p>
+                            <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] mb-1">Total Ventas</p>
                             <h3 className="text-3xl font-black text-ui-text tracking-tighter">{metrics.count} <span className="text-xs font-bold opacity-60">Transacciones</span></h3>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-lg shadow-orange-500/10 bg-linear-to-br from-orange-500/10 to-transparent dark:from-orange-600/20">
+                <Card className="border-0 shadow-lg shadow-purple-500/10 bg-linear-to-br from-purple-500/10 to-transparent dark:from-purple-600/20">
                     <CardContent className="p-6 h-full flex flex-col justify-between">
-                        <div className="bg-orange-500 shadow-lg shadow-orange-500/20 p-3 rounded-2xl w-fit">
+                        <div className="bg-purple-500 shadow-lg shadow-purple-500/20 p-3 rounded-2xl w-fit">
                             <TrendingUp className="text-white" size={24} strokeWidth={2.5} />
                         </div>
                         <div className="mt-6">
-                            <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-[0.2em] mb-1">Ticket Promedio</p>
+                            <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.2em] mb-1">Ticket Promedio</p>
                             <h3 className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(metrics.average)}</h3>
                         </div>
                     </CardContent>
@@ -330,9 +330,9 @@ function ReportsScreen() {
                                         <Line
                                             type="monotone"
                                             dataKey="total"
-                                            stroke="#3b82f6"
+                                            stroke="#7C3AED"
                                             strokeWidth={4}
-                                            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 6, stroke: '#fff' }}
+                                            dot={{ fill: '#7C3AED', strokeWidth: 2, r: 6, stroke: '#fff' }}
                                             activeDot={{ r: 8, strokeWidth: 0 }}
                                         />
                                     </LineChart>
@@ -380,39 +380,40 @@ function ReportsScreen() {
             </div>
 
             {/* Cashbox Summary List */}
-            <Card className="overflow-hidden border-0 shadow-sm shadow-blue-900/5">
+            <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
                 <CardContent className="p-0">
-                    <div className="p-6 border-b border-gray-100 dark:border-gray-800">
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Rendimiento por Cajero</h2>
+                    <div className="p-6 border-b border-ui-border flex items-center justify-between">
+                        <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Rendimiento por Cajero</h2>
+                        <div className="h-1 w-12 bg-accent-primary rounded-full" />
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-gray-50/50 dark:bg-gray-800/20 text-xs uppercase tracking-wider text-gray-500 font-bold">
-                                    <th className="p-4 border-b border-gray-100 dark:border-gray-800 rounded-tl-xl font-bold">Cajero / Usuario</th>
-                                    <th className="p-4 border-b border-gray-100 dark:border-gray-800 font-bold text-right">Ventas</th>
-                                    <th className="p-4 border-b border-gray-100 dark:border-gray-800 font-bold text-right text-green-600 dark:text-green-500">Ingreso Real</th>
-                                    <th className="p-4 border-b border-gray-100 dark:border-gray-800 rounded-tr-xl font-bold text-right text-blue-600 dark:text-blue-500">Teórico Generado</th>
+                                <tr className="bg-accent-primary/10 text-[10px] uppercase tracking-[0.2em] text-accent-primary font-black">
+                                    <th className="p-5 font-black">Cajero / Usuario</th>
+                                    <th className="p-5 font-black text-right">Ventas</th>
+                                    <th className="p-5 font-black text-right">Ingreso Real</th>
+                                    <th className="p-5 font-black text-right">Teórico Generado</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                            <tbody className="divide-y divide-ui-border/50">
                                 {cashboxMetrics.length === 0 ? (
-                                    <tr><td colSpan={4} className="p-8 text-center text-gray-500 font-medium">Sin datos en caja.</td></tr>
+                                    <tr><td colSpan={4} className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">Sin datos en caja.</td></tr>
                                 ) : (
                                     cashboxMetrics.map(box => (
-                                        <tr key={box.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
-                                            <td className="p-4">
-                                                <div className="font-bold text-gray-900 dark:text-white">{box.name}</div>
+                                        <tr key={box.id} className="hover:bg-accent-primary/[0.02] transition-colors group">
+                                            <td className="p-5">
+                                                <div className="font-black text-ui-text uppercase tracking-tight group-hover:text-accent-primary transition-colors">{box.name}</div>
                                             </td>
-                                            <td className="p-4 text-right">
-                                                <span className="font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-sm">
+                                            <td className="p-5 text-right">
+                                                <span className="font-black text-ui-text-muted bg-ui-bg px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-widest">
                                                     {box.salesCount} tx
                                                 </span>
                                             </td>
-                                            <td className="p-4 text-right font-bold text-green-600 dark:text-green-500">
+                                            <td className="p-5 text-right font-black text-accent-primary">
                                                 {formatPrice(box.real)}
                                             </td>
-                                            <td className="p-4 text-right font-bold text-blue-600 dark:text-blue-500">
+                                            <td className="p-5 text-right font-black text-accent-secondary opacity-80">
                                                 {formatPrice(box.teorico)}
                                             </td>
                                         </tr>

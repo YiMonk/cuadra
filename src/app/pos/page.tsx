@@ -14,10 +14,11 @@ import { storage } from '@/config/firebaseConfig';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Product } from '@/types/inventory';
 import { Client } from '@/types/client';
-import { 
-    Search, ShoppingCart, Minus, Plus, X, User as UserIcon, Camera, AlertCircle, 
-    ChevronDown, ChevronUp, Tag, Coffee, Shirt, Utensils, Zap, Package, 
-    Smartphone, Home, LayoutGrid, Pizza, Briefcase, Gift, Droplets, Shield
+import {
+    Search, ShoppingCart, Minus, Plus, X, User as UserIcon, Camera, AlertCircle,
+    ChevronDown, ChevronUp, Tag, Coffee, Shirt, Utensils, Zap, Package,
+    Smartphone, Home, LayoutGrid, Pizza, Briefcase, Gift, Droplets, Shield,
+    Edit2, MessageSquareWarning
 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -82,6 +83,11 @@ function POSScreen() {
     const [paymentBank, setPaymentBank] = useState('');
     const [paymentDate, setPaymentDate] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    // Price override
+    const [isPriceOverride, setIsPriceOverride] = useState(false);
+    const [customTotalStr, setCustomTotalStr] = useState('');
+    const [discountReason, setDiscountReason] = useState('');
 
     // Clients
     const [clients, setClients] = useState<Client[]>([]);
@@ -218,6 +224,19 @@ function POSScreen() {
             toast.error('Se requiere un cliente para ventas a crédito/fiado.');
             return;
         }
+
+        const finalTotal = isPriceOverride ? parseFloat(customTotalStr) : total;
+        if (isPriceOverride) {
+            if (isNaN(finalTotal) || finalTotal < 0) {
+                toast.error('El monto ingresado no es válido');
+                return;
+            }
+            if (Math.abs(finalTotal - total) > 0.001 && !discountReason.trim()) {
+                toast.error('Debes indicar el motivo del ajuste de precio');
+                return;
+            }
+        }
+
         setIsSaving(true);
         try {
             let evidenceUrl: string | null = null;
@@ -226,16 +245,17 @@ function POSScreen() {
                 await uploadBytes(fileRef, evidenceFile);
                 evidenceUrl = await getDownloadURL(fileRef);
             }
-            const cashboxObj = cashboxes.find(c => c.id === selectedCashbox) || { id: currentUser?.uid, name: currentUser?.displayName || 'Cajero' };
 
-            const finalNotes = paymentCurrency === 'VES' 
-                ? `[PAGO EN BS] Monto: Bs. ${(total * exchangeRate).toFixed(2)} (Tasa: ${exchangeRate}). ${paymentNotes}`
+            const finalNotes = paymentCurrency === 'VES'
+                ? `[PAGO EN BS] Monto: Bs. ${(finalTotal * exchangeRate).toFixed(2)} (Tasa: ${exchangeRate}). ${paymentNotes}`
                 : paymentNotes;
+
+            const hasPriceAdjustment = isPriceOverride && Math.abs(finalTotal - total) > 0.001;
 
             const ownerId = currentUser?.ownerId || currentUser?.uid || '';
             await SalesService.createSale({
                 items: items as any,
-                total,
+                total: finalTotal,
                 paymentMethod,
                 ownerId,
                 clientId: selectedClient?.id || null,
@@ -251,6 +271,11 @@ function POSScreen() {
                 paymentData: (paymentMethod === 'transfer' || paymentMethod === 'mobile_pay')
                     ? { reference: paymentReference || undefined, bank: paymentBank || undefined, date: paymentDate || undefined }
                     : undefined,
+                ...(hasPriceAdjustment ? {
+                    originalTotal: total,
+                    discountAmount: total - finalTotal,
+                    discountReason: discountReason.trim(),
+                } : {}),
             } as any);
             clearCart();
             setPaymentNotes('');
@@ -259,6 +284,9 @@ function POSScreen() {
             setPaymentDate('');
             setEvidenceFile(null);
             setEvidencePreview(null);
+            setIsPriceOverride(false);
+            setCustomTotalStr('');
+            setDiscountReason('');
             setCheckoutModalVisible(false);
             toast.success('¡Venta registrada con éxito!');
         } catch (error: any) {
@@ -513,7 +541,7 @@ function POSScreen() {
                         </span>
                     </div>
 
-                    <button onClick={() => setCheckoutModalVisible(true)} disabled={items.length === 0} className="ui-btn ui-btn-primary w-full text-[13px] h-[44px] rounded-xl uppercase font-black tracking-widest leading-none disabled:opacity-50 shadow-lg shadow-accent-primary/20 active:scale-[0.98] transition-all">
+                    <button onClick={() => { setIsPriceOverride(false); setCustomTotalStr(''); setDiscountReason(''); setCheckoutModalVisible(true); }} disabled={items.length === 0} className="ui-btn ui-btn-primary w-full text-[13px] h-[44px] rounded-xl uppercase font-black tracking-widest leading-none disabled:opacity-50 shadow-lg shadow-accent-primary/20 active:scale-[0.98] transition-all">
                         Finalizar Cobro
                     </button>
                 </div>
@@ -530,35 +558,99 @@ function POSScreen() {
                             </div>
 
                             <form onSubmit={handleConfirmSale} className="space-y-8">
-                                <div className="ui-input-box px-6 py-4 flex flex-col gap-2 relative overflow-hidden">
+                                {/* Total / Price Override Block */}
+                                <div className={`ui-input-box px-6 py-4 flex flex-col gap-3 relative overflow-hidden transition-colors ${isPriceOverride ? 'ring-2 ring-amber-500/40' : ''}`}>
                                     <div className="flex items-center justify-between">
                                         <span className="text-ui-text-muted font-black uppercase tracking-widest text-[10px]">Total a Pagar</span>
-                                        <div className="flex gap-2">
-                                            <button 
+                                        <div className="flex items-center gap-2">
+                                            <button
                                                 type="button"
                                                 onClick={() => setPaymentCurrency('USD')}
                                                 className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-widest transition-all ${paymentCurrency === 'USD' ? 'bg-accent-primary text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text-muted'}`}
-                                            >
-                                                USD
-                                            </button>
-                                            <button 
+                                            >USD</button>
+                                            <button
                                                 type="button"
                                                 onClick={() => setPaymentCurrency('VES')}
                                                 className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-widest transition-all ${paymentCurrency === 'VES' ? 'bg-orange-500 text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text-muted'}`}
+                                            >VES</button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (!isPriceOverride) {
+                                                        setCustomTotalStr(total.toFixed(2));
+                                                    }
+                                                    setIsPriceOverride(p => !p);
+                                                    setDiscountReason('');
+                                                }}
+                                                className={`p-1.5 rounded-lg text-[10px] font-black transition-all ${isPriceOverride ? 'bg-amber-500 text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text-muted hover:text-amber-500'}`}
+                                                title="Modificar precio"
                                             >
-                                                VES
+                                                <Edit2 size={13} />
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-3xl font-black text-ui-text">
-                                            {paymentCurrency === 'USD' ? `$ ${total.toFixed(2)}` : `Bs. ${(total * exchangeRate).toFixed(2)}`}
-                                        </span>
-                                        {paymentCurrency === 'VES' && (
-                                            <span className="text-[10px] font-black text-ui-text-muted opacity-50">Tasa: {exchangeRate}</span>
+
+                                    {isPriceOverride ? (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-ui-text-muted text-sm font-bold">$</span>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    value={customTotalStr}
+                                                    onChange={e => setCustomTotalStr(e.target.value)}
+                                                    className="flex-1 bg-transparent text-3xl font-black text-ui-text outline-none border-b-2 border-amber-500 pb-1 w-full"
+                                                    autoFocus
+                                                />
+                                            </div>
+                                            {parseFloat(customTotalStr) !== total && !isNaN(parseFloat(customTotalStr)) && (
+                                                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                                                    <span className="text-ui-text-muted">Original: {formatPrice(total)}</span>
+                                                    <span className={parseFloat(customTotalStr) < total ? 'text-green-500' : 'text-red-500'}>
+                                                        {parseFloat(customTotalStr) < total ? '▼' : '▲'} {formatPrice(Math.abs(total - parseFloat(customTotalStr)))}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-3xl font-black text-ui-text">
+                                                {paymentCurrency === 'USD'
+                                                    ? `$ ${total.toFixed(2)}`
+                                                    : `Bs. ${(total * exchangeRate).toFixed(2)}`}
+                                            </span>
+                                            {paymentCurrency === 'VES' && (
+                                                <span className="text-[10px] font-black text-ui-text-muted opacity-50">Tasa: {exchangeRate}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Discount reason — required when price was modified */}
+                                {isPriceOverride && Math.abs(parseFloat(customTotalStr || '0') - total) > 0.001 && (
+                                    <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+                                        <div className="flex items-center gap-2">
+                                            <MessageSquareWarning size={14} className="text-amber-500 shrink-0" />
+                                            <p className="text-[11px] font-black uppercase tracking-widest text-amber-500">
+                                                Motivo del ajuste <span className="text-red-500">*</span>
+                                            </p>
+                                        </div>
+                                        <textarea
+                                            value={discountReason}
+                                            onChange={e => setDiscountReason(e.target.value)}
+                                            placeholder="Ej: Descuento por cliente frecuente, negociación especial, promoción acordada..."
+                                            rows={3}
+                                            required
+                                            className="w-full rounded-xl ui-input-box px-4 py-3 text-sm font-medium text-ui-text resize-none outline-none focus:ring-2 focus:ring-amber-500/30 border border-amber-500/30 placeholder:text-ui-text-muted/40"
+                                        />
+                                        {!discountReason.trim() && (
+                                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest">
+                                                Este campo es obligatorio para registrar el ajuste
+                                            </p>
                                         )}
                                     </div>
-                                </div>
+                                )}
 
                                 <div className="space-y-4">
                                     <p className="text-[11px] font-black uppercase tracking-widest text-ui-text-muted">Medio de Pago</p>
@@ -665,7 +757,17 @@ function POSScreen() {
 
                                 <div className="flex gap-4 pt-4">
                                     <button type="button" className="ui-btn ui-btn-secondary flex-1" onClick={() => setCheckoutModalVisible(false)} disabled={isSaving}>Cancelar</button>
-                                    <button type="submit" className="ui-btn ui-btn-primary flex-1" disabled={isSaving || (paymentMethod === 'credit' && !selectedClient)}>{isSaving ? 'Cobrando...' : 'Confirmar'}</button>
+                                    <button
+                                        type="submit"
+                                        className="ui-btn ui-btn-primary flex-1 disabled:opacity-50"
+                                        disabled={
+                                            isSaving
+                                            || (paymentMethod === 'credit' && !selectedClient)
+                                            || (isPriceOverride && Math.abs(parseFloat(customTotalStr || '0') - total) > 0.001 && !discountReason.trim())
+                                        }
+                                    >
+                                        {isSaving ? 'Cobrando...' : 'Confirmar'}
+                                    </button>
                                 </div>
                             </form>
                         </div>

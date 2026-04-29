@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { BRAND_ASSETS } from '@/config/brand';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -103,13 +104,10 @@ export default function RegisterPage() {
 
                     {/* Brand Section */}
                     <div className="mb-10 animate-in fade-in slide-in-from-top duration-700">
-                        <Image
-                            src="/icono.svg"
+                        <img
+                            src={BRAND_ASSETS.logo_icon}
                             alt="Cuadra"
-                            width={56}
-                            height={43}
-                            className="[filter:brightness(0)_invert(1)]"
-                            priority
+                            className="brightness-0 invert w-[56px] h-auto"
                         />
                         <h1 className="text-3xl font-black tracking-[0.05em] text-white mt-4 uppercase">Crear Cuenta</h1>
                         <p className="text-gray-400 mt-2 font-medium text-sm">Únete a CUADRA y gestiona tu negocio de forma inteligente</p>

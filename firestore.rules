@@ -2,21 +2,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Reads role from Firestore document (no Cloud Functions / Custom Claims needed on Spark plan)
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function getRole() {
-      return getUserData().role;
+      let d = getUserData();
+      return d != null ? d.get('role', null) : null;
     }
 
     function getEffectiveOwnerId() {
-      return getRole() == 'owner' ? request.auth.uid : getUserData().ownerId;
+      let d = getUserData();
+      return d == null ? null :
+        (d.get('role', null) == 'owner' ? request.auth.uid : d.get('ownerId', null));
     }
 
     function isAdminGod() {
@@ -32,7 +34,20 @@ service cloud.firestore {
     }
 
     function ownerIdMatches(docOwnerId) {
-      return isAuthenticated() && getEffectiveOwnerId() == docOwnerId;
+      return isAuthenticated() && (
+        docOwnerId == getEffectiveOwnerId()
+        || (docOwnerId == null && getRole() in ['owner', 'staff', 'admin', 'admingod'])
+      );
+    }
+
+    // True when a document has no ownerId yet (legacy data created before multi-tenancy)
+    function isLegacyDoc() {
+      return resource.data.get('ownerId', null) == null;
+    }
+
+    // Users allowed to claim/stamp legacy documents with their ownerId
+    function canClaimLegacy() {
+      return isAuthenticated() && getRole() in ['owner', 'admin', 'admingod'];
     }
 
     function isNotChangingProtectedFields() {
@@ -44,13 +59,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAdmin()
         || request.auth.uid == userId
-        || (isAuthenticated() && resource.data.ownerId == getEffectiveOwnerId());
+        || (isAuthenticated() && resource.data.get('ownerId', null) == getEffectiveOwnerId());
       allow create: if
-        // Self-registration as owner
         (request.auth.uid == userId
           && request.resource.data.role == 'owner'
           && request.resource.data.active == true)
-        // Owner creating a staff document via secondary Firebase app (Spark plan workaround)
         || (isOwner()
           && request.resource.data.role == 'staff'
           && request.resource.data.ownerId == request.auth.uid
@@ -62,69 +75,80 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
       allow create: if isAuthenticated()
-        && ownerIdMatches(request.resource.data.ownerId)
+        && ownerIdMatches(request.resource.data.get('ownerId', null))
         && request.resource.data.price is number
         && request.resource.data.price >= 0
         && request.resource.data.stock is number
         && request.resource.data.stock >= 0;
-      allow update: if ownerIdMatches(resource.data.ownerId)
-        && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
+      // Allow normal updates (ownerId immutable) OR migration (stamping legacy docs)
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null))
+        && (isLegacyDoc() && canClaimLegacy()
+            || request.resource.data.get('ownerId', null) == resource.data.get('ownerId', null));
+      allow delete: if (isOwner() && request.auth.uid == resource.data.get('ownerId', null)) || isAdminGod();
     }
 
     match /sales/{saleId} {
-      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
       allow create: if isAuthenticated()
-        && ownerIdMatches(request.resource.data.ownerId)
+        && ownerIdMatches(request.resource.data.get('ownerId', null))
         && request.resource.data.total is number
         && request.resource.data.total >= 0
         && request.resource.data.status in ['paid', 'pending']
         && request.resource.data.paymentMethod in ['cash', 'transfer', 'mobile_pay', 'credit'];
-      allow update: if ownerIdMatches(resource.data.ownerId)
-        && request.resource.data.ownerId == resource.data.ownerId
-        && !request.resource.data.diff(resource.data)
-            .affectedKeys().hasAny(['items', 'total', 'createdBy', 'ownerId']);
+      // Migration: allow stamping ownerId on legacy docs. Normal: block changing key fields.
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null))
+        && (isLegacyDoc() && canClaimLegacy()
+            || (request.resource.data.get('ownerId', null) == resource.data.get('ownerId', null)
+                && !request.resource.data.diff(resource.data)
+                    .affectedKeys().hasAny(['items', 'total', 'createdBy', 'ownerId'])));
       allow delete: if isAdminGod();
     }
 
     match /clients/{clientId} {
-      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
       allow create: if isAuthenticated()
-        && ownerIdMatches(request.resource.data.ownerId);
-      allow update: if ownerIdMatches(resource.data.ownerId)
-        && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null))
+        && (isLegacyDoc() && canClaimLegacy()
+            || request.resource.data.get('ownerId', null) == resource.data.get('ownerId', null));
+      allow delete: if (isOwner() && request.auth.uid == resource.data.get('ownerId', null)) || isAdminGod();
     }
 
     match /categories/{catId} {
-      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
       allow create: if isAuthenticated()
-        && ownerIdMatches(request.resource.data.ownerId);
-      allow update: if ownerIdMatches(resource.data.ownerId);
-      allow delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null));
+      allow delete: if (isOwner() && request.auth.uid == resource.data.get('ownerId', null)) || isAdminGod();
     }
 
     match /cashboxes/{cashboxId} {
-      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
       allow create: if isOwner()
-        && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
+        && request.resource.data.get('ownerId', null) == request.auth.uid;
+      // Allow normal owner updates OR migration (legacy docs with null ownerId)
+      allow update, delete: if isAdminGod()
+        || (isOwner() && request.auth.uid == resource.data.get('ownerId', null))
+        || (isLegacyDoc() && canClaimLegacy());
     }
 
     match /locations/{locationId} {
-      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
       allow create: if isOwner()
-        && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if (isOwner() && request.auth.uid == resource.data.ownerId) || isAdminGod();
+        && request.resource.data.get('ownerId', null) == request.auth.uid;
+      allow update, delete: if isAdminGod()
+        || (isOwner() && request.auth.uid == resource.data.get('ownerId', null))
+        || (isLegacyDoc() && canClaimLegacy());
     }
 
     match /stock_movements/{movId} {
-      allow read: if ownerIdMatches(resource.data.ownerId) || isAdminGod();
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
       allow create: if isAuthenticated()
-        && ownerIdMatches(request.resource.data.ownerId);
-      allow update, delete: if isAdminGod();
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update, delete: if isAdminGod()
+        || (isLegacyDoc() && canClaimLegacy());
     }
 
     match /admin_activities/{activityId} {

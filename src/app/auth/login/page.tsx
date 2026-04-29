@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, Zap, Shield, BarChart3 } from 'lucide-react';
+import { BRAND_ASSETS } from '@/config/brand';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -117,9 +118,9 @@ export default function LoginPage() {
         <div className="min-h-screen w-full bg-[#080808] relative overflow-hidden flex items-center justify-center">
             {/* Animated Background Gradients */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '8s' }} />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-teal-500/15 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
-                <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-blue-400/10 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
+                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-violet-600/20 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '8s' }} />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-fuchsia-500/15 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
+                <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-violet-400/10 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
             </div>
 
             {/* Grid Pattern Overlay */}
@@ -135,22 +136,19 @@ export default function LoginPage() {
                         <div className="animate-in fade-in slide-in-from-left duration-1000">
                             {/* Brand Logo & Name */}
                             <div className="mb-12">
-                                <Image
-                                    src="/Logotipo2.svg"
+                                <img
+                                    src={BRAND_ASSETS.logo_full}
                                     alt="Cuadra"
-                                    width={340}
-                                    height={263}
-                                    className="[filter:brightness(0)_invert(1)] w-full max-w-[340px]"
-                                    priority
+                                    className="w-full max-w-[480px] brightness-0 invert"
                                 />
-                                <p className="text-teal-400 font-bold uppercase tracking-[0.15em] text-sm mt-4">Punto de Venta Inteligente</p>
+                                <p className="text-fuchsia-400 font-bold uppercase tracking-[0.15em] text-sm mt-4">Punto de Venta Inteligente</p>
                             </div>
 
                             {/* Features */}
                             <div className="space-y-6">
                                 <div className="flex gap-4 items-start group">
-                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center group-hover:bg-blue-500/30 transition-all duration-300">
-                                        <Zap size={24} className="text-blue-400" />
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-violet-500/20 border border-violet-500/40 flex items-center justify-center group-hover:bg-violet-500/30 transition-all duration-300">
+                                        <Zap size={24} className="text-violet-400" />
                                     </div>
                                     <div>
                                         <h3 className="text-white font-bold text-sm uppercase tracking-wider">Gestión Rápida</h3>
@@ -159,8 +157,8 @@ export default function LoginPage() {
                                 </div>
 
                                 <div className="flex gap-4 items-start group">
-                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center group-hover:bg-teal-500/30 transition-all duration-300">
-                                        <Shield size={24} className="text-teal-400" />
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-fuchsia-500/20 border border-fuchsia-500/40 flex items-center justify-center group-hover:bg-fuchsia-500/30 transition-all duration-300">
+                                        <Shield size={24} className="text-fuchsia-400" />
                                     </div>
                                     <div>
                                         <h3 className="text-white font-bold text-sm uppercase tracking-wider">Seguridad Total</h3>
@@ -183,7 +181,7 @@ export default function LoginPage() {
                         {/* Bottom Text */}
                         <div className="animate-in fade-in duration-1000 delay-500">
                             <p className="text-gray-500 text-xs font-medium uppercase tracking-widest">
-                                Confían en nosotros más de <span className="text-blue-400 font-bold">500 comerciantes</span> en Venezuela
+                                Confían en nosotros más de <span className="text-violet-400 font-bold">500 comerciantes</span> en Venezuela
                             </p>
                         </div>
                     </div>
@@ -192,13 +190,10 @@ export default function LoginPage() {
                     <div className="w-full max-w-md mx-auto lg:mx-0 animate-in fade-in slide-in-from-right duration-1000">
                         {/* Mobile Brand - Only visible on mobile */}
                         <div className="lg:hidden text-center mb-8">
-                            <Image
-                                src="/Logotipo2.svg"
+                            <img
+                                src={BRAND_ASSETS.logo_full}
                                 alt="Cuadra"
-                                width={220}
-                                height={170}
-                                className="[filter:brightness(0)_invert(1)] mx-auto"
-                                priority
+                                className="mx-auto brightness-0 invert w-[280px]"
                             />
                         </div>
 
@@ -256,14 +251,14 @@ export default function LoginPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => setView('forgot')}
-                                                className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-wider"
+                                                className="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors uppercase tracking-wider"
                                             >
                                                 ¿Olvidaste tu contraseña?
                                             </button>
                                         </div>
 
                                         {/* Submit Button */}
-                                        <Button type="submit" className="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300" size="lg" isLoading={loading}>
+                                        <Button type="submit" className="w-full mt-6 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-300" size="lg" isLoading={loading}>
                                             Iniciar Sesión
                                         </Button>
                                     </form>
@@ -305,7 +300,7 @@ export default function LoginPage() {
                                         )}
 
                                         {/* Submit Button */}
-                                        <Button type="submit" className="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300" size="lg" isLoading={loading} disabled={!!successMsg}>
+                                        <Button type="submit" className="w-full mt-6 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-300" size="lg" isLoading={loading} disabled={!!successMsg}>
                                             Enviar Instrucciones
                                         </Button>
 

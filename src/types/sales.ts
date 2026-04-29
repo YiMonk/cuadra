@@ -33,4 +33,7 @@ export interface Sale {
   cashboxId?: string | null;
   cashboxName?: string | null;
   exchangeRateAtSale?: number;
+  originalTotal?: number;
+  discountAmount?: number;
+  discountReason?: string;
 }
