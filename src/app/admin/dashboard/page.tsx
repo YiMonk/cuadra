@@ -203,7 +203,7 @@ function AdminGodDashboardPage() {
                         <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center text-accent-primary">
                             <ShoppingCart size={20} />
                         </div>
-                        <h3 className="text-sm font-black text-ui-text uppercase tracking-widest">Actividad de Ventas</h3>
+                        <h3 className="text-sm font-black text-ui-text uppercase tracking-widest">Actividad de Transacciones</h3>
                     </div>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">

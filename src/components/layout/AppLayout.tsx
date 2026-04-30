@@ -153,24 +153,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'Usuarios', href: '/admin/users', icon: Users },
         { name: 'Historial', href: '/admin/activities', icon: Clock },
     ] : isStaff ? [
-        { name: 'Venta', href: '/pos', icon: ShoppingCart },
+        { name: 'Transacciones', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', href: '/inventory', icon: Package },
-        { name: 'Cobranzas', href: '/collections', icon: DollarSign },
+        { name: 'Cobros', href: '/collections', icon: DollarSign },
         { name: 'Clientes', href: '/clients', icon: Users },
     ] : [
         // Default Owner / Manager View
-        { name: 'Venta', href: '/pos', icon: ShoppingCart },
+        { name: 'Transacciones', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', href: '/inventory', icon: Package },
         { name: 'Clientes', href: '/clients', icon: Users },
         { name: 'Reportes', href: '/reports', icon: FileText },
         { name: 'Administración', href: '/team', icon: ShieldAlert },
-        { name: 'Cobranzas', href: '/collections', icon: DollarSign },
+        { name: 'Cobros', href: '/collections', icon: DollarSign },
     ];
 
     // For mobile bottom nav - Always append Profile
-    const baseMobileItems = (isGlobalAdmin || isStaff) 
-        ? navItems 
-        : navItems.filter(item => ['Venta', 'Inventario', 'Cobranzas', 'Clientes', 'Reportes'].includes(item.name));
+    const baseMobileItems = (isGlobalAdmin || isStaff)
+        ? navItems
+        : navItems.filter(item => ['Transacciones', 'Inventario', 'Cobros', 'Clientes', 'Reportes'].includes(item.name));
     const mobileNavItems = [
         ...baseMobileItems.map(item => ({
             ...item,
@@ -224,12 +224,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     {isActive && (
                                         <div className="absolute -right-1 w-1 h-4 bg-black dark:bg-white rounded-full" />
                                     )}
-                                    {item.name === 'Venta' && cartItemsCount > 0 && (
+                                    {item.name === 'Transacciones' && cartItemsCount > 0 && (
                                         <div className="absolute top-1 right-1 w-4 h-4 bg-accent-primary rounded-full flex items-center justify-center text-[8px] font-bold text-white z-10 shadow-md">
                                             {cartItemsCount > 9 ? '9+' : cartItemsCount}
                                         </div>
                                     )}
-                                    {item.name === 'Cobranzas' && pendingCollectionsCount > 0 && (
+                                    {item.name === 'Cobros' && pendingCollectionsCount > 0 && (
                                         <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white z-10 shadow-md">
                                             {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
                                         </div>
@@ -433,7 +433,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <div className={`p-1.5 md:p-2 rounded-2xl transition-all duration-500 ${isActive ? 'bg-black/5 dark:bg-white/10 scale-110' : ''}`}>
                                     <Icon size={22} strokeWidth={isActive ? 3 : 2} />
                                 </div>
-                                {item.name === 'Venta' && cartItemsCount > 0 && (
+                                {item.name === 'Transacciones' && cartItemsCount > 0 && (
                                     <div className="absolute top-0 -right-1 w-4 h-4 bg-accent-primary rounded-full border-2 border-ui-bg flex items-center justify-center text-[8px] font-black text-white shadow-sm z-10">
                                         {cartItemsCount > 9 ? '9+' : cartItemsCount}
                                     </div>
@@ -441,7 +441,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 {isActive && (
                                     <div className="absolute -bottom-1 w-1.5 h-1.5 bg-accent-primary rounded-full" />
                                 )}
-                                {item.name === 'Cobranzas' && pendingCollectionsCount > 0 && (
+                                {item.name === 'Cobros' && pendingCollectionsCount > 0 && (
                                     <div className="absolute top-0 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-ui-bg flex items-center justify-center text-[8px] font-black text-white shadow-sm z-10">
                                         {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
                                     </div>
