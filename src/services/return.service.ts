@@ -101,18 +101,19 @@ export const ReturnService = {
 
           // Log stock movement
           const movRef = doc(collection(db, STOCK_MOVEMENTS_COLLECTION));
+          const movData: Record<string, any> = {
+            productId: returnItem.productId,
+            productName: returnItem.productName,
+            adjustment: returnItem.quantity,
+            reason: 'return',
+            notes: `Devolución de venta ${saleId}: ${reason}`,
+            createdAt: Date.now(),
+          };
+          if (returnItem.variantId) movData.variantId = returnItem.variantId;
+          if (returnItem.variantName) movData.variantName = returnItem.variantName;
           movementLogs.push({
             ref: movRef,
-            data: {
-              productId: returnItem.productId,
-              productName: returnItem.productName,
-              adjustment: returnItem.quantity,
-              reason: 'return',
-              notes: `Devolución de venta ${saleId}: ${reason}`,
-              variantId: returnItem.variantId || null,
-              variantName: returnItem.variantName || null,
-              createdAt: Date.now(),
-            },
+            data: movData,
           });
         }
 
