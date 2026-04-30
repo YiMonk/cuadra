@@ -6,7 +6,7 @@ import { SalesService } from '@/services/sales.service';
 import { UserService } from '@/services/user.service';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
-import { ArrowLeft, User, Phone, CheckCircle2, Clock, Calendar, Edit2, Check, Banknote, HelpCircle, ShoppingCart, ChevronRight, MessageCircle, FileText } from 'lucide-react';
+import { ArrowLeft, User, Phone, CheckCircle2, Clock, Calendar, Edit2, Check, Banknote, HelpCircle, ShoppingCart, ChevronRight, MessageCircle, FileText, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -33,6 +33,9 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
     const [paymentNotes, setPaymentNotes] = useState('');
     const [isSavingPayment, setIsSavingPayment] = useState(false);
     const [reminderModalVisible, setReminderModalVisible] = useState(false);
+
+    const [selectedSaleForDetail, setSelectedSaleForDetail] = useState<any>(null);
+    const [isSaleDetailModalOpen, setIsSaleDetailModalOpen] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -271,18 +274,19 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
                                         const isSelected = selectedDebts.includes(sale.id);
 
                                         return (
-                                            <tr 
-                                                key={sale.id} 
+                                            <tr
+                                                key={sale.id}
                                                 onClick={() => {
                                                     if (isPending) {
-                                                        setSelectedDebts(prev => 
+                                                        setSelectedDebts(prev =>
                                                             prev.includes(sale.id) ? prev.filter(id => id !== sale.id) : [...prev, sale.id]
                                                         );
                                                     } else {
-                                                        router.push(`/sales/${sale.id}`);
+                                                        setSelectedSaleForDetail(sale);
+                                                        setIsSaleDetailModalOpen(true);
                                                     }
-                                                }} 
-                                                className={`border-b dark:border-gray-800 transition-colors group ${isPending ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 ' + (isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-900') : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 bg-white dark:bg-gray-900'}`}
+                                                }}
+                                                className={`border-b dark:border-gray-800 transition-colors group cursor-pointer ${isPending ? 'hover:bg-gray-50 dark:hover:bg-gray-800/80 ' + (isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-900') : 'hover:bg-gray-50 dark:hover:bg-gray-800/80 bg-white dark:bg-gray-900'}`}
                                             >
                                                 <td className="px-4 py-4">
                                                     {isPending && (
@@ -399,6 +403,100 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
                         <button onClick={() => setReminderModalVisible(false)} className="mt-4 text-[10px] p-2 font-black text-ui-text-muted uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity self-center">
                             Cancelar
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Sale Detail Modal */}
+            {isSaleDetailModalOpen && selectedSaleForDetail && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="ui-card w-full max-w-2xl border border-ui-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
+                        {/* Header */}
+                        <div className="p-6 border-b border-ui-border flex items-center justify-between bg-ui-bg/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex items-center justify-center text-accent-primary">
+                                    <ShoppingCart size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-ui-text uppercase tracking-tighter">Detalle de Compra</h2>
+                                    <p className="text-[9px] text-ui-text-muted font-bold uppercase tracking-[0.2em] mt-0.5">
+                                        {new Date(selectedSaleForDetail.createdAt).toLocaleDateString()} • {new Date(selectedSaleForDetail.createdAt).toLocaleTimeString()}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsSaleDetailModalOpen(false)}
+                                className="w-8 h-8 rounded-full bg-ui-bg border border-ui-border flex items-center justify-center text-ui-text-muted hover:text-accent-danger hover:bg-accent-danger/10 transition-all"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                            {/* Info Grid */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50">
+                                    <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Estado</p>
+                                    <div className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-ui-bg border border-ui-border">
+                                        {selectedSaleForDetail.status === 'paid' ? (
+                                            <span className="text-green-600 dark:text-green-400">✓ Pagado</span>
+                                        ) : selectedSaleForDetail.status === 'pending' ? (
+                                            <span className="text-amber-600 dark:text-amber-400">⏱ Pendiente</span>
+                                        ) : (
+                                            <span className="text-red-600 dark:text-red-400">✗ Cancelado</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50">
+                                    <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Método de Pago</p>
+                                    <p className="text-xs font-bold text-ui-text">
+                                        {selectedSaleForDetail.paymentMethod === 'cash' ? 'Efectivo' : selectedSaleForDetail.paymentMethod === 'transfer' ? 'Transferencia' : selectedSaleForDetail.paymentMethod === 'mobile_pay' ? 'Pago Móvil' : 'Crédito'}
+                                    </p>
+                                </div>
+                                <div className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50">
+                                    <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Cajero</p>
+                                    <p className="text-xs font-bold text-ui-text truncate">{selectedSaleForDetail.creatorName || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            {/* Items */}
+                            <div className="space-y-3">
+                                <h3 className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Productos Comprados</h3>
+                                <div className="space-y-2">
+                                    {selectedSaleForDetail.items?.map((item: any, idx: number) => (
+                                        <div key={idx} className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50 flex items-center justify-between">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-black text-ui-text uppercase tracking-tight">{item.name}</p>
+                                                {item.variantName && (
+                                                    <p className="text-[9px] text-ui-text-muted font-bold mt-0.5">Variante: {item.variantName}</p>
+                                                )}
+                                                <p className="text-[9px] text-ui-text-muted font-bold mt-1">Cantidad: {item.quantity} × {formatPrice(item.finalPrice)}</p>
+                                            </div>
+                                            <div className="text-right ml-4 shrink-0">
+                                                <p className="text-xs font-black text-accent-primary">{formatPrice(item.finalPrice * item.quantity)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Notes if exists */}
+                            {selectedSaleForDetail.notes && (
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Notas</p>
+                                    <div className="bg-accent-secondary/5 p-3 rounded-lg border border-accent-secondary/20">
+                                        <p className="text-xs text-ui-text italic">{selectedSaleForDetail.notes}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer - Total */}
+                        <div className="p-6 bg-ui-bg/50 border-t border-ui-border flex items-center justify-between">
+                            <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Total</span>
+                            <p className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(selectedSaleForDetail.total)}</p>
+                        </div>
                     </div>
                 </div>
             )}

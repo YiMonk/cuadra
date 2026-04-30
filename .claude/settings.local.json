@@ -15,7 +15,8 @@
       "Bash(where firebase *)",
       "Bash(npx firebase *)",
       "Bash(node generate-icons.mjs)",
-      "Bash(node -e \"require\\('@resvg/resvg-js'\\); console.log\\('OK'\\)\")"
+      "Bash(node -e \"require\\('@resvg/resvg-js'\\); console.log\\('OK'\\)\")",
+      "Bash(git commit *)"
     ]
   }
 }
