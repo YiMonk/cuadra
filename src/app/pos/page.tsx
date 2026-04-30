@@ -459,7 +459,7 @@ function POSScreen() {
             <div className={`fixed inset-x-0 bottom-0 lg:relative lg:inset-x-auto lg:bottom-auto w-full lg:w-[450px] shrink-0 flex flex-col transition-all duration-700 z-50
                 ${items.length > 0 ? (isCartMinimized ? 'translate-y-[calc(100%-80px)] lg:translate-y-0' : 'translate-y-0') : 'translate-y-[120%] lg:translate-y-0'} h-[75vh] lg:h-full`}>
                 
-                <div className="ui-card ui-glass-card h-full flex flex-col p-4 border-ui-border shadow-float overflow-hidden relative bg-white/60 dark:bg-white/10 lg:bg-white/30 lg:dark:bg-white/5">
+                <div className="ui-card ui-glass-card h-full flex flex-col p-4 border-ui-border shadow-float overflow-hidden relative bg-white/85 dark:bg-slate-900/90 lg:bg-white/40 lg:dark:bg-slate-900/50">
 
                 <div className="p-4 relative cursor-pointer md:cursor-default" onClick={() => window.innerWidth < 768 && setIsCartMinimized(!isCartMinimized)}>
                     <div className="w-12 h-1.5 bg-ui-border rounded-full mx-auto mb-4 md:hidden" />
