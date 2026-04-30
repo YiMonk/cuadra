@@ -107,11 +107,25 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
             setIsSavingPayment(false);
         }
     };
+    const generateMessage = () => {
+        if (!client) return '';
+        const amount = selectedDebtTotal > 0 ? selectedDebtTotal : totalDebt;
+        const debtCount = selectedDebts.length > 0 ? selectedDebts.length : pendingSales.length;
+
+        if (amount <= 0) {
+            return `Hola ${client.name}, te escribimos de Cuadra.`;
+        }
+
+        if (selectedDebts.length > 0 && selectedDebts.length < pendingSales.length) {
+            return `Hola ${client.name}, te recordamos que tienes un saldo pendiente de $${amount.toFixed(2)} (${debtCount} cobro${debtCount > 1 ? 's' : ''}) en Cuadra.`;
+        }
+
+        return `Hola ${client.name}, te recordamos que tienes un saldo pendiente de $${amount.toFixed(2)} en Cuadra.`;
+    };
+
     const openWhatsApp = () => {
         if (!client) return;
-        const message = totalDebt > 0 
-            ? `Hola ${client.name}, te recordamos que tienes un saldo pendiente de $${totalDebt.toFixed(2)} en Cuadra.`
-            : `Hola ${client.name}, te escribimos de Cuadra.`;
+        const message = generateMessage();
         const whatsappUrl = `https://wa.me/${client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
         setReminderModalVisible(false);
@@ -119,9 +133,7 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
 
     const copyReminderMessage = () => {
         if (!client) return;
-        const message = totalDebt > 0 
-            ? `Hola ${client.name}, te recordamos que tienes un saldo pendiente de $${totalDebt.toFixed(2)} en Cuadra.`
-            : `Hola ${client.name}, te escribimos de Cuadra.`;
+        const message = generateMessage();
         navigator.clipboard.writeText(message);
         toast.success('Mensaje copiado al portapapeles');
         setReminderModalVisible(false);
@@ -358,25 +370,33 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
             {/* Reminder Modal */}
             {reminderModalVisible && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 transition-all animate-in fade-in duration-200">
-                    <div className="ui-card w-full max-w-sm border border-ui-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 p-8 flex flex-col items-center text-center !bg-white dark:!bg-[#1c1c1e]">
-                        <div className="w-16 h-16 bg-[#25D366]/20 text-[#25D366] rounded-2xl flex items-center justify-center mb-6">
-                            <MessageCircle size={32} />
+                    <div className="ui-card w-full max-w-md border border-ui-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 p-6 flex flex-col !bg-white dark:!bg-[#1c1c1e]">
+                        <div className="w-12 h-12 bg-[#25D366]/20 text-[#25D366] rounded-xl flex items-center justify-center mb-4">
+                            <MessageCircle size={24} />
                         </div>
-                        <h2 className="text-xl font-black text-ui-text mb-2 uppercase tracking-tight">Vía de Contacto</h2>
-                        <p className="text-xs font-bold text-ui-text-muted mb-8 tracking-wide">
-                            Selecciona cómo notificar a <span className="text-ui-text">{client.name}</span>
+                        <h2 className="text-lg font-black text-ui-text mb-1 uppercase tracking-tight">Vía de Contacto</h2>
+                        <p className="text-[10px] font-bold text-ui-text-muted mb-4 tracking-wide">
+                            Notificar a <span className="text-ui-text">{client.name}</span>
                         </p>
-                        
-                        <div className="w-full space-y-3">
-                            <button onClick={openWhatsApp} className="w-full py-4 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-black uppercase tracking-widest text-xs transition-transform active:scale-95 flex items-center justify-center gap-3 shadow-md">
-                                <MessageCircle size={18} /> Abrir WhatsApp
+
+                        {/* Message Preview */}
+                        <div className="mb-6 p-4 bg-[#25D366]/5 border border-[#25D366]/20 rounded-xl">
+                            <p className="text-[11px] font-black text-ui-text-muted uppercase tracking-widest mb-2">Vista Previa del Mensaje</p>
+                            <p className="text-xs text-ui-text leading-relaxed italic">
+                                {generateMessage()}
+                            </p>
+                        </div>
+
+                        <div className="w-full space-y-2">
+                            <button onClick={openWhatsApp} className="w-full py-3 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg font-black uppercase tracking-widest text-[11px] transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-md">
+                                <MessageCircle size={16} /> Abrir WhatsApp
                             </button>
-                            <button onClick={copyReminderMessage} className="w-full py-4 px-4 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-ui-text rounded-xl font-black uppercase tracking-widest text-xs transition-transform active:scale-95 flex items-center justify-center gap-3">
-                                <FileText size={18} opacity={0.5} /> Copiar Mensaje
+                            <button onClick={copyReminderMessage} className="w-full py-3 px-4 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-ui-text rounded-lg font-black uppercase tracking-widest text-[11px] transition-transform active:scale-95 flex items-center justify-center gap-2">
+                                <FileText size={16} /> Copiar Mensaje
                             </button>
                         </div>
-                        
-                        <button onClick={() => setReminderModalVisible(false)} className="mt-8 text-[10px] p-2 font-black text-ui-text-muted uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">
+
+                        <button onClick={() => setReminderModalVisible(false)} className="mt-4 text-[10px] p-2 font-black text-ui-text-muted uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity self-center">
                             Cancelar
                         </button>
                     </div>
