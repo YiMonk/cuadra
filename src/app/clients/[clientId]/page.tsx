@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { ClientService } from '@/services/client.service';
 import { SalesService } from '@/services/sales.service';
 import { UserService } from '@/services/user.service';
+import { ReturnService } from '@/services/return.service';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
-import { ArrowLeft, User, Phone, CheckCircle2, Clock, Calendar, Edit2, Check, Banknote, HelpCircle, ShoppingCart, ChevronRight, MessageCircle, FileText, X } from 'lucide-react';
+import { ArrowLeft, User, Phone, CheckCircle2, Clock, Calendar, Edit2, Check, Banknote, HelpCircle, ShoppingCart, ChevronRight, MessageCircle, FileText, X, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -36,6 +37,12 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
 
     const [selectedSaleForDetail, setSelectedSaleForDetail] = useState<any>(null);
     const [isSaleDetailModalOpen, setIsSaleDetailModalOpen] = useState(false);
+
+    // Return states for detail modal
+    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+    const [returnItems, setReturnItems] = useState<Record<string, number>>({});
+    const [returnReason, setReturnReason] = useState('');
+    const [isProcessingReturn, setIsProcessingReturn] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -140,6 +147,53 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
         navigator.clipboard.writeText(message);
         toast.success('Mensaje copiado al portapapeles');
         setReminderModalVisible(false);
+    };
+
+    const handleProcessReturn = async () => {
+        if (!selectedSaleForDetail?.id) return;
+        if (!returnReason.trim()) {
+            toast.error('Debes ingresar un motivo para la devolución');
+            return;
+        }
+
+        const itemsToReturn = Object.entries(returnItems)
+            .filter(([_, qty]) => qty > 0)
+            .map(([itemKey, qty]) => {
+                const item = selectedSaleForDetail.items.find((i: any) => i.id + (i.variantId || '') === itemKey);
+                if (!item) throw new Error('Producto no encontrado');
+                return {
+                    productId: item.id,
+                    productName: item.name,
+                    quantity: qty,
+                    price: item.finalPrice,
+                    variantId: item.variantId,
+                    variantName: item.variantName,
+                };
+            });
+
+        if (itemsToReturn.length === 0) {
+            toast.error('Debes seleccionar al menos un producto para devolver');
+            return;
+        }
+
+        setIsProcessingReturn(true);
+        try {
+            await ReturnService.createReturn(
+                selectedSaleForDetail.id,
+                itemsToReturn,
+                returnReason.trim(),
+                { id: currentUser?.uid || '', name: currentUser?.displayName || '' }
+            );
+            toast.success('Devolución registrada exitosamente');
+            setIsReturnModalOpen(false);
+            setReturnItems({});
+            setReturnReason('');
+            setSelectedSaleForDetail({ ...selectedSaleForDetail, hasReturns: true });
+        } catch (error: any) {
+            toast.error(error.message || 'Error al procesar la devolución');
+        } finally {
+            setIsProcessingReturn(false);
+        }
     };
 
     if (loading) {
@@ -492,10 +546,143 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
                             )}
                         </div>
 
-                        {/* Footer - Total */}
-                        <div className="p-6 bg-ui-bg/50 border-t border-ui-border flex items-center justify-between">
-                            <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Total</span>
-                            <p className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(selectedSaleForDetail.total)}</p>
+                        {/* Footer - Total & Actions */}
+                        <div className="p-6 bg-ui-bg/50 border-t border-ui-border space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Total</span>
+                                <p className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(selectedSaleForDetail.total)}</p>
+                            </div>
+
+                            {selectedSaleForDetail.status === 'paid' && (
+                                <button
+                                    onClick={() => {
+                                        setReturnItems({});
+                                        setReturnReason('');
+                                        setIsReturnModalOpen(true);
+                                    }}
+                                    className="w-full py-2.5 px-4 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 dark:hover:bg-amber-500/30 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                >
+                                    <RotateCcw size={16} />
+                                    Registrar Devolución
+                                </button>
+                            )}
+                            {selectedSaleForDetail.hasReturns && (
+                                <div className="py-2 px-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-600 dark:text-green-400 text-[9px] font-black uppercase tracking-widest text-center">
+                                    ✓ Tiene devoluciones registradas
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Return Modal */}
+            {isReturnModalOpen && selectedSaleForDetail && (
+                <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="w-full max-w-md bg-ui-surface backdrop-blur-2xl border border-ui-border rounded-2xl shadow-float overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-400">
+                        {/* Header */}
+                        <div className="p-6 border-b border-ui-border flex items-center justify-between bg-amber-500/5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-600">
+                                    <RotateCcw size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-ui-text uppercase tracking-tighter leading-none">Registrar Devolución</h2>
+                                    <p className="text-[9px] text-ui-text-muted font-bold uppercase tracking-[0.2em] mt-0.5">Selecciona qué devolver</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsReturnModalOpen(false)}
+                                className="w-8 h-8 rounded-full bg-ui-bg border border-ui-border flex items-center justify-center text-ui-text-muted hover:text-amber-600 hover:bg-amber-600/10 transition-all"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                            {/* Items Selection */}
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Productos</p>
+                                {selectedSaleForDetail.items.map((item: any) => {
+                                    const itemKey = item.id + (item.variantId || '');
+                                    const returnQty = returnItems[itemKey] || 0;
+                                    return (
+                                        <div key={itemKey} className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50 space-y-2">
+                                            <div>
+                                                <p className="text-xs font-black text-ui-text uppercase tracking-tight">{item.name}</p>
+                                                {item.variantName && (
+                                                    <p className="text-[9px] text-ui-text-muted font-bold mt-0.5">Variante: {item.variantName}</p>
+                                                )}
+                                                <p className="text-[9px] text-ui-text-muted font-bold mt-1">{formatPrice(item.finalPrice)} × {item.quantity} un</p>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[9px] font-bold text-ui-text-muted uppercase">A devolver:</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max={item.quantity}
+                                                    value={returnQty}
+                                                    onChange={(e) => {
+                                                        const val = Math.max(0, Math.min(item.quantity, parseInt(e.target.value) || 0));
+                                                        setReturnItems(prev => ({
+                                                            ...prev,
+                                                            [itemKey]: val
+                                                        }));
+                                                    }}
+                                                    className="w-14 h-7 bg-ui-bg border border-ui-border rounded-lg text-xs font-black text-ui-text text-center outline-none focus:border-amber-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Reason */}
+                            <div className="space-y-2 pt-2">
+                                <label className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">
+                                    Motivo <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    value={returnReason}
+                                    onChange={(e) => setReturnReason(e.target.value)}
+                                    placeholder="Producto defectuoso, cambio de decisión..."
+                                    rows={3}
+                                    className="w-full bg-ui-bg border border-ui-border rounded-lg px-3 py-2 text-xs font-bold text-ui-text placeholder:text-ui-text-muted/40 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 resize-none"
+                                />
+                            </div>
+
+                            {/* Total Refund */}
+                            {Object.values(returnItems).some(v => v > 0) && (
+                                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 space-y-1">
+                                    <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Total a Devolver</p>
+                                    <p className="text-lg font-black text-amber-600 dark:text-amber-400 tracking-tighter">
+                                        {formatPrice(
+                                            Object.entries(returnItems).reduce((sum, [itemKey, qty]) => {
+                                                const item = selectedSaleForDetail.items.find((i: any) => i.id + (i.variantId || '') === itemKey);
+                                                return sum + (item?.finalPrice || 0) * qty;
+                                            }, 0)
+                                        )}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 bg-ui-bg/50 border-t border-ui-border flex gap-3">
+                            <button
+                                onClick={() => setIsReturnModalOpen(false)}
+                                className="flex-1 py-2.5 px-4 bg-ui-bg border border-ui-border rounded-lg text-ui-text-muted hover:text-ui-text text-xs font-black uppercase tracking-widest transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleProcessReturn}
+                                disabled={isProcessingReturn || !Object.values(returnItems).some(v => v > 0) || !returnReason.trim()}
+                                className="flex-1 py-2.5 px-4 bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-black uppercase tracking-widest transition-all rounded-lg"
+                            >
+                                {isProcessingReturn ? 'Procesando...' : 'Confirmar'}
+                            </button>
                         </div>
                     </div>
                 </div>
