@@ -273,7 +273,7 @@ function POSScreen() {
                 locationName: selectedLocation !== 'all' ? locations.find(l => l.id === selectedLocation)?.name : null,
                 exchangeRateAtSale: exchangeRate,
                 paymentData: (paymentMethod === 'transfer' || paymentMethod === 'mobile_pay')
-                    ? { reference: paymentReference || undefined, bank: paymentBank || undefined, date: paymentDate || undefined }
+                    ? Object.fromEntries(Object.entries({ reference: paymentReference, bank: paymentBank, date: paymentDate }).filter(([_, v]) => v))
                     : undefined,
                 ...(hasPriceAdjustment ? {
                     originalTotal: total,

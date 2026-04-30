@@ -126,16 +126,17 @@ export const ReturnService = {
 
         // Create return document
         const newReturnRef = doc(collection(db, RETURNS_COLLECTION));
-        transaction.set(newReturnRef, {
+        const returnData: Record<string, any> = {
           saleId,
           ownerId: saleData.ownerId,
           items: returnItems,
           totalRefund,
           reason: reason.trim(),
           createdAt: Date.now(),
-          createdBy: creator?.id || null,
-          creatorName: creator?.name || null,
-        });
+        };
+        if (creator?.id) returnData.createdBy = creator.id;
+        if (creator?.name) returnData.creatorName = creator.name;
+        transaction.set(newReturnRef, returnData);
 
         // Update sale to mark it has returns
         transaction.update(saleRef, {
