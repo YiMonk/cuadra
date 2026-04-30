@@ -127,14 +127,26 @@ export const ReturnService = {
 
         // Create return document
         const newReturnRef = doc(collection(db, RETURNS_COLLECTION));
+        const cleanedItems = returnItems.map(item => {
+          const cleaned: Record<string, any> = {
+            productId: item.productId,
+            productName: item.productName,
+            quantity: item.quantity,
+            price: item.price,
+          };
+          if (item.variantId) cleaned.variantId = item.variantId;
+          if (item.variantName) cleaned.variantName = item.variantName;
+          return cleaned;
+        });
+
         const returnData: Record<string, any> = {
           saleId,
-          ownerId: saleData.ownerId,
-          items: returnItems,
+          items: cleanedItems,
           totalRefund,
           reason: reason.trim(),
           createdAt: Date.now(),
         };
+        if (saleData.ownerId) returnData.ownerId = saleData.ownerId;
         if (creator?.id) returnData.createdBy = creator.id;
         if (creator?.name) returnData.creatorName = creator.name;
         transaction.set(newReturnRef, returnData);
