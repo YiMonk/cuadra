@@ -77,7 +77,7 @@ function POSScreen() {
     const [clientModalVisible, setClientModalVisible] = useState(false);
 
     // Checkout State
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'credit' | 'mobile_pay'>('cash');
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'credit' | 'mobile_pay' | ''>('');
     const [paymentNotes, setPaymentNotes] = useState('');
     const [paymentReference, setPaymentReference] = useState('');
     const [paymentBank, setPaymentBank] = useState('');
@@ -220,6 +220,10 @@ function POSScreen() {
 
     const handleConfirmSale = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!paymentMethod) {
+            toast.error('Debes seleccionar un método de pago');
+            return;
+        }
         if (paymentMethod === 'credit' && !selectedClient) {
             toast.error('Se requiere un cliente para ventas a crédito/fiado.');
             return;
@@ -269,7 +273,7 @@ function POSScreen() {
                 locationName: selectedLocation !== 'all' ? locations.find(l => l.id === selectedLocation)?.name : null,
                 exchangeRateAtSale: exchangeRate,
                 paymentData: (paymentMethod === 'transfer' || paymentMethod === 'mobile_pay')
-                    ? { reference: paymentReference || undefined, bank: paymentBank || undefined, date: paymentDate || undefined }
+                    ? Object.fromEntries(Object.entries({ reference: paymentReference, bank: paymentBank, date: paymentDate }).filter(([_, v]) => v))
                     : undefined,
                 ...(hasPriceAdjustment ? {
                     originalTotal: total,
@@ -455,7 +459,7 @@ function POSScreen() {
             <div className={`fixed inset-x-0 bottom-0 lg:relative lg:inset-x-auto lg:bottom-auto w-full lg:w-[450px] shrink-0 flex flex-col transition-all duration-700 z-50
                 ${items.length > 0 ? (isCartMinimized ? 'translate-y-[calc(100%-80px)] lg:translate-y-0' : 'translate-y-0') : 'translate-y-[120%] lg:translate-y-0'} h-[75vh] lg:h-full`}>
                 
-                <div className="ui-card ui-glass-card h-full flex flex-col p-4 border-ui-border shadow-float overflow-hidden relative">
+                <div className="ui-card h-full flex flex-col p-4 border-ui-border shadow-float overflow-hidden relative bg-white dark:bg-slate-900">
 
                 <div className="p-4 relative cursor-pointer md:cursor-default" onClick={() => window.innerWidth < 768 && setIsCartMinimized(!isCartMinimized)}>
                     <div className="w-12 h-1.5 bg-ui-border rounded-full mx-auto mb-4 md:hidden" />
@@ -541,7 +545,7 @@ function POSScreen() {
                         </span>
                     </div>
 
-                    <button onClick={() => { setIsPriceOverride(false); setCustomTotalStr(''); setDiscountReason(''); setCheckoutModalVisible(true); }} disabled={items.length === 0} className="ui-btn ui-btn-primary w-full text-[13px] h-[44px] rounded-xl uppercase font-black tracking-widest leading-none disabled:opacity-50 shadow-lg shadow-accent-primary/20 active:scale-[0.98] transition-all">
+                    <button onClick={() => { setIsPriceOverride(false); setCustomTotalStr(''); setDiscountReason(''); setPaymentMethod(''); setCheckoutModalVisible(true); }} disabled={items.length === 0} className="ui-btn ui-btn-primary w-full text-[13px] h-[44px] rounded-xl uppercase font-black tracking-widest leading-none disabled:opacity-50 shadow-lg shadow-accent-primary/20 active:scale-[0.98] transition-all">
                         Finalizar Cobro
                     </button>
                 </div>
@@ -702,7 +706,7 @@ function POSScreen() {
 
                                 {(paymentMethod === 'transfer' || paymentMethod === 'mobile_pay') && (
                                     <div className="space-y-3">
-                                        <p className="text-[11px] font-black uppercase tracking-widest text-ui-text-muted">Datos del Pago</p>
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-ui-text-muted">Datos del Pago <span className="text-[10px] font-normal text-ui-text-muted/60">(Opcional)</span></p>
                                         <Input label="REFERENCIA" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Nro. de referencia o confirmación" />
                                         <Input label="BANCO" value={paymentBank} onChange={(e) => setPaymentBank(e.target.value)} placeholder="Banco emisor" />
                                         <Input label="FECHA DEL PAGO" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
@@ -762,6 +766,7 @@ function POSScreen() {
                                         className="ui-btn ui-btn-primary flex-1 disabled:opacity-50"
                                         disabled={
                                             isSaving
+                                            || !paymentMethod
                                             || (paymentMethod === 'credit' && !selectedClient)
                                             || (isPriceOverride && Math.abs(parseFloat(customTotalStr || '0') - total) > 0.001 && !discountReason.trim())
                                         }

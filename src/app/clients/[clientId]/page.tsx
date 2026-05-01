@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { ClientService } from '@/services/client.service';
 import { SalesService } from '@/services/sales.service';
 import { UserService } from '@/services/user.service';
+import { ReturnService } from '@/services/return.service';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
-import { ArrowLeft, User, Phone, CheckCircle2, Clock, Calendar, Edit2, Check, Banknote, HelpCircle, ShoppingCart, ChevronRight, MessageCircle, FileText } from 'lucide-react';
+import { ArrowLeft, User, Phone, CheckCircle2, Clock, Calendar, Edit2, Check, Banknote, HelpCircle, ShoppingCart, ChevronRight, MessageCircle, FileText, X, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -33,6 +34,15 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
     const [paymentNotes, setPaymentNotes] = useState('');
     const [isSavingPayment, setIsSavingPayment] = useState(false);
     const [reminderModalVisible, setReminderModalVisible] = useState(false);
+
+    const [selectedSaleForDetail, setSelectedSaleForDetail] = useState<any>(null);
+    const [isSaleDetailModalOpen, setIsSaleDetailModalOpen] = useState(false);
+
+    // Return states for detail modal
+    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+    const [returnItems, setReturnItems] = useState<Record<string, number>>({});
+    const [returnReason, setReturnReason] = useState('');
+    const [isProcessingReturn, setIsProcessingReturn] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -107,11 +117,25 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
             setIsSavingPayment(false);
         }
     };
+    const generateMessage = () => {
+        if (!client) return '';
+        const amount = selectedDebtTotal > 0 ? selectedDebtTotal : totalDebt;
+        const debtCount = selectedDebts.length > 0 ? selectedDebts.length : pendingSales.length;
+
+        if (amount <= 0) {
+            return `Hola ${client.name}, te escribimos de Cuadra.`;
+        }
+
+        if (selectedDebts.length > 0 && selectedDebts.length < pendingSales.length) {
+            return `Hola ${client.name}, te recordamos que tienes un saldo pendiente de $${amount.toFixed(2)} (${debtCount} cobro${debtCount > 1 ? 's' : ''}) en Cuadra.`;
+        }
+
+        return `Hola ${client.name}, te recordamos que tienes un saldo pendiente de $${amount.toFixed(2)} en Cuadra.`;
+    };
+
     const openWhatsApp = () => {
         if (!client) return;
-        const message = totalDebt > 0 
-            ? `Hola ${client.name}, te recordamos que tienes un saldo pendiente de $${totalDebt.toFixed(2)} en Cuadra.`
-            : `Hola ${client.name}, te escribimos de Cuadra.`;
+        const message = generateMessage();
         const whatsappUrl = `https://wa.me/${client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
         setReminderModalVisible(false);
@@ -119,12 +143,57 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
 
     const copyReminderMessage = () => {
         if (!client) return;
-        const message = totalDebt > 0 
-            ? `Hola ${client.name}, te recordamos que tienes un saldo pendiente de $${totalDebt.toFixed(2)} en Cuadra.`
-            : `Hola ${client.name}, te escribimos de Cuadra.`;
+        const message = generateMessage();
         navigator.clipboard.writeText(message);
         toast.success('Mensaje copiado al portapapeles');
         setReminderModalVisible(false);
+    };
+
+    const handleProcessReturn = async () => {
+        if (!selectedSaleForDetail?.id) return;
+        if (!returnReason.trim()) {
+            toast.error('Debes ingresar un motivo para la devolución');
+            return;
+        }
+
+        const itemsToReturn = Object.entries(returnItems)
+            .filter(([_, qty]) => qty > 0)
+            .map(([itemKey, qty]) => {
+                const item = selectedSaleForDetail.items.find((i: any) => i.id + (i.variantId || '') === itemKey);
+                if (!item) throw new Error('Producto no encontrado');
+                return {
+                    productId: item.id,
+                    productName: item.name,
+                    quantity: qty,
+                    price: item.finalPrice,
+                    variantId: item.variantId,
+                    variantName: item.variantName,
+                };
+            });
+
+        if (itemsToReturn.length === 0) {
+            toast.error('Debes seleccionar al menos un producto para devolver');
+            return;
+        }
+
+        setIsProcessingReturn(true);
+        try {
+            await ReturnService.createReturn(
+                selectedSaleForDetail.id,
+                itemsToReturn,
+                returnReason.trim(),
+                { id: currentUser?.uid || '', name: currentUser?.displayName || '' }
+            );
+            toast.success('Devolución registrada exitosamente');
+            setIsReturnModalOpen(false);
+            setReturnItems({});
+            setReturnReason('');
+            setSelectedSaleForDetail({ ...selectedSaleForDetail, hasReturns: true });
+        } catch (error: any) {
+            toast.error(error.message || 'Error al procesar la devolución');
+        } finally {
+            setIsProcessingReturn(false);
+        }
     };
 
     if (loading) {
@@ -259,18 +328,19 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
                                         const isSelected = selectedDebts.includes(sale.id);
 
                                         return (
-                                            <tr 
-                                                key={sale.id} 
+                                            <tr
+                                                key={sale.id}
                                                 onClick={() => {
                                                     if (isPending) {
-                                                        setSelectedDebts(prev => 
+                                                        setSelectedDebts(prev =>
                                                             prev.includes(sale.id) ? prev.filter(id => id !== sale.id) : [...prev, sale.id]
                                                         );
                                                     } else {
-                                                        router.push(`/sales/${sale.id}`);
+                                                        setSelectedSaleForDetail(sale);
+                                                        setIsSaleDetailModalOpen(true);
                                                     }
-                                                }} 
-                                                className={`border-b dark:border-gray-800 transition-colors group ${isPending ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 ' + (isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-900') : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 bg-white dark:bg-gray-900'}`}
+                                                }}
+                                                className={`border-b dark:border-gray-800 transition-colors group cursor-pointer ${isPending ? 'hover:bg-gray-50 dark:hover:bg-gray-800/80 ' + (isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-900') : 'hover:bg-gray-50 dark:hover:bg-gray-800/80 bg-white dark:bg-gray-900'}`}
                                             >
                                                 <td className="px-4 py-4">
                                                     {isPending && (
@@ -358,27 +428,262 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
             {/* Reminder Modal */}
             {reminderModalVisible && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 transition-all animate-in fade-in duration-200">
-                    <div className="ui-card w-full max-w-sm border border-ui-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 p-8 flex flex-col items-center text-center !bg-white dark:!bg-[#1c1c1e]">
-                        <div className="w-16 h-16 bg-[#25D366]/20 text-[#25D366] rounded-2xl flex items-center justify-center mb-6">
-                            <MessageCircle size={32} />
+                    <div className="ui-card w-full max-w-md border border-ui-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 p-6 flex flex-col !bg-white dark:!bg-[#1c1c1e]">
+                        <div className="w-12 h-12 bg-[#25D366]/20 text-[#25D366] rounded-xl flex items-center justify-center mb-4">
+                            <MessageCircle size={24} />
                         </div>
-                        <h2 className="text-xl font-black text-ui-text mb-2 uppercase tracking-tight">Vía de Contacto</h2>
-                        <p className="text-xs font-bold text-ui-text-muted mb-8 tracking-wide">
-                            Selecciona cómo notificar a <span className="text-ui-text">{client.name}</span>
+                        <h2 className="text-lg font-black text-ui-text mb-1 uppercase tracking-tight">Vía de Contacto</h2>
+                        <p className="text-[10px] font-bold text-ui-text-muted mb-4 tracking-wide">
+                            Notificar a <span className="text-ui-text">{client.name}</span>
                         </p>
-                        
-                        <div className="w-full space-y-3">
-                            <button onClick={openWhatsApp} className="w-full py-4 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-black uppercase tracking-widest text-xs transition-transform active:scale-95 flex items-center justify-center gap-3 shadow-md">
-                                <MessageCircle size={18} /> Abrir WhatsApp
+
+                        {/* Message Preview */}
+                        <div className="mb-6 p-4 bg-[#25D366]/5 border border-[#25D366]/20 rounded-xl">
+                            <p className="text-[11px] font-black text-ui-text-muted uppercase tracking-widest mb-2">Vista Previa del Mensaje</p>
+                            <p className="text-xs text-ui-text leading-relaxed italic">
+                                {generateMessage()}
+                            </p>
+                        </div>
+
+                        <div className="w-full space-y-2">
+                            <button onClick={openWhatsApp} className="w-full py-3 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg font-black uppercase tracking-widest text-[11px] transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-md">
+                                <MessageCircle size={16} /> Abrir WhatsApp
                             </button>
-                            <button onClick={copyReminderMessage} className="w-full py-4 px-4 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-ui-text rounded-xl font-black uppercase tracking-widest text-xs transition-transform active:scale-95 flex items-center justify-center gap-3">
-                                <FileText size={18} opacity={0.5} /> Copiar Mensaje
+                            <button onClick={copyReminderMessage} className="w-full py-3 px-4 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-ui-text rounded-lg font-black uppercase tracking-widest text-[11px] transition-transform active:scale-95 flex items-center justify-center gap-2">
+                                <FileText size={16} /> Copiar Mensaje
                             </button>
                         </div>
-                        
-                        <button onClick={() => setReminderModalVisible(false)} className="mt-8 text-[10px] p-2 font-black text-ui-text-muted uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">
+
+                        <button onClick={() => setReminderModalVisible(false)} className="mt-4 text-[10px] p-2 font-black text-ui-text-muted uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity self-center">
                             Cancelar
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Sale Detail Modal */}
+            {isSaleDetailModalOpen && selectedSaleForDetail && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="ui-card w-full max-w-2xl border border-ui-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
+                        {/* Header */}
+                        <div className="p-6 border-b border-ui-border flex items-center justify-between bg-ui-bg/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex items-center justify-center text-accent-primary">
+                                    <ShoppingCart size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-ui-text uppercase tracking-tighter">Detalle de Compra</h2>
+                                    <p className="text-[9px] text-ui-text-muted font-bold uppercase tracking-[0.2em] mt-0.5">
+                                        {new Date(selectedSaleForDetail.createdAt).toLocaleDateString()} • {new Date(selectedSaleForDetail.createdAt).toLocaleTimeString()}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsSaleDetailModalOpen(false)}
+                                className="w-8 h-8 rounded-full bg-ui-bg border border-ui-border flex items-center justify-center text-ui-text-muted hover:text-accent-danger hover:bg-accent-danger/10 transition-all"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                            {/* Info Grid */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50">
+                                    <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Estado</p>
+                                    <div className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-ui-bg border border-ui-border">
+                                        {selectedSaleForDetail.status === 'paid' ? (
+                                            <span className="text-green-600 dark:text-green-400">✓ Pagado</span>
+                                        ) : selectedSaleForDetail.status === 'pending' ? (
+                                            <span className="text-amber-600 dark:text-amber-400">⏱ Pendiente</span>
+                                        ) : (
+                                            <span className="text-red-600 dark:text-red-400">✗ Cancelado</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50">
+                                    <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Método de Pago</p>
+                                    <p className="text-xs font-bold text-ui-text">
+                                        {selectedSaleForDetail.paymentMethod === 'cash' ? 'Efectivo' : selectedSaleForDetail.paymentMethod === 'transfer' ? 'Transferencia' : selectedSaleForDetail.paymentMethod === 'mobile_pay' ? 'Pago Móvil' : 'Crédito'}
+                                    </p>
+                                </div>
+                                <div className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50">
+                                    <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Cajero</p>
+                                    <p className="text-xs font-bold text-ui-text truncate">{selectedSaleForDetail.creatorName || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            {/* Items */}
+                            <div className="space-y-3">
+                                <h3 className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Productos Comprados</h3>
+                                <div className="space-y-2">
+                                    {selectedSaleForDetail.items?.map((item: any, idx: number) => (
+                                        <div key={idx} className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50 flex items-center justify-between">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-black text-ui-text uppercase tracking-tight">{item.name}</p>
+                                                {item.variantName && (
+                                                    <p className="text-[9px] text-ui-text-muted font-bold mt-0.5">Variante: {item.variantName}</p>
+                                                )}
+                                                <p className="text-[9px] text-ui-text-muted font-bold mt-1">Cantidad: {item.quantity} × {formatPrice(item.finalPrice)}</p>
+                                            </div>
+                                            <div className="text-right ml-4 shrink-0">
+                                                <p className="text-xs font-black text-accent-primary">{formatPrice(item.finalPrice * item.quantity)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Notes if exists */}
+                            {selectedSaleForDetail.notes && (
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Notas</p>
+                                    <div className="bg-accent-secondary/5 p-3 rounded-lg border border-accent-secondary/20">
+                                        <p className="text-xs text-ui-text italic">{selectedSaleForDetail.notes}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer - Total & Actions */}
+                        <div className="p-6 bg-ui-bg/50 border-t border-ui-border space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Total</span>
+                                <p className="text-3xl font-black text-ui-text tracking-tighter">{formatPrice(selectedSaleForDetail.total)}</p>
+                            </div>
+
+                            {selectedSaleForDetail.status === 'paid' && (
+                                <button
+                                    onClick={() => {
+                                        setReturnItems({});
+                                        setReturnReason('');
+                                        setIsReturnModalOpen(true);
+                                    }}
+                                    className="w-full py-2.5 px-4 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 dark:hover:bg-amber-500/30 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                >
+                                    <RotateCcw size={16} />
+                                    Registrar Devolución
+                                </button>
+                            )}
+                            {selectedSaleForDetail.hasReturns && (
+                                <div className="py-2 px-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-600 dark:text-green-400 text-[9px] font-black uppercase tracking-widest text-center">
+                                    ✓ Tiene devoluciones registradas
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Return Modal */}
+            {isReturnModalOpen && selectedSaleForDetail && (
+                <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="w-full max-w-md bg-ui-surface backdrop-blur-2xl border border-ui-border rounded-2xl shadow-float overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-400">
+                        {/* Header */}
+                        <div className="p-6 border-b border-ui-border flex items-center justify-between bg-amber-500/5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-600">
+                                    <RotateCcw size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-ui-text uppercase tracking-tighter leading-none">Registrar Devolución</h2>
+                                    <p className="text-[9px] text-ui-text-muted font-bold uppercase tracking-[0.2em] mt-0.5">Selecciona qué devolver</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsReturnModalOpen(false)}
+                                className="w-8 h-8 rounded-full bg-ui-bg border border-ui-border flex items-center justify-center text-ui-text-muted hover:text-amber-600 hover:bg-amber-600/10 transition-all"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                            {/* Items Selection */}
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Productos</p>
+                                {selectedSaleForDetail.items.map((item: any) => {
+                                    const itemKey = item.id + (item.variantId || '');
+                                    const returnQty = returnItems[itemKey] || 0;
+                                    return (
+                                        <div key={itemKey} className="bg-ui-bg/50 p-3 rounded-lg border border-ui-border/50 space-y-2">
+                                            <div>
+                                                <p className="text-xs font-black text-ui-text uppercase tracking-tight">{item.name}</p>
+                                                {item.variantName && (
+                                                    <p className="text-[9px] text-ui-text-muted font-bold mt-0.5">Variante: {item.variantName}</p>
+                                                )}
+                                                <p className="text-[9px] text-ui-text-muted font-bold mt-1">{formatPrice(item.finalPrice)} × {item.quantity} un</p>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[9px] font-bold text-ui-text-muted uppercase">A devolver:</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max={item.quantity}
+                                                    value={returnQty}
+                                                    onChange={(e) => {
+                                                        const val = Math.max(0, Math.min(item.quantity, parseInt(e.target.value) || 0));
+                                                        setReturnItems(prev => ({
+                                                            ...prev,
+                                                            [itemKey]: val
+                                                        }));
+                                                    }}
+                                                    className="w-14 h-7 bg-ui-bg border border-ui-border rounded-lg text-xs font-black text-ui-text text-center outline-none focus:border-amber-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Reason */}
+                            <div className="space-y-2 pt-2">
+                                <label className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">
+                                    Motivo <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    value={returnReason}
+                                    onChange={(e) => setReturnReason(e.target.value)}
+                                    placeholder="Producto defectuoso, cambio de decisión..."
+                                    rows={3}
+                                    className="w-full bg-ui-bg border border-ui-border rounded-lg px-3 py-2 text-xs font-bold text-ui-text placeholder:text-ui-text-muted/40 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 resize-none"
+                                />
+                            </div>
+
+                            {/* Total Refund */}
+                            {Object.values(returnItems).some(v => v > 0) && (
+                                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 space-y-1">
+                                    <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Total a Devolver</p>
+                                    <p className="text-lg font-black text-amber-600 dark:text-amber-400 tracking-tighter">
+                                        {formatPrice(
+                                            Object.entries(returnItems).reduce((sum, [itemKey, qty]) => {
+                                                const item = selectedSaleForDetail.items.find((i: any) => i.id + (i.variantId || '') === itemKey);
+                                                return sum + (item?.finalPrice || 0) * qty;
+                                            }, 0)
+                                        )}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 bg-ui-bg/50 border-t border-ui-border flex gap-3">
+                            <button
+                                onClick={() => setIsReturnModalOpen(false)}
+                                className="flex-1 py-2.5 px-4 bg-ui-bg border border-ui-border rounded-lg text-ui-text-muted hover:text-ui-text text-xs font-black uppercase tracking-widest transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleProcessReturn}
+                                disabled={isProcessingReturn || !Object.values(returnItems).some(v => v > 0) || !returnReason.trim()}
+                                className="flex-1 py-2.5 px-4 bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-black uppercase tracking-widest transition-all rounded-lg"
+                            >
+                                {isProcessingReturn ? 'Procesando...' : 'Confirmar'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

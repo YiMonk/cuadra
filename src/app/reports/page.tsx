@@ -6,11 +6,12 @@ import { useCurrency } from '@/context/CurrencyContext';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { SalesService } from '@/services/sales.service';
+import { ReturnService } from '@/services/return.service';
 import { UserService } from '@/services/user.service';
 import { Sale } from '@/types/sales';
 import { UserMetadata } from '@/services/user.service';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet, Eye, Info, AlertCircle, X, Clock, CreditCard, Wallet, Banknote } from 'lucide-react';
+import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet, Eye, Info, AlertCircle, X, Clock, CreditCard, Wallet, Banknote, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -45,6 +46,12 @@ function ReportsScreen() {
     const [isEditingPayment, setIsEditingPayment] = useState(false);
     const [tempPaymentData, setTempPaymentData] = useState({ reference: '', bank: '', date: '' });
     const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+    // Return Modal State
+    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+    const [returnItems, setReturnItems] = useState<Record<string, number>>({});
+    const [returnReason, setReturnReason] = useState('');
+    const [isProcessingReturn, setIsProcessingReturn] = useState(false);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -253,11 +260,11 @@ function ReportsScreen() {
                 }
             });
             toast.success('Datos de pago actualizados');
-            
+
             // Update local state
-            const updatedSale = { 
-                ...selectedSale, 
-                paymentData: { ...selectedSale.paymentData, ...tempPaymentData } 
+            const updatedSale = {
+                ...selectedSale,
+                paymentData: { ...selectedSale.paymentData, ...tempPaymentData }
             };
             setSelectedSale(updatedSale);
             setAllSales(prev => prev.map(s => s.id === selectedSale.id ? updatedSale : s));
@@ -266,6 +273,57 @@ function ReportsScreen() {
             toast.error('Error al actualizar datos');
         } finally {
             setIsSavingEdit(false);
+        }
+    };
+
+    const handleProcessReturn = async () => {
+        if (!selectedSale?.id) return;
+        if (!returnReason.trim()) {
+            toast.error('Debes ingresar un motivo para la devolución');
+            return;
+        }
+
+        const itemsToReturn = Object.entries(returnItems)
+            .filter(([_, qty]) => qty > 0)
+            .map(([itemKey, qty]) => {
+                const item = selectedSale.items.find(i => i.id + (i.variantId || '') === itemKey);
+                if (!item) throw new Error('Producto no encontrado');
+                return {
+                    productId: item.id,
+                    productName: item.name,
+                    quantity: qty,
+                    price: item.finalPrice,
+                    variantId: item.variantId,
+                    variantName: item.variantName,
+                };
+            });
+
+        if (itemsToReturn.length === 0) {
+            toast.error('Debes seleccionar al menos un producto para devolver');
+            return;
+        }
+
+        setIsProcessingReturn(true);
+        try {
+            await ReturnService.createReturn(
+                selectedSale.id,
+                itemsToReturn,
+                returnReason.trim(),
+                { id: user?.uid || '', name: user?.displayName || '' }
+            );
+            toast.success('Devolución registrada exitosamente');
+            setIsReturnModalOpen(false);
+            setReturnItems({});
+            setReturnReason('');
+
+            // Update sale to show it has returns
+            const updated = { ...selectedSale, hasReturns: true };
+            setSelectedSale(updated);
+            setAllSales(prev => prev.map(s => s.id === selectedSale.id ? updated : s));
+        } catch (error: any) {
+            toast.error(error.message || 'Error al procesar la devolución');
+        } finally {
+            setIsProcessingReturn(false);
         }
     };
 
@@ -839,16 +897,151 @@ function ReportsScreen() {
                             )}
                         </div>
 
-                        {/* Footer - Total */}
-                        <div className="p-8 bg-ui-bg/50 border-t border-ui-border flex items-center justify-between">
+                        {/* Footer - Total & Actions */}
+                        <div className="p-8 bg-ui-bg/50 border-t border-ui-border space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Clock size={16} className="text-ui-text-muted" />
+                                    <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Resumen Final</span>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.3em] mb-1">Total Pagado</p>
+                                    <h3 className="text-4xl font-black text-ui-text tracking-tighter leading-none">{formatPrice(selectedSale.total)}</h3>
+                                </div>
+                            </div>
+
+                            {selectedSale.status === 'paid' && (
+                                <button
+                                    onClick={() => {
+                                        setReturnItems({});
+                                        setReturnReason('');
+                                        setIsReturnModalOpen(true);
+                                    }}
+                                    className="w-full py-2.5 px-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-600 hover:bg-amber-500/20 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                >
+                                    <RotateCcw size={16} />
+                                    Registrar Devolución
+                                </button>
+                            )}
+                            {selectedSale.hasReturns && (
+                                <div className="py-1.5 px-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-600 text-[9px] font-black uppercase tracking-widest text-center">
+                                    ✓ Tiene devoluciones registradas
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Return Modal */}
+            {isReturnModalOpen && selectedSale && (
+                <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 md:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="w-full max-w-xl bg-ui-surface backdrop-blur-2xl border border-ui-border rounded-[2.5rem] shadow-float overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-400">
+                        {/* Header */}
+                        <div className="p-6 border-b border-ui-border flex items-center justify-between bg-amber-500/5">
                             <div className="flex items-center gap-3">
-                                <Clock size={16} className="text-ui-text-muted" />
-                                <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Resumen Final</span>
+                                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-600">
+                                    <RotateCcw size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-ui-text uppercase tracking-tighter leading-none">Registrar Devolución</h2>
+                                    <p className="text-[9px] text-ui-text-muted font-bold uppercase tracking-[0.2em] mt-0.5">Selecciona los productos a devolver</p>
+                                </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.3em] mb-1">Total Pagado</p>
-                                <h3 className="text-4xl font-black text-ui-text tracking-tighter leading-none">{formatPrice(selectedSale.total)}</h3>
+                            <button
+                                onClick={() => setIsReturnModalOpen(false)}
+                                className="w-8 h-8 rounded-full bg-ui-bg border border-ui-border flex items-center justify-center text-ui-text-muted hover:text-accent-danger hover:bg-accent-danger/10 transition-all"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                            {/* Items Selection */}
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Productos en la Venta</p>
+                                {selectedSale.items.map((item) => {
+                                    const itemKey = item.id + (item.variantId || '');
+                                    const returnQty = returnItems[itemKey] || 0;
+                                    return (
+                                        <div key={itemKey} className="bg-ui-bg/50 p-4 rounded-xl border border-ui-border/50 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs font-black text-ui-text uppercase tracking-tight">{item.name}</p>
+                                                    {item.variantName && (
+                                                        <p className="text-[9px] text-ui-text-muted font-bold mt-0.5">Variante: {item.variantName}</p>
+                                                    )}
+                                                    <p className="text-[9px] text-ui-text-muted font-bold mt-1">Precio: {formatPrice(item.finalPrice)} × {item.quantity} un</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[9px] font-bold text-ui-text-muted uppercase">Cantidad a devolver:</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max={item.quantity}
+                                                    value={returnQty}
+                                                    onChange={(e) => {
+                                                        const val = Math.max(0, Math.min(item.quantity, parseInt(e.target.value) || 0));
+                                                        setReturnItems(prev => ({
+                                                            ...prev,
+                                                            [itemKey]: val
+                                                        }));
+                                                    }}
+                                                    className="w-16 h-8 bg-ui-bg border border-ui-border rounded-lg text-xs font-black text-ui-text text-center outline-none focus:border-accent-primary"
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
+
+                            {/* Reason */}
+                            <div className="space-y-2 pt-2">
+                                <label className="text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">
+                                    Motivo de la Devolución <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    value={returnReason}
+                                    onChange={(e) => setReturnReason(e.target.value)}
+                                    placeholder="Ej: Producto defectuoso, cambio de decisión, talla incorrecta..."
+                                    rows={3}
+                                    className="w-full bg-ui-bg border border-ui-border rounded-xl px-3 py-2 text-xs font-bold text-ui-text placeholder:text-ui-text-muted/40 outline-none focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/20 resize-none"
+                                />
+                            </div>
+
+                            {/* Total Refund */}
+                            {Object.values(returnItems).some(v => v > 0) && (
+                                <div className="bg-accent-primary/10 border border-accent-primary/30 rounded-xl p-3 space-y-1">
+                                    <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.2em]">Total a Devolver</p>
+                                    <p className="text-lg font-black text-accent-primary tracking-tighter">
+                                        {formatPrice(
+                                            Object.entries(returnItems).reduce((sum, [itemKey, qty]) => {
+                                                const item = selectedSale.items.find(i => i.id + (i.variantId || '') === itemKey);
+                                                return sum + (item?.finalPrice || 0) * qty;
+                                            }, 0)
+                                        )}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 bg-ui-bg/50 border-t border-ui-border flex gap-3">
+                            <button
+                                onClick={() => setIsReturnModalOpen(false)}
+                                className="flex-1 py-2.5 px-4 bg-ui-bg border border-ui-border rounded-xl text-ui-text-muted hover:text-ui-text text-xs font-black uppercase tracking-widest transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleProcessReturn}
+                                disabled={isProcessingReturn || !Object.values(returnItems).some(v => v > 0) || !returnReason.trim()}
+                                className="flex-1 py-2.5 px-4 bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-black uppercase tracking-widest transition-all rounded-xl"
+                            >
+                                {isProcessingReturn ? 'Procesando...' : 'Confirmar Devolución'}
+                            </button>
                         </div>
                     </div>
                 </div>

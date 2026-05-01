@@ -36,4 +36,26 @@ export interface Sale {
   originalTotal?: number;
   discountAmount?: number;
   discountReason?: string;
+  hasReturns?: boolean;
+}
+
+export interface ReturnItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  variantId?: string;
+  variantName?: string;
+}
+
+export interface Return {
+  id?: string;
+  saleId: string;
+  ownerId: string;
+  items: ReturnItem[];
+  totalRefund: number;
+  reason: string;
+  createdAt: number;
+  createdBy?: string | null;
+  creatorName?: string | null;
 }
