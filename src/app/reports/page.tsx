@@ -10,8 +10,8 @@ import { ReturnService } from '@/services/return.service';
 import { UserService } from '@/services/user.service';
 import { Sale } from '@/types/sales';
 import { UserMetadata } from '@/services/user.service';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet, Eye, Info, AlertCircle, X, Clock, CreditCard, Wallet, Banknote, RotateCcw } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
+import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet, Eye, Info, AlertCircle, X, Clock, CreditCard, Wallet, Banknote, RotateCcw, Search } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -53,6 +53,23 @@ function ReportsScreen() {
     const [returnReason, setReturnReason] = useState('');
     const [isProcessingReturn, setIsProcessingReturn] = useState(false);
 
+    // Search & Filter State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'pending' | 'cancelled'>('all');
+    const [filterMethod, setFilterMethod] = useState<'all' | 'cash' | 'transfer' | 'mobile_pay' | 'credit'>('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const PAGE_SIZE = 20;
+
+    // Paying Pending Sale State
+    const [isPayingPending, setIsPayingPending] = useState(false);
+    const [pendingPayMethod, setPendingPayMethod] = useState<'cash' | 'transfer' | 'mobile_pay' | ''>('');
+    const [pendingPayData, setPendingPayData] = useState({ reference: '', bank: '', date: '' });
+    const [pendingEvidenceFile, setPendingEvidenceFile] = useState<File | null>(null);
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+    // Product Chart State
+    const [productChartPeriod, setProductChartPeriod] = useState<'day' | 'week' | 'month' | 'all'>('month');
+
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
@@ -87,8 +104,15 @@ function ReportsScreen() {
 
     useEffect(() => {
         let filtered = allSales.filter(s => {
-            if (selectedCashier !== 'all') {
-                return s.cashboxId === selectedCashier || s.createdBy === selectedCashier;
+            if (selectedCashier !== 'all' && s.cashboxId !== selectedCashier && s.createdBy !== selectedCashier) return false;
+            if (filterStatus !== 'all' && s.status !== filterStatus) return false;
+            if (filterMethod !== 'all' && s.paymentMethod !== filterMethod) return false;
+            if (searchQuery.trim()) {
+                const q = searchQuery.toLowerCase();
+                const ok = (s.clientName || '').toLowerCase().includes(q)
+                        || (s.creatorName || '').toLowerCase().includes(q)
+                        || (s.id || '').toLowerCase().includes(q);
+                if (!ok) return false;
             }
             return true;
         });
@@ -100,8 +124,9 @@ function ReportsScreen() {
         });
 
         setFilteredSales(filtered);
+        setCurrentPage(1);
         processStats(filtered);
-    }, [allSales, selectedCashier]);
+    }, [allSales, selectedCashier, filterStatus, filterMethod, searchQuery]);
 
     const processStats = (data: Sale[]) => {
         const summary = SalesService.computeSummary(data);
@@ -132,6 +157,82 @@ function ReportsScreen() {
         setPieData(Object.entries(byCount).map(([name, value], idx) => ({ name, value, color: COLORS[idx % COLORS.length] })));
 
         setCashboxMetrics(summary.byCashbox);
+    };
+
+    const displayedSales = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return filteredSales.slice(start, start + PAGE_SIZE);
+    }, [filteredSales, currentPage]);
+
+    const totalPages = useMemo(() => {
+        return Math.max(1, Math.ceil(filteredSales.length / PAGE_SIZE));
+    }, [filteredSales]);
+
+    const topProductsData = useMemo(() => {
+        const now = Date.now();
+        const cutoffs = { day: 86400000, week: 604800000, month: 2592000000 };
+        const cutoff = productChartPeriod === 'all' ? 0 : now - cutoffs[productChartPeriod];
+
+        const counter: Record<string, { name: string; qty: number; revenue: number }> = {};
+        allSales
+            .filter(s => s.status === 'paid' && (productChartPeriod === 'all' || s.createdAt >= cutoff))
+            .forEach(s => {
+                s.items.forEach(item => {
+                    const key = item.id + (item.variantId || '');
+                    const label = item.variantName ? `${item.name} (${item.variantName})` : item.name;
+                    if (!counter[key]) counter[key] = { name: label, qty: 0, revenue: 0 };
+                    counter[key].qty += item.quantity;
+                    counter[key].revenue += item.finalPrice * item.quantity;
+                });
+            });
+        return Object.values(counter)
+            .sort((a, b) => b.qty - a.qty)
+            .slice(0, 10);
+    }, [allSales, productChartPeriod]);
+
+    const handlePayPendingSale = async () => {
+        if (!selectedSale?.id || !pendingPayMethod) {
+            toast.error('Debes seleccionar un método de pago');
+            return;
+        }
+        setIsProcessingPayment(true);
+        try {
+            let evidenceUrl = selectedSale.evidenceUrl;
+            if (pendingEvidenceFile) {
+                const formData = new FormData();
+                formData.append('file', pendingEvidenceFile);
+                const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+                if (uploadRes.ok) {
+                    const data = await uploadRes.json();
+                    evidenceUrl = data.url;
+                }
+            }
+            const updateData: Partial<Sale> = {
+                status: 'paid',
+                paymentMethod: pendingPayMethod,
+                paidAt: Date.now(),
+                evidenceUrl,
+            };
+            if ((pendingPayMethod === 'transfer' || pendingPayMethod === 'mobile_pay') &&
+                (pendingPayData.reference || pendingPayData.bank || pendingPayData.date)) {
+                updateData.paymentData = Object.fromEntries(
+                    Object.entries(pendingPayData).filter(([_, v]) => v)
+                ) as any;
+            }
+            await SalesService.updateSale(selectedSale.id, updateData);
+            toast.success('Venta cobrada exitosamente');
+            const updated = { ...selectedSale, ...updateData } as Sale;
+            setSelectedSale(updated);
+            setAllSales(prev => prev.map(s => s.id === selectedSale.id ? updated : s));
+            setIsPayingPending(false);
+            setPendingPayMethod('');
+            setPendingPayData({ reference: '', bank: '', date: '' });
+            setPendingEvidenceFile(null);
+        } catch (error: any) {
+            toast.error(error.message || 'Error al cobrar la venta');
+        } finally {
+            setIsProcessingPayment(false);
+        }
     };
 
     const exportToExcel = () => {
@@ -571,6 +672,41 @@ function ReportsScreen() {
                         <p className="hidden sm:block text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">{filteredSales.length} Registros</p>
                     </div>
 
+                    {/* Search & Filters */}
+                    <div className="p-4 border-b border-ui-border flex flex-col sm:flex-row gap-3 bg-ui-bg/30">
+                        <div className="relative flex-1">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-muted" />
+                            <input
+                                type="text"
+                                placeholder="Buscar cliente, cajero o ID..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full pl-8 pr-4 py-2.5 bg-ui-bg border border-ui-border rounded-xl text-xs font-bold text-ui-text outline-none focus:border-accent-primary placeholder:text-ui-text-muted/50 uppercase tracking-wide"
+                            />
+                        </div>
+                        <select
+                            value={filterStatus}
+                            onChange={e => setFilterStatus(e.target.value as any)}
+                            className="px-4 py-2.5 bg-ui-bg border border-ui-border rounded-xl text-xs font-bold text-ui-text outline-none focus:border-accent-primary uppercase tracking-wide"
+                        >
+                            <option value="all">Todos los estados</option>
+                            <option value="paid">Pagado</option>
+                            <option value="pending">Pendiente</option>
+                            <option value="cancelled">Cancelado</option>
+                        </select>
+                        <select
+                            value={filterMethod}
+                            onChange={e => setFilterMethod(e.target.value as any)}
+                            className="px-4 py-2.5 bg-ui-bg border border-ui-border rounded-xl text-xs font-bold text-ui-text outline-none focus:border-accent-primary uppercase tracking-wide"
+                        >
+                            <option value="all">Todos los métodos</option>
+                            <option value="cash">Efectivo</option>
+                            <option value="transfer">Transferencia</option>
+                            <option value="mobile_pay">Pago Móvil</option>
+                            <option value="credit">Crédito / Fiado</option>
+                        </select>
+                    </div>
+
                     {/* Desktop Table View */}
                     <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -588,7 +724,7 @@ function ReportsScreen() {
                                 {filteredSales.length === 0 ? (
                                     <tr><td colSpan={6} className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">No hay ventas registradas.</td></tr>
                                 ) : (
-                                    filteredSales.map(sale => {
+                                    displayedSales.map(sale => {
                                         const time = typeof sale.createdAt === 'number' ? sale.createdAt : (sale.createdAt as any)?.toDate?.()?.getTime() || 0;
                                         const hasPriceMod = sale.items.some(it => it.finalPrice !== it.price);
                                         
@@ -639,7 +775,7 @@ function ReportsScreen() {
                         {filteredSales.length === 0 ? (
                             <div className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">No hay ventas registradas.</div>
                         ) : (
-                            filteredSales.map(sale => {
+                            displayedSales.map(sale => {
                                 const time = typeof sale.createdAt === 'number' ? sale.createdAt : (sale.createdAt as any)?.toDate?.()?.getTime() || 0;
                                 const hasPriceMod = sale.items.some(it => it.finalPrice !== it.price);
                                 
@@ -671,6 +807,112 @@ function ReportsScreen() {
                                     </div>
                                 );
                             })
+                        )}
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="p-4 border-t border-ui-border flex items-center justify-between bg-ui-bg/30">
+                            <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-widest">
+                                Pág. {currentPage} de {totalPages} — {filteredSales.length} registros
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-3 py-1.5 rounded-lg bg-ui-bg border border-ui-border text-ui-text font-black text-sm uppercase tracking-widest hover:bg-accent-primary hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    ‹ Anterior
+                                </button>
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum = i + 1;
+                                        if (totalPages > 5) {
+                                            if (currentPage <= 3) pageNum = i + 1;
+                                            else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                                            else pageNum = currentPage - 2 + i;
+                                        }
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className={`px-2.5 py-1.5 rounded-lg font-black text-xs uppercase tracking-widest transition-all ${
+                                                    currentPage === pageNum
+                                                        ? 'bg-accent-primary text-white shadow-lg shadow-accent-primary/20'
+                                                        : 'bg-ui-bg border border-ui-border text-ui-text hover:border-accent-primary'
+                                                }`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="px-3 py-1.5 rounded-lg bg-ui-bg border border-ui-border text-ui-text font-black text-sm uppercase tracking-widest hover:bg-accent-primary hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    Siguiente ›
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Top Products Chart */}
+            <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+                <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Productos Más Vendidos</h2>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {['day', 'week', 'month', 'all'].map(period => (
+                                <button
+                                    key={period}
+                                    onClick={() => setProductChartPeriod(period as any)}
+                                    className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all ${
+                                        productChartPeriod === period
+                                            ? 'bg-accent-primary text-white'
+                                            : 'bg-ui-bg border border-ui-border text-ui-text hover:border-accent-primary'
+                                    }`}
+                                >
+                                    {period === 'day' ? 'Hoy' : period === 'week' ? 'Semana' : period === 'month' ? 'Mes' : 'Todo'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="h-80">
+                        {topProductsData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={topProductsData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                    <XAxis
+                                        dataKey="name"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#6B7280', fontSize: 11 }}
+                                        interval={0}
+                                        angle={-20}
+                                        textAnchor="end"
+                                        height={80}
+                                    />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                                        formatter={(value: any, name: string) => {
+                                            if (name === 'qty') return [value, 'Cantidad'];
+                                            if (name === 'revenue') return [formatPrice(value), 'Ingresos'];
+                                            return [value, name];
+                                        }}
+                                        labelFormatter={() => ''}
+                                    />
+                                    <Bar dataKey="qty" fill="#7C3AED" radius={[8, 8, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full flex items-center justify-center text-gray-400 font-medium">No hay datos de productos vendidos</div>
                         )}
                     </div>
                 </CardContent>
@@ -909,6 +1151,93 @@ function ReportsScreen() {
                                     <h3 className="text-4xl font-black text-ui-text tracking-tighter leading-none">{formatPrice(selectedSale.total)}</h3>
                                 </div>
                             </div>
+
+                            {selectedSale.status === 'pending' && !isPayingPending && (
+                                <button
+                                    onClick={() => setIsPayingPending(true)}
+                                    className="w-full py-2.5 px-4 bg-accent-primary/10 border border-accent-primary/30 rounded-xl text-accent-primary hover:bg-accent-primary hover:text-white text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                >
+                                    <CreditCard size={16} />
+                                    Cobrar Venta
+                                </button>
+                            )}
+
+                            {selectedSale.status === 'pending' && isPayingPending && (
+                                <div className="space-y-3 p-4 bg-accent-primary/5 rounded-2xl border border-accent-primary/20">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest">Método de Pago</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {(['cash', 'transfer', 'mobile_pay'] as const).map(method => (
+                                                <button
+                                                    key={method}
+                                                    onClick={() => {
+                                                        setPendingPayMethod(method);
+                                                        setPendingPayData({ reference: '', bank: '', date: '' });
+                                                    }}
+                                                    className={`py-2 px-3 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all ${
+                                                        pendingPayMethod === method
+                                                            ? 'bg-accent-primary text-white'
+                                                            : 'bg-ui-bg border border-ui-border text-ui-text hover:border-accent-primary'
+                                                    }`}
+                                                >
+                                                    {method === 'cash' ? 'Efectivo' : method === 'transfer' ? 'Transferencia' : 'P. Móvil'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {(pendingPayMethod === 'transfer' || pendingPayMethod === 'mobile_pay') && (
+                                        <div className="space-y-3 pt-2 border-t border-accent-primary/20">
+                                            <div>
+                                                <label className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest block mb-1">Referencia</label>
+                                                <input
+                                                    type="text"
+                                                    value={pendingPayData.reference}
+                                                    onChange={e => setPendingPayData(p => ({ ...p, reference: e.target.value }))}
+                                                    placeholder="Número de referencia"
+                                                    className="w-full bg-ui-bg/80 border border-ui-border rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary text-ui-text placeholder:text-ui-text-muted/40"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest block mb-1">Banco</label>
+                                                <input
+                                                    type="text"
+                                                    value={pendingPayData.bank}
+                                                    onChange={e => setPendingPayData(p => ({ ...p, bank: e.target.value }))}
+                                                    placeholder="Nombre del banco"
+                                                    className="w-full bg-ui-bg/80 border border-ui-border rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary text-ui-text placeholder:text-ui-text-muted/40"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest block mb-1">Fecha del Pago</label>
+                                                <input
+                                                    type="date"
+                                                    value={pendingPayData.date}
+                                                    onChange={e => setPendingPayData(p => ({ ...p, date: e.target.value }))}
+                                                    className="w-full bg-ui-bg/80 border border-ui-border rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary text-ui-text"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-2 pt-2 border-t border-accent-primary/20">
+                                        <button
+                                            onClick={handlePayPendingSale}
+                                            disabled={isProcessingPayment || !pendingPayMethod}
+                                            className="flex-1 py-2 px-4 bg-accent-primary text-white font-black text-[9px] uppercase tracking-widest rounded-lg hover:shadow-lg hover:shadow-accent-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                        >
+                                            {isProcessingPayment ? 'Procesando...' : 'Confirmar Pago'}
+                                        </button>
+                                        <button
+                                            onClick={() => setIsPayingPending(false)}
+                                            disabled={isProcessingPayment}
+                                            className="py-2 px-4 bg-ui-bg border border-ui-border text-ui-text font-black text-[9px] uppercase tracking-widest rounded-lg hover:bg-ui-border disabled:opacity-50 transition-all"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             {selectedSale.status === 'paid' && (
                                 <button
