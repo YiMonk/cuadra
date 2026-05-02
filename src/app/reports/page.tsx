@@ -252,7 +252,7 @@ function ReportsScreen() {
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+            XLSX.utils.book_append_sheet(wb, ws, "Transacciones");
             XLSX.writeFile(wb, `Reporte_Cuadra_${new Date().toISOString().split('T')[0]}.xlsx`);
             toast.success("Excel exportado correctamente");
         } catch (e) {
@@ -289,20 +289,20 @@ function ReportsScreen() {
                 startY: 60,
                 head: [['KPI', 'Valor']],
                 body: [
-                    ['Ventas Reales (Pagadas)', `$${metrics.revenue.toFixed(2)}`],
+                    ['Transacciones Completadas', `$${metrics.revenue.toFixed(2)}`],
                     ['Cuentas por Cobrar', `$${metrics.pending.toFixed(2)}`],
-                    ['Transacciones Totales', `${metrics.count}`],
-                    ['Valor Promedio Ticket', `$${metrics.average.toFixed(2)}`]
+                    ['Total de Transacciones', `${metrics.count}`],
+                    ['Valor Promedio Transacción', `$${metrics.average.toFixed(2)}`]
                 ],
                 theme: 'striped',
                 headStyles: { fillColor: [0, 122, 255], textColor: [255, 255, 255] },
                 margin: { left: 20, right: 20 }
             });
 
-            // Sales list
+            // Transactions list
             const lastY = (doc as any).lastAutoTable.finalY || 100;
             doc.setFontSize(16);
-            doc.text("Listado Detallado de Ventas", 20, lastY + 20);
+            doc.text("Listado Detallado de Transacciones", 20, lastY + 20);
             
             autoTable(doc, {
                 startY: lastY + 25,
@@ -495,7 +495,7 @@ function ReportsScreen() {
                             <ShoppingCart className="text-white" size={22} strokeWidth={2.5} />
                         </div>
                         <div className="mt-4 md:mt-6">
-                            <p className="text-[8px] md:text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] mb-1">Ventas</p>
+                            <p className="text-[8px] md:text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] mb-1">Transacciones</p>
                             <h3 className="text-xl md:text-3xl font-black text-ui-text tracking-tighter leading-none">{metrics.count} <span className="text-[10px] md:text-xs font-bold opacity-60">Tx</span></h3>
                         </div>
                     </CardContent>
@@ -518,7 +518,7 @@ function ReportsScreen() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2 overflow-hidden border-0 shadow-sm shadow-blue-900/5">
                     <CardContent className="p-6">
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Tendencia de Ventas (Últimas)</h2>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Tendencia de Transacciones (Últimas)</h2>
                         <div className="h-72">
                             {chartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
@@ -528,7 +528,7 @@ function ReportsScreen() {
                                         <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => currency === 'USD' ? `$${value}` : `Bs.${Math.round(fromUSD(value))}`} tick={{ fill: '#6B7280', fontSize: 12 }} dx={-10} />
                                         <Tooltip
                                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                                            formatter={(value: any) => [formatPrice(value), 'Ventas']}
+                                            formatter={(value: any) => [formatPrice(value), 'Transacciones']}
                                             labelStyle={{ color: '#374151', fontWeight: 'bold' }}
                                         />
                                         <Line
@@ -569,7 +569,7 @@ function ReportsScreen() {
                                             ))}
                                         </Pie>
                                         <Tooltip
-                                            formatter={(value) => [`${value} Ventas`, 'Cantidad']}
+                                            formatter={(value) => [`${value} Transacciones`, 'Cantidad']}
                                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                                         />
                                         <Legend verticalAlign="bottom" height={36} iconType="circle" />
@@ -597,7 +597,7 @@ function ReportsScreen() {
                             <thead>
                                 <tr className="bg-accent-primary/10 text-[10px] uppercase tracking-[0.2em] text-accent-primary font-black">
                                     <th className="p-5 font-black">Cajero / Usuario</th>
-                                    <th className="p-5 font-black text-right">Ventas</th>
+                                    <th className="p-5 font-black text-right">Transacciones</th>
                                     <th className="p-5 font-black text-right">Ingreso Real</th>
                                     <th className="p-5 font-black text-right">Teórico Generado</th>
                                 </tr>
@@ -667,7 +667,7 @@ function ReportsScreen() {
                             <div className="bg-fuchsia-500/20 p-2 rounded-lg">
                                 <FileText size={18} className="text-fuchsia-500" />
                             </div>
-                            <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Historial de Ventas</h2>
+                            <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Historial de Transacciones</h2>
                         </div>
                         <p className="hidden sm:block text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">{filteredSales.length} Registros</p>
                     </div>
