@@ -18,7 +18,8 @@
       "Bash(node -e \"require\\('@resvg/resvg-js'\\); console.log\\('OK'\\)\")",
       "Bash(git commit *)",
       "Bash(npm run *)",
-      "Bash(curl -s http://localhost:3000)"
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
     ]
   }
 }

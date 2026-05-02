@@ -7,7 +7,8 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { UserService } from '@/services/user.service';
 import { auth } from '@/config/firebaseConfig';
 import { updateProfile, verifyBeforeUpdateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight, Users } from 'lucide-react';
+import { LegalModal } from '@/components/legal/LegalModal';
+import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight, Users, FileText, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -70,6 +71,8 @@ export default function SettingsScreen() {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [updating, setUpdating] = useState(false);
+    const [legalModalOpen, setLegalModalOpen] = useState(false);
+    const [legalModalTab, setLegalModalTab] = useState<'terms' | 'privacy' | 'disclaimer'>('terms');
 
     const handleLogout = () => {
         toast.custom((t) => (
@@ -297,8 +300,65 @@ export default function SettingsScreen() {
                         )}
                     </div>
 
+                    {/* Legal Info */}
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-black text-accent-primary uppercase tracking-[0.2em] mt-8 mb-4">Información Legal</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button
+                                onClick={() => {
+                                    setLegalModalTab('terms');
+                                    setLegalModalOpen(true);
+                                }}
+                                className="ui-card border border-ui-border p-6 group hover:border-accent-primary/30 transition-all shadow-bento cursor-pointer"
+                            >
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="p-3 bg-blue-500/10 rounded-xl text-blue-500 group-hover:scale-110 transition-transform duration-500">
+                                        <FileText size={24} />
+                                    </div>
+                                    <ChevronRight size={16} className="text-ui-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                </div>
+                                <h3 className="font-black text-ui-text uppercase tracking-tight mb-1">Términos</h3>
+                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Términos y Condiciones</p>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setLegalModalTab('privacy');
+                                    setLegalModalOpen(true);
+                                }}
+                                className="ui-card border border-ui-border p-6 group hover:border-accent-primary/30 transition-all shadow-bento cursor-pointer"
+                            >
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="p-3 bg-green-500/10 rounded-xl text-green-500 group-hover:scale-110 transition-transform duration-500">
+                                        <Shield size={24} />
+                                    </div>
+                                    <ChevronRight size={16} className="text-ui-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                </div>
+                                <h3 className="font-black text-ui-text uppercase tracking-tight mb-1">Privacidad</h3>
+                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Política de Privacidad</p>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setLegalModalTab('disclaimer');
+                                    setLegalModalOpen(true);
+                                }}
+                                className="ui-card border border-ui-border p-6 group hover:border-accent-primary/30 transition-all shadow-bento cursor-pointer"
+                            >
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 group-hover:scale-110 transition-transform duration-500">
+                                        <AlertCircle size={24} />
+                                    </div>
+                                    <ChevronRight size={16} className="text-ui-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                </div>
+                                <h3 className="font-black text-ui-text uppercase tracking-tight mb-1">Aviso Legal</h3>
+                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Exención de Responsabilidad</p>
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Build Info */}
-                    <div className="ui-card border border-ui-border p-6 bg-black/5 dark:bg-white/5 flex items-center justify-between shadow-soft">
+                    <div className="ui-card border border-ui-border p-6 bg-black/5 dark:bg-white/5 flex items-center justify-between shadow-soft mt-8">
                         <div className="flex items-center gap-4">
                             <div className="p-2 bg-accent-primary/10 rounded-lg">
                                 <Shield className="text-accent-primary" size={18} />
@@ -391,6 +451,14 @@ export default function SettingsScreen() {
                     </div>
                 </div>
             )}
+
+            {/* Legal Modal */}
+            <LegalModal
+                isOpen={legalModalOpen}
+                onClose={() => setLegalModalOpen(false)}
+                initialTab={legalModalTab}
+                showAcceptButton={false}
+            />
         </div>
     );
 }

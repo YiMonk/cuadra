@@ -10,6 +10,7 @@ import { UserService } from '@/services/user.service';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
+import { LegalModal } from '@/components/legal/LegalModal';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { BRAND_ASSETS } from '@/config/brand';
@@ -25,6 +26,9 @@ export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [legalModalOpen, setLegalModalOpen] = useState(false);
+    const [legalModalTab, setLegalModalTab] = useState<'terms' | 'privacy' | 'disclaimer'>('terms');
 
     React.useEffect(() => {
         if (user) {
@@ -38,6 +42,11 @@ export default function RegisterPage() {
 
         if (!name || !email || !password || !confirmPassword) {
             setErrorMsg('Todos los campos son obligatorios');
+            return;
+        }
+
+        if (!agreedToTerms) {
+            setErrorMsg('Debes aceptar los términos y condiciones para continuar');
             return;
         }
 
@@ -197,8 +206,60 @@ export default function RegisterPage() {
                                     Mínimo 6 caracteres para tu contraseña
                                 </div>
 
+                                {/* Terms Acceptance */}
+                                <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
+                                    <input
+                                        type="checkbox"
+                                        id="terms"
+                                        checked={agreedToTerms}
+                                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                        className="w-4 h-4 mt-1 rounded cursor-pointer accent-blue-500"
+                                    />
+                                    <label htmlFor="terms" className="text-xs text-gray-400 cursor-pointer leading-relaxed">
+                                        Acepto los{' '}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setLegalModalTab('terms');
+                                                setLegalModalOpen(true);
+                                            }}
+                                            className="text-blue-400 hover:text-blue-300 font-bold underline transition-colors"
+                                        >
+                                            Términos y Condiciones
+                                        </button>
+                                        , la{' '}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setLegalModalTab('privacy');
+                                                setLegalModalOpen(true);
+                                            }}
+                                            className="text-blue-400 hover:text-blue-300 font-bold underline transition-colors"
+                                        >
+                                            Política de Privacidad
+                                        </button>
+                                        {' '}y el{' '}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setLegalModalTab('disclaimer');
+                                                setLegalModalOpen(true);
+                                            }}
+                                            className="text-blue-400 hover:text-blue-300 font-bold underline transition-colors"
+                                        >
+                                            Disclaimer
+                                        </button>
+                                    </label>
+                                </div>
+
                                 {/* Submit Button */}
-                                <Button type="submit" className="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300" size="lg" isLoading={loading}>
+                                <Button
+                                    type="submit"
+                                    disabled={!agreedToTerms}
+                                    className="w-full mt-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    size="lg"
+                                    isLoading={loading}
+                                >
                                     Crear Cuenta
                                 </Button>
                             </form>
@@ -226,12 +287,16 @@ export default function RegisterPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Footer Text */}
-                    <div className="mt-8 text-center text-xs text-gray-500 font-medium uppercase tracking-widest">
-                        Al registrarte aceptas nuestros <Link href="#" className="text-blue-400 hover:text-blue-300 transition-colors font-bold">Términos de Servicio</Link>
-                    </div>
                 </div>
             </div>
+
+            {/* Legal Modal */}
+            <LegalModal
+                isOpen={legalModalOpen}
+                onClose={() => setLegalModalOpen(false)}
+                initialTab={legalModalTab}
+                showAcceptButton={false}
+            />
         </div>
     );
 }
