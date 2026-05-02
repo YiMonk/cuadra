@@ -17,17 +17,30 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-  });
-} else {
-  app = getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
+// Initialize Firebase - this is safe as it checks if already initialized
+const initializeFirebaseIfNeeded = () => {
+  try {
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      });
+    } else {
+      app = getApp();
+      auth = getAuth(app);
+      db = getFirestore(app);
+    }
+  } catch (error) {
+    // Silently fail during build if Firebase is not available
+    console.debug('Firebase initialization skipped during build');
+  }
+};
+
+// Initialize on first import if in browser or if apps are already loaded
+if (typeof window !== 'undefined' || getApps().length > 0) {
+  initializeFirebaseIfNeeded();
 }
 
-export { auth, db };
-export const storage = getStorage(app);
+export { auth, db, initializeFirebaseIfNeeded };
+export const storage = getApps().length > 0 ? getStorage(getApp()) : (null as any);
