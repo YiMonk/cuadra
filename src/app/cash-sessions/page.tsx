@@ -112,32 +112,34 @@ export default function CashSessionsPage() {
       {openSession ? (
         <Card className="border-accent-primary/30 bg-accent-primary/5">
           <CardContent className="p-6 md:p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
               {/* Session Info */}
-              <div>
-                <h2 className="text-lg font-black text-ui-text uppercase tracking-tight mb-4">
+              <div className="space-y-3">
+                <h2 className="text-base md:text-lg font-black text-ui-text uppercase tracking-tight">
                   Sesión Actual
                 </h2>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-ui-text-muted uppercase tracking-widest">
-                      Iniciada hace
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[9px] md:text-xs font-black text-ui-text-muted uppercase tracking-widest">
+                      Iniciada
                     </span>
-                    <span className="text-sm font-black text-ui-text">
+                    <span className="text-[11px] md:text-sm font-black text-ui-text text-right break-words">
                       {new Date(openSession.openedAt).toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-ui-text-muted uppercase tracking-widest">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[9px] md:text-xs font-black text-ui-text-muted uppercase tracking-widest">
                       Cajero
                     </span>
-                    <span className="text-sm font-black text-ui-text">{openSession.cashierName}</span>
+                    <span className="text-[11px] md:text-sm font-black text-ui-text text-right truncate">
+                      {openSession.cashierName}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-ui-text-muted uppercase tracking-widest">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[9px] md:text-xs font-black text-ui-text-muted uppercase tracking-widest">
                       Deuda al iniciar
                     </span>
-                    <span className="text-sm font-black text-accent-secondary">
+                    <span className="text-[11px] md:text-sm font-black text-accent-secondary">
                       {formatPrice(openSession.debtPendingAtOpen)}
                     </span>
                   </div>
@@ -146,36 +148,40 @@ export default function CashSessionsPage() {
 
               {/* Live Stats */}
               {sessionStats && (
-                <div>
-                  <h2 className="text-lg font-black text-ui-text uppercase tracking-tight mb-4">
+                <div className="space-y-3">
+                  <h2 className="text-base md:text-lg font-black text-ui-text uppercase tracking-tight">
                     Estadísticas (En Vivo)
                   </h2>
-                  <div className="space-y-3">
-                    <div className="bg-ui-bg/50 p-3 rounded-lg">
-                      <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mb-1">
-                        Total Vendido
+                  <div className="bg-ui-bg/50 p-3 rounded-lg">
+                    <p className="text-[8px] md:text-[9px] font-black text-ui-text-muted uppercase tracking-widest mb-1">
+                      Total Vendido
+                    </p>
+                    <p className="text-xl md:text-2xl font-black text-accent-primary">
+                      {formatPrice(sessionStats.totalSales)}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
+                      <p className="text-[7px] md:text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-0.5">
+                        Pagadas
                       </p>
-                      <p className="text-2xl font-black text-accent-primary">
-                        {formatPrice(sessionStats.totalSales)}
+                      <p className="text-[10px] md:text-xs font-black text-emerald-600 truncate">
+                        {sessionStats.paidCount}
+                      </p>
+                      <p className="text-[9px] md:text-[10px] font-black text-emerald-600">
+                        {formatPrice(sessionStats.paidAmount)}
                       </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
-                        <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-0.5">
-                          Pagadas
-                        </p>
-                        <p className="text-xs font-black text-emerald-600">
-                          {sessionStats.paidCount} ({formatPrice(sessionStats.paidAmount)})
-                        </p>
-                      </div>
-                      <div className="bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
-                        <p className="text-[8px] font-black text-amber-600 uppercase tracking-widest mb-0.5">
-                          Fiadas
-                        </p>
-                        <p className="text-xs font-black text-amber-600">
-                          {sessionStats.pendingCount} ({formatPrice(sessionStats.pendingAmount)})
-                        </p>
-                      </div>
+                    <div className="bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                      <p className="text-[7px] md:text-[8px] font-black text-amber-600 uppercase tracking-widest mb-0.5">
+                        Fiadas
+                      </p>
+                      <p className="text-[10px] md:text-xs font-black text-amber-600 truncate">
+                        {sessionStats.pendingCount}
+                      </p>
+                      <p className="text-[9px] md:text-[10px] font-black text-amber-600">
+                        {formatPrice(sessionStats.pendingAmount)}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -185,21 +191,21 @@ export default function CashSessionsPage() {
             {/* Income by Method */}
             {sessionStats && (
               <div className="mb-6 pb-6 border-t border-ui-border">
-                <h3 className="text-sm font-black text-ui-text uppercase tracking-tight mb-4">
+                <h3 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-tight mb-3">
                   Ingresos por Método
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
                   {[
                     { key: 'cash', label: '💵 Efectivo' },
-                    { key: 'transfer', label: '📲 Transferencia' },
-                    { key: 'mobile_pay', label: '📱 Pago Móvil' },
+                    { key: 'transfer', label: '📲 Transf.' },
+                    { key: 'mobile_pay', label: '📱 P. Móvil' },
                     { key: 'credit', label: '📝 Crédito' },
                   ].map(({ key, label }) => (
-                    <div key={key} className="bg-ui-bg p-3 rounded-lg">
-                      <p className="text-[9px] font-bold text-ui-text-muted uppercase tracking-widest mb-1">
+                    <div key={key} className="bg-ui-bg p-2 md:p-3 rounded-lg">
+                      <p className="text-[7px] md:text-[9px] font-bold text-ui-text-muted uppercase tracking-widest mb-1">
                         {label}
                       </p>
-                      <p className="text-sm font-black text-ui-text">
+                      <p className="text-[10px] md:text-sm font-black text-ui-text truncate">
                         {formatPrice(sessionStats.totalByMethod[key as keyof typeof sessionStats.totalByMethod] || 0)}
                       </p>
                     </div>
@@ -259,8 +265,56 @@ export default function CashSessionsPage() {
               .filter(s => s.status === 'closed')
               .map(session => (
                 <Card key={session.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <CardContent className="p-4 md:p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                  <CardContent className="p-3 md:p-6">
+                    {/* Mobile Layout */}
+                    <div className="md:hidden space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-0.5">
+                            Fecha
+                          </p>
+                          <p className="text-xs font-black text-ui-text">
+                            {new Date(session.openedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex-1 text-right">
+                          <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-0.5">
+                            Total Vendido
+                          </p>
+                          <p className="text-sm font-black text-accent-primary">
+                            {formatPrice(session.totalSales)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-0.5">
+                            Ventas
+                          </p>
+                          <p className="text-sm font-black text-ui-text">{session.saleIds.length}</p>
+                        </div>
+                        <div className="flex-1 text-right">
+                          <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-0.5">
+                            Deuda al cierre
+                          </p>
+                          <p className="text-sm font-black text-accent-secondary">
+                            {formatPrice(session.debtPendingAtClose)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full bg-ui-bg hover:bg-ui-border text-ui-text text-xs"
+                        size="sm"
+                      >
+                        <FileText size={14} />
+                        Ver Reporte
+                      </Button>
+                    </div>
+
+                    {/* Desktop Layout */}
+                    <div className="hidden md:grid grid-cols-5 gap-4 items-center">
                       <div>
                         <p className="text-xs font-black text-ui-text-muted uppercase tracking-widest mb-1">
                           Fecha
