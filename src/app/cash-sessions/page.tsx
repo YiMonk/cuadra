@@ -95,7 +95,7 @@ export default function CashSessionsPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-24">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-4 animate-in fade-in duration-500 pb-24">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -247,123 +247,6 @@ export default function CashSessionsPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Closed Sessions History */}
-      <div>
-        <h2 className="text-lg font-black text-ui-text uppercase tracking-tight mb-4">
-          Sesiones Cerradas
-        </h2>
-        <div className="space-y-3">
-          {allSessions.filter(s => s.status === 'closed').length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center text-ui-text-muted">
-                No hay sesiones cerradas
-              </CardContent>
-            </Card>
-          ) : (
-            allSessions
-              .filter(s => s.status === 'closed')
-              .map(session => (
-                <Card key={session.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <CardContent className="p-3 md:p-6">
-                    {/* Mobile Layout */}
-                    <div className="md:hidden space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-0.5">
-                            Fecha
-                          </p>
-                          <p className="text-xs font-black text-ui-text">
-                            {new Date(session.openedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex-1 text-right">
-                          <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-0.5">
-                            Total Vendido
-                          </p>
-                          <p className="text-sm font-black text-accent-primary">
-                            {formatPrice(session.totalSales)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-0.5">
-                            Ventas
-                          </p>
-                          <p className="text-sm font-black text-ui-text">{session.saleIds.length}</p>
-                        </div>
-                        <div className="flex-1 text-right">
-                          <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-0.5">
-                            Deuda al cierre
-                          </p>
-                          <p className="text-sm font-black text-accent-secondary">
-                            {formatPrice(session.debtPendingAtClose)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <Button
-                        className="w-full bg-ui-bg hover:bg-ui-border text-ui-text text-xs"
-                        size="sm"
-                      >
-                        <FileText size={14} />
-                        Ver Reporte
-                      </Button>
-                    </div>
-
-                    {/* Desktop Layout */}
-                    <div className="hidden md:grid grid-cols-5 gap-4 items-center">
-                      <div>
-                        <p className="text-xs font-black text-ui-text-muted uppercase tracking-widest mb-1">
-                          Fecha
-                        </p>
-                        <p className="text-sm font-black text-ui-text">
-                          {new Date(session.openedAt).toLocaleDateString()}
-                        </p>
-                        <p className="text-[10px] text-ui-text-muted font-bold">
-                          {new Date(session.openedAt).toLocaleTimeString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-ui-text-muted uppercase tracking-widest mb-1">
-                          Total Vendido
-                        </p>
-                        <p className="text-lg font-black text-accent-primary">
-                          {formatPrice(session.totalSales)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-ui-text-muted uppercase tracking-widest mb-1">
-                          Ventas
-                        </p>
-                        <p className="text-lg font-black text-ui-text">{session.saleIds.length}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-ui-text-muted uppercase tracking-widest mb-1">
-                          Deuda al cierre
-                        </p>
-                        <p className="text-lg font-black text-accent-secondary">
-                          {formatPrice(session.debtPendingAtClose)}
-                        </p>
-                      </div>
-                      <div>
-                        <Button
-                          className="w-full bg-ui-bg hover:bg-ui-border text-ui-text"
-                          size="sm"
-                        >
-                          <FileText size={16} />
-                          Ver Reporte
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-          )}
-        </div>
-      </div>
 
       {/* Close Session Modal */}
       {showCloseModal && (

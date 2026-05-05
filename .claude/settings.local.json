@@ -19,7 +19,8 @@
       "Bash(npm run *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(awk *)"
     ]
   }
 }
