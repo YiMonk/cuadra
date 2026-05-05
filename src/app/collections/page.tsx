@@ -97,6 +97,7 @@ export default function CollectionsScreen() {
     }, [searchQuery, debtors, sortBy]);
 
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+    const [paymentData, setPaymentData] = useState({ reference: '', bank: '', date: '' });
 
     const handleRemindClick = (client: any, debt: number, sales: any[]) => {
         setReminderModal({ client, debt, sales });
@@ -294,9 +295,17 @@ export default function CollectionsScreen() {
         if (!payModal) return;
         setIsPaying(true);
         try {
-            await SalesService.payAllDebts(payModal.client.id, { paymentMethod });
+            const updateData: any = { paymentMethod };
+            if ((paymentMethod === 'transfer' || paymentMethod === 'mobile_pay') &&
+                (paymentData.reference || paymentData.bank || paymentData.date)) {
+                updateData.paymentData = Object.fromEntries(
+                    Object.entries(paymentData).filter(([_, v]) => v)
+                );
+            }
+            await SalesService.payAllDebts(payModal.client.id, updateData);
             toast.success(`Deuda de ${payModal.client.name} cobrada con éxito`);
             setPayModal(null);
+            setPaymentData({ reference: '', bank: '', date: '' });
         } catch (error: any) {
             toast.error(error.message || 'Error al registrar el cobro');
         } finally {
@@ -423,16 +432,32 @@ export default function CollectionsScreen() {
             </div>
 
             {payModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" role="dialog" aria-modal="true">
-                    <div className="ui-card w-full max-w-sm border border-ui-border shadow-2xl animate-in zoom-in-95 duration-300 p-6 md:p-8">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto" role="dialog" aria-modal="true">
+                    <div className="ui-card w-full max-w-sm border border-ui-border shadow-2xl animate-in zoom-in-95 duration-300 p-6 md:p-8 my-4">
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h2 className="text-lg md:text-xl font-black text-ui-text uppercase tracking-tight">Registrar Cobro</h2>
                                 <p className="text-[10px] md:text-[11px] font-bold text-ui-text-muted mt-1 uppercase tracking-widest truncate max-w-[200px] md:max-w-none">{payModal.client.name}</p>
                             </div>
-                            <button onClick={() => setPayModal(null)} className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-ui-text-muted hover:text-ui-text transition-colors" aria-label="Cerrar">
+                            <button onClick={() => { setPayModal(null); setPaymentData({ reference: '', bank: '', date: '' }); }} className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-ui-text-muted hover:text-ui-text transition-colors" aria-label="Cerrar">
                                 <X size={16} />
                             </button>
+                        </div>
+
+                        {/* Sales Breakdown */}
+                        <div className="mb-6 pb-6 border-b border-ui-border">
+                            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-ui-text-muted mb-3">Deudas a Cobrar</p>
+                            <div className="space-y-2">
+                                {payModal.sales.map((sale: any, idx: number) => (
+                                    <div key={idx} className="bg-black/5 dark:bg-white/5 p-3 rounded-lg text-xs">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-ui-text font-bold">{new Date(sale.createdAt).toLocaleDateString()}</span>
+                                            <span className="text-accent-primary font-black">{formatPrice(sale.total)}</span>
+                                        </div>
+                                        <p className="text-[9px] text-ui-text-muted font-medium">{sale.items?.length || 0} producto{sale.items?.length !== 1 ? 's' : ''}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="ui-input-box px-4 md:px-6 py-3 md:py-4 mb-6 flex justify-between items-center bg-black/5 dark:bg-white/5 border-0">
@@ -447,15 +472,50 @@ export default function CollectionsScreen() {
                                 { id: 'transfer', emoji: '📲', label: 'Transferencia' },
                                 { id: 'mobile_pay', emoji: '📱', label: 'Pago Móvil' },
                             ] as const).map(opt => (
-                                <button key={opt.id} onClick={() => setPaymentMethod(opt.id)} className={`w-full p-3 md:p-3.5 rounded-xl flex items-center gap-3 font-bold border-2 transition-all active:scale-95 ${paymentMethod === opt.id ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-transparent bg-black/5 dark:bg-white/5 text-ui-text-muted hover:bg-black/10 dark:hover:bg-white/10'}`}>
+                                <button key={opt.id} onClick={() => { setPaymentMethod(opt.id); setPaymentData({ reference: '', bank: '', date: '' }); }} className={`w-full p-3 md:p-3.5 rounded-xl flex items-center gap-3 font-bold border-2 transition-all active:scale-95 ${paymentMethod === opt.id ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-transparent bg-black/5 dark:bg-white/5 text-ui-text-muted hover:bg-black/10 dark:hover:bg-white/10'}`}>
                                     <span className="text-lg">{opt.emoji}</span>
                                     <span className="uppercase tracking-wide text-[10px] md:text-xs">{opt.label}</span>
                                 </button>
                             ))}
                         </div>
 
+                        {/* Payment Reference Fields */}
+                        {(paymentMethod === 'transfer' || paymentMethod === 'mobile_pay') && (
+                            <div className="space-y-3 mb-8 p-3 bg-accent-primary/5 border border-accent-primary/20 rounded-lg">
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-ui-text-muted block">Referencia</label>
+                                    <input
+                                        type="text"
+                                        value={paymentData.reference}
+                                        onChange={(e) => setPaymentData(p => ({ ...p, reference: e.target.value }))}
+                                        placeholder="Ej: 12345678"
+                                        className="w-full bg-ui-bg/50 border border-ui-border rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary text-ui-text placeholder:text-ui-text-muted/40"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-ui-text-muted block">Banco</label>
+                                    <input
+                                        type="text"
+                                        value={paymentData.bank}
+                                        onChange={(e) => setPaymentData(p => ({ ...p, bank: e.target.value }))}
+                                        placeholder="Ej: Banco Provincial"
+                                        className="w-full bg-ui-bg/50 border border-ui-border rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary text-ui-text placeholder:text-ui-text-muted/40"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-ui-text-muted block">Fecha del Pago</label>
+                                    <input
+                                        type="date"
+                                        value={paymentData.date}
+                                        onChange={(e) => setPaymentData(p => ({ ...p, date: e.target.value }))}
+                                        className="w-full bg-ui-bg/50 border border-ui-border rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary text-ui-text"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex gap-3">
-                            <button onClick={() => setPayModal(null)} className="flex-1 h-12 rounded-xl bg-black/5 dark:bg-white/5 font-black text-[10px] md:text-xs uppercase tracking-widest text-ui-text-muted hover:text-ui-text transition-colors">
+                            <button onClick={() => { setPayModal(null); setPaymentData({ reference: '', bank: '', date: '' }); }} className="flex-1 h-12 rounded-xl bg-black/5 dark:bg-white/5 font-black text-[10px] md:text-xs uppercase tracking-widest text-ui-text-muted hover:text-ui-text transition-colors">
                                 Cancelar
                             </button>
                             <button onClick={handlePayAll} disabled={isPaying} className="flex-1 h-12 rounded-xl bg-emerald-500 text-white font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-emerald-600 transition-colors disabled:opacity-50 shadow-lg shadow-emerald-500/20">

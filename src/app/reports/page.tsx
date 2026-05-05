@@ -11,7 +11,7 @@ import { UserService } from '@/services/user.service';
 import { Sale } from '@/types/sales';
 import { UserMetadata } from '@/services/user.service';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
-import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet, Eye, Info, AlertCircle, X, Clock, CreditCard, Wallet, Banknote, RotateCcw, Search } from 'lucide-react';
+import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet, Eye, Info, AlertCircle, X, Clock, CreditCard, Wallet, Banknote, RotateCcw, Search, Copy, Camera } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -69,6 +69,9 @@ function ReportsScreen() {
 
     // Product Chart State
     const [productChartPeriod, setProductChartPeriod] = useState<'day' | 'week' | 'month' | 'all'>('month');
+
+    // Share buttons state
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -234,6 +237,171 @@ function ReportsScreen() {
             setIsProcessingPayment(false);
         }
     };
+
+    const handleCopyList = () => {
+        if (!selectedSale) return;
+        let text = `Cliente: ${selectedSale.clientName || 'Consumidor Final'}\n`;
+        text += `📋 Lista de productos:\n`;
+
+        selectedSale.items?.forEach((item: any) => {
+            const qty = item.quantity || 0;
+            const price = item.finalPrice || item.price || 0;
+            const variantText = item.variantName ? ` (${item.variantName})` : '';
+            const subtotal = price * qty;
+
+            text += `• ${qty}x ${item.name}${variantText} — $${price.toFixed(2)} c/u = $${subtotal.toFixed(2)}\n`;
+            if (item.discountApplied) {
+                text += `  └─ Nota: ${item.discountApplied}\n`;
+            }
+        });
+
+        const { exchangeRate } = useCurrency();
+        text += `\nTotal: ${formatPrice(selectedSale.total)}\n`;
+        text += `Bs. ${(selectedSale.total * exchangeRate).toLocaleString('es-VE')} (Tasa BCV: Bs. ${exchangeRate.toFixed(2)})\n`;
+        text += `\nCuadra POS`;
+
+        navigator.clipboard.writeText(text);
+        toast.success('Lista copiada al portapapeles');
+    };
+
+    const handleGenerateImage = async () => {
+        if (!selectedSale) return;
+        setIsGeneratingImage(true);
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            const allItems = selectedSale.items || [];
+            const itemLineHeight = 35;
+            const detailHeight = allItems.length * itemLineHeight;
+            const baseHeight = 500;
+            const totalHeight = Math.max(600, baseHeight + detailHeight);
+
+            const scale = 2;
+            canvas.width = 400 * scale;
+            canvas.height = totalHeight * scale;
+            ctx.scale(scale, scale);
+
+            const radius = 40;
+            const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
+                ctx.beginPath();
+                if (ctx.roundRect) {
+                    ctx.roundRect(x, y, w, h, r);
+                } else {
+                    ctx.rect(x, y, w, h);
+                }
+            };
+
+            drawRoundedRect(0, 0, 400, totalHeight, radius);
+            ctx.clip();
+            ctx.fillStyle = '#0D0B1F';
+            ctx.fillRect(0, 0, 400, totalHeight);
+
+            ctx.strokeStyle = '#7C3AED';
+            ctx.lineWidth = 14;
+            drawRoundedRect(7, 7, 386, totalHeight - 14, radius);
+            ctx.stroke();
+
+            ctx.fillStyle = '#7C3AED';
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('CUADRA', 200, 50);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = 'bold 10px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('DETALLE DE VENTA:', 45, 90);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 18px Inter, sans-serif';
+            ctx.fillText((selectedSale.clientName || 'Consumidor Final').toUpperCase(), 45, 115);
+
+            let currentY = 150;
+
+            if (allItems.length > 0) {
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.font = 'black 10px Inter, sans-serif';
+                ctx.fillText('PRODUCTOS', 45, 145);
+
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(45, 155);
+                ctx.lineTo(355, 155);
+                ctx.stroke();
+
+                currentY = 180;
+                allItems.forEach((item: any) => {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px Inter, sans-serif';
+                    const nameText = `${item.quantity}x ${item.name.substring(0, 24)}`;
+                    ctx.fillText(nameText, 45, currentY);
+
+                    ctx.textAlign = 'right';
+                    ctx.fillText(formatPrice(item.finalPrice || item.price), 355, currentY);
+                    ctx.textAlign = 'left';
+
+                    if (item.discountApplied) {
+                        currentY += 15;
+                        ctx.fillStyle = '#C026D3';
+                        ctx.font = 'italic 10px Inter, sans-serif';
+                        ctx.fillText(`└─ ${item.discountApplied.substring(0, 30)}`, 55, currentY);
+                    }
+                    currentY += itemLineHeight;
+                });
+                currentY += 20;
+            }
+
+            const { exchangeRate } = useCurrency();
+            const summaryY = Math.max(currentY, totalHeight - 150);
+            ctx.strokeStyle = '#7C3AED';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(45, summaryY);
+            ctx.lineTo(355, summaryY);
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 32px Inter, sans-serif';
+            ctx.fillText(`Total: ${formatPrice(selectedSale.total)}`, 45, summaryY + 45);
+
+            const vesY = summaryY + 80;
+            ctx.fillStyle = '#C026D3';
+            ctx.font = 'bold 16px Inter, sans-serif';
+            ctx.fillText(`Bs. ${(selectedSale.total * exchangeRate).toLocaleString('es-VE')}`, 45, vesY);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = 'bold 10px Inter, sans-serif';
+            ctx.fillText(`TASA BCV: Bs. ${exchangeRate.toFixed(2)}`, 45, vesY + 20);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.textAlign = 'center';
+            ctx.font = '900 10px Inter, sans-serif';
+            ctx.fillText('cuadra.vercel.app', 200, totalHeight - 30);
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+                const file = new File([blob], 'venta-cuadra.png', { type: 'image/png' });
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Detalle de Venta', text: `Detalle de compra de ${selectedSale.clientName}` });
+                } else {
+                    try {
+                        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                        toast.success('Imagen copiada. Pégala en WhatsApp.');
+                    } catch (e) {
+                        toast.error('Error al compartir');
+                    }
+                }
+            }, 'image/png');
+
+        } catch (error: any) {
+            console.error(error);
+            toast.error('Error al generar imagen');
+        } finally {
+            setIsGeneratingImage(false);
+        }
+    };
+
 
     const exportToExcel = () => {
         try {
@@ -1150,6 +1318,27 @@ function ReportsScreen() {
                                     <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.3em] mb-1">Total Pagado</p>
                                     <h3 className="text-4xl font-black text-ui-text tracking-tighter leading-none">{formatPrice(selectedSale.total)}</h3>
                                 </div>
+                            </div>
+
+                            {/* Share Buttons */}
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleCopyList}
+                                    className="flex-1 py-2.5 px-4 bg-ui-bg border border-ui-border rounded-xl text-ui-text hover:border-ui-text hover:bg-ui-border/50 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    title="Copiar lista de productos al portapapeles"
+                                >
+                                    <Copy size={16} />
+                                    Copiar
+                                </button>
+                                <button
+                                    onClick={handleGenerateImage}
+                                    disabled={isGeneratingImage}
+                                    className="flex-1 py-2.5 px-4 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-600 hover:bg-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    title="Generar y compartir imagen"
+                                >
+                                    <Camera size={16} />
+                                    {isGeneratingImage ? 'Generando...' : 'Imagen'}
+                                </button>
                             </div>
 
                             {selectedSale.status === 'pending' && !isPayingPending && (
