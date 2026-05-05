@@ -78,7 +78,7 @@ export default function RegisterPage() {
                 ownerId: userCredential.user.uid, // Self-owned
                 active: true,
                 createdAt: Date.now(),
-                termsAcceptedAt: Date.now()
+                termsAccepted: false
             });
 
         } catch (error: any) {

@@ -24,7 +24,7 @@ export interface UserMetadata {
     updatedAt?: number;
     subscriptionEndsAt?: number;
     subscriptionPrice?: number;
-    termsAcceptedAt?: number;
+    termsAccepted?: boolean;
 }
 
 const USERS_COLLECTION = 'users';

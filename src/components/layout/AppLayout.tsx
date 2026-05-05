@@ -113,7 +113,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     // Show terms modal if user hasn't accepted them yet
     useEffect(() => {
-        if (user && !isAuthRoute && !user.termsAcceptedAt) {
+        if (user && !isAuthRoute && !user.termsAccepted) {
             setShowTermsModal(true);
         }
     }, [user, isAuthRoute]);
@@ -122,7 +122,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         if (user) {
             try {
                 await UserService.updateUser(user.uid, {
-                    termsAcceptedAt: Date.now(),
+                    termsAccepted: true,
                 });
                 // Update user context to reflect the change
                 await reloadUser();
