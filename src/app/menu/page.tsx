@@ -9,7 +9,7 @@ import {
     Settings,
     FileText,
     History,
-    DollarSign,
+    Archive,
     Target,
     LogOut,
     ChevronRight
@@ -33,7 +33,7 @@ export default function MenuPage() {
     const standardItems = [
         { title: 'Reportes', icon: FileText, route: '/reports', color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20', description: 'Análisis operacional' },
         { title: 'Historial', icon: History, route: '/history', color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20', description: 'Registro de transacciones' },
-        { title: 'Cobros', icon: DollarSign, route: '/collections', color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', description: 'Pagos pendientes' },
+        { title: 'Movimientos', icon: Archive, route: '/collections', color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', description: 'Pagos pendientes' },
         { title: 'Categorías', icon: Target, route: '/categories', color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20', description: 'Gestionar catálogo' },
         ...(user?.role === 'admin' ? [
             { title: 'Mi Equipo', icon: Users, route: '/team', color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20', description: 'Gestionar usuarios y roles' }

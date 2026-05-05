@@ -20,7 +20,9 @@
       "Bash(git commit *)",
       "Bash(git push *)",
       "Bash(git remote *)",
-      "Bash(awk *)"
+      "Bash(awk *)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(git reset *)"
     ]
   }
 }

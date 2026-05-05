@@ -1,10 +1,22 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 
 export const DisclaimerBanner = () => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const isDismissed = localStorage.getItem('cuadra_disclaimer_dismissed');
+    if (!isDismissed) {
+      setIsVisible(true);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    localStorage.setItem('cuadra_disclaimer_dismissed', 'true');
+    setIsVisible(false);
+  };
 
   if (!isVisible) return null;
 
@@ -27,7 +39,7 @@ export const DisclaimerBanner = () => {
           </a>
         </div>
         <button
-          onClick={() => setIsVisible(false)}
+          onClick={handleDismiss}
           className="text-amber-600 hover:text-amber-800 flex-shrink-0"
           aria-label="Cerrar aviso"
         >

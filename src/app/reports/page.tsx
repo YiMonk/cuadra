@@ -827,207 +827,6 @@ function ReportsScreen() {
                 </CardContent>
             </Card>
 
-            {/* Sales History Table */}
-            <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
-                <CardContent className="p-0">
-                    <div className="p-6 border-b border-ui-border flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-fuchsia-500/20 p-2 rounded-lg">
-                                <FileText size={18} className="text-fuchsia-500" />
-                            </div>
-                            <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Historial de Transacciones</h2>
-                        </div>
-                        <p className="hidden sm:block text-[10px] font-black text-ui-text-muted uppercase tracking-[0.2em]">{filteredSales.length} Registros</p>
-                    </div>
-
-                    {/* Search & Filters */}
-                    <div className="p-4 border-b border-ui-border flex flex-col sm:flex-row gap-3 bg-ui-bg/30">
-                        <div className="relative flex-1">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-muted" />
-                            <input
-                                type="text"
-                                placeholder="Buscar cliente, cajero o ID..."
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                className="w-full pl-8 pr-4 py-2.5 bg-ui-bg border border-ui-border rounded-xl text-xs font-bold text-ui-text outline-none focus:border-accent-primary placeholder:text-ui-text-muted/50 uppercase tracking-wide"
-                            />
-                        </div>
-                        <select
-                            value={filterStatus}
-                            onChange={e => setFilterStatus(e.target.value as any)}
-                            className="px-4 py-2.5 bg-ui-bg border border-ui-border rounded-xl text-xs font-bold text-ui-text outline-none focus:border-accent-primary uppercase tracking-wide"
-                        >
-                            <option value="all">Todos los estados</option>
-                            <option value="paid">Pagado</option>
-                            <option value="pending">Pendiente</option>
-                            <option value="cancelled">Cancelado</option>
-                        </select>
-                        <select
-                            value={filterMethod}
-                            onChange={e => setFilterMethod(e.target.value as any)}
-                            className="px-4 py-2.5 bg-ui-bg border border-ui-border rounded-xl text-xs font-bold text-ui-text outline-none focus:border-accent-primary uppercase tracking-wide"
-                        >
-                            <option value="all">Todos los métodos</option>
-                            <option value="cash">Efectivo</option>
-                            <option value="transfer">Transferencia</option>
-                            <option value="mobile_pay">Pago Móvil</option>
-                            <option value="credit">Crédito / Fiado</option>
-                        </select>
-                    </div>
-
-                    {/* Desktop Table View */}
-                    <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-ui-bg/50 text-[10px] uppercase tracking-[0.2em] text-ui-text-muted font-black border-b border-ui-border">
-                                    <th className="p-5">Fecha / Hora</th>
-                                    <th className="p-5">Cliente</th>
-                                    <th className="p-5">Cajero</th>
-                                    <th className="p-5 text-center">Método</th>
-                                    <th className="p-5 text-right">Total</th>
-                                    <th className="p-5 text-center">Detalles</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-ui-border/30">
-                                {filteredSales.length === 0 ? (
-                                    <tr><td colSpan={6} className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">No hay ventas registradas.</td></tr>
-                                ) : (
-                                    displayedSales.map(sale => {
-                                        const time = typeof sale.createdAt === 'number' ? sale.createdAt : (sale.createdAt as any)?.toDate?.()?.getTime() || 0;
-                                        const hasPriceMod = sale.items.some(it => it.finalPrice !== it.price);
-                                        
-                                        return (
-                                            <tr key={sale.id} className="hover:bg-accent-primary/[0.02] transition-colors group cursor-pointer" onClick={() => openSaleDetails(sale)}>
-                                                <td className="p-5">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-black text-ui-text uppercase tracking-tight text-xs">{new Date(time).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                                                        <span className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">{new Date(time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-5">
-                                                    <div className="font-black text-ui-text uppercase tracking-tight text-xs">{sale.clientName || 'Cliente General'}</div>
-                                                </td>
-                                                <td className="p-5">
-                                                    <div className="font-bold text-ui-text-muted uppercase tracking-widest text-[10px]">{sale.creatorName || 'N/A'}</div>
-                                                </td>
-                                                <td className="p-5 text-center">
-                                                    <div className="inline-flex items-center px-2.5 py-1 rounded-lg bg-ui-bg text-[9px] font-black uppercase tracking-widest border border-ui-border/50 text-ui-text-muted">
-                                                        {sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod === 'transfer' ? 'Transf.' : sale.paymentMethod === 'mobile_pay' ? 'P. Móvil' : 'Crédito'}
-                                                    </div>
-                                                </td>
-                                                <td className="p-5 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {hasPriceMod && (
-                                                            <div className="text-accent-secondary animate-pulse" title="Precio Modificado">
-                                                                <AlertCircle size={14} />
-                                                            </div>
-                                                        )}
-                                                        <span className="font-black text-ui-text text-sm tracking-tighter">{formatPrice(sale.total)}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-5 text-center">
-                                                    <button className="p-2 rounded-xl bg-accent-primary/10 text-accent-primary hover:bg-accent-primary hover:text-white transition-all">
-                                                        <Eye size={16} />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Mobile Card View */}
-                    <div className="md:hidden divide-y divide-ui-border/30">
-                        {filteredSales.length === 0 ? (
-                            <div className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">No hay ventas registradas.</div>
-                        ) : (
-                            displayedSales.map(sale => {
-                                const time = typeof sale.createdAt === 'number' ? sale.createdAt : (sale.createdAt as any)?.toDate?.()?.getTime() || 0;
-                                const hasPriceMod = sale.items.some(it => it.finalPrice !== it.price);
-                                
-                                return (
-                                    <div key={sale.id} className="p-5 hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer" onClick={() => openSaleDetails(sale)}>
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">
-                                                    {new Date(time).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} • {new Date(time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                                <span className="text-sm font-black text-ui-text uppercase tracking-tight mt-0.5">{sale.clientName || 'Consumidor Final'}</span>
-                                            </div>
-                                            <div className="text-right">
-                                                <span className="text-lg font-black text-ui-text tracking-tighter block">{formatPrice(sale.total)}</span>
-                                                <div className="inline-flex items-center gap-1 mt-1">
-                                                    {hasPriceMod && <AlertCircle size={10} className="text-accent-secondary" />}
-                                                    <span className="text-[8px] font-black uppercase tracking-widest text-ui-text-muted">
-                                                        {sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod === 'transfer' ? 'Transf.' : 'P. Móvil'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between pt-2 border-t border-ui-border/20">
-                                            <span className="text-[8px] font-bold text-ui-text-muted uppercase tracking-widest">Atendido por: {sale.creatorName || 'N/A'}</span>
-                                            <span className="text-accent-primary font-black text-[9px] uppercase tracking-widest flex items-center gap-1">
-                                                Ver Detalles <Eye size={12} />
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-
-                    {/* Pagination Controls */}
-                    {totalPages > 1 && (
-                        <div className="p-4 border-t border-ui-border flex items-center justify-between bg-ui-bg/30">
-                            <span className="text-[10px] font-black text-ui-text-muted uppercase tracking-widest">
-                                Pág. {currentPage} de {totalPages} — {filteredSales.length} registros
-                            </span>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
-                                    className="px-3 py-1.5 rounded-lg bg-ui-bg border border-ui-border text-ui-text font-black text-sm uppercase tracking-widest hover:bg-accent-primary hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                >
-                                    ‹ Anterior
-                                </button>
-                                <div className="flex items-center gap-1">
-                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                        let pageNum = i + 1;
-                                        if (totalPages > 5) {
-                                            if (currentPage <= 3) pageNum = i + 1;
-                                            else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                                            else pageNum = currentPage - 2 + i;
-                                        }
-                                        return (
-                                            <button
-                                                key={pageNum}
-                                                onClick={() => setCurrentPage(pageNum)}
-                                                className={`px-2.5 py-1.5 rounded-lg font-black text-xs uppercase tracking-widest transition-all ${
-                                                    currentPage === pageNum
-                                                        ? 'bg-accent-primary text-white shadow-lg shadow-accent-primary/20'
-                                                        : 'bg-ui-bg border border-ui-border text-ui-text hover:border-accent-primary'
-                                                }`}
-                                            >
-                                                {pageNum}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                <button
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages}
-                                    className="px-3 py-1.5 rounded-lg bg-ui-bg border border-ui-border text-ui-text font-black text-sm uppercase tracking-widest hover:bg-accent-primary hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                >
-                                    Siguiente ›
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
             {/* Top Products Chart */}
             <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
                 <CardContent className="p-4 md:p-6">
@@ -1051,36 +850,83 @@ function ReportsScreen() {
                             ))}
                         </div>
                     </div>
-                    <div className="h-60 md:h-80">
+                    <div style={{ height: Math.max(250, topProductsData.length * 45) }} className="w-full transition-all duration-500">
                         {topProductsData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={topProductsData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                    <XAxis
-                                        dataKey="name"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fill: '#6B7280', fontSize: window.innerWidth < 768 ? 9 : 11 }}
-                                        interval={window.innerWidth < 768 ? Math.floor(topProductsData.length / 3) : 0}
-                                        angle={window.innerWidth < 768 ? -45 : -20}
-                                        textAnchor={window.innerWidth < 768 ? 'end' : 'end'}
-                                        height={window.innerWidth < 768 ? 60 : 80}
+                                <BarChart 
+                                    data={topProductsData} 
+                                    layout="vertical"
+                                    margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
+                                >
+                                    <defs>
+                                        <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
+                                            <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.8} />
+                                            <stop offset="100%" stopColor="#C026D3" stopOpacity={1} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" opacity={0.1} />
+                                    <XAxis 
+                                        type="number" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fill: '#6B7280', fontSize: 10, fontWeight: 600 }}
                                     />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 10 }} />
+                                    <YAxis 
+                                        dataKey="name" 
+                                        type="category" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        width={window.innerWidth < 768 ? 90 : 140}
+                                        tick={(props) => {
+                                            const { x, y, payload } = props;
+                                            const name = payload.value;
+                                            const maxLength = window.innerWidth < 768 ? 14 : 22;
+                                            const displayName = name.length > maxLength ? name.substring(0, maxLength) + '...' : name;
+                                            return (
+                                                <g transform={`translate(${x},${y})`}>
+                                                    <text
+                                                        x={-10}
+                                                        y={0}
+                                                        dy={4}
+                                                        textAnchor="end"
+                                                        fill="#9CA3AF"
+                                                        fontSize={window.innerWidth < 768 ? 9 : 10}
+                                                        fontWeight="800"
+                                                        className="uppercase tracking-tight"
+                                                    >
+                                                        {displayName}
+                                                    </text>
+                                                </g>
+                                            );
+                                        }}
+                                    />
                                     <Tooltip
-                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                                        cursor={{ fill: 'rgba(124, 58, 237, 0.1)' }}
+                                        contentStyle={{ 
+                                            borderRadius: '16px', 
+                                            border: '1px solid rgba(255, 255, 255, 0.1)', 
+                                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+                                            background: '#0f172a',
+                                            padding: '12px'
+                                        }}
+                                        itemStyle={{ color: '#F3F4F6', fontWeight: 'bold', fontSize: '12px' }}
+                                        labelStyle={{ color: '#9CA3AF', fontWeight: '900', marginBottom: '4px', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.1em' }}
                                         formatter={(value: any, name: string | undefined) => {
                                             if (name === 'qty') return [value, 'Cantidad'];
-                                            if (name === 'revenue') return [formatPrice(value), 'Ingresos'];
+                                            if (name === 'revenue') return [formatPrice(value), 'Total'];
                                             return [value, name || ''];
                                         }}
-                                        labelFormatter={() => ''}
                                     />
-                                    <Bar dataKey="qty" fill="#7C3AED" radius={[8, 8, 0, 0]} />
+                                    <Bar 
+                                        dataKey="qty" 
+                                        fill="url(#barGradient)" 
+                                        radius={[0, 6, 6, 0]} 
+                                        barSize={window.innerWidth < 768 ? 16 : 24}
+                                    />
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="h-full flex items-center justify-center text-gray-400 font-medium text-sm">No hay datos de productos vendidos</div>
+                            <div className="h-full flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest text-[10px] opacity-60">No hay datos de productos vendidos</div>
                         )}
                     </div>
                 </CardContent>

@@ -13,6 +13,7 @@ import {
     FileText,
     DollarSign,
     Menu,
+    Archive,
     Bell,
     ShieldAlert,
     Sun,
@@ -154,7 +155,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ] : isStaff ? [
         { name: 'Transacciones', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', href: '/inventory', icon: Package },
-        { name: 'Cobros', href: '/collections', icon: DollarSign },
+        { name: 'Movimientos', href: '/collections', icon: Archive },
         { name: 'Clientes', href: '/clients', icon: Users },
     ] : [
         // Default Owner / Manager View
@@ -162,14 +163,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'Inventario', href: '/inventory', icon: Package },
         { name: 'Clientes', href: '/clients', icon: Users },
         { name: 'Reportes', href: '/reports', icon: FileText },
+        { name: 'Cierre de Caja', href: '/cash-sessions', icon: Archive },
         { name: 'Administración', href: '/team', icon: ShieldAlert },
-        { name: 'Cobros', href: '/collections', icon: DollarSign },
+        { name: 'Movimientos', href: '/collections', icon: Archive },
     ];
 
     // For mobile bottom nav - Always append Profile
     const baseMobileItems = (isGlobalAdmin || isStaff)
         ? navItems
-        : navItems.filter(item => ['Transacciones', 'Inventario', 'Cobros', 'Clientes', 'Reportes'].includes(item.name));
+        : navItems.filter(item => ['Transacciones', 'Inventario', 'Movimientos', 'Clientes', 'Reportes', 'Cierre de Caja'].includes(item.name));
     const mobileNavItems = [
         ...baseMobileItems.map(item => ({
             ...item,
@@ -228,7 +230,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                             {cartItemsCount > 9 ? '9+' : cartItemsCount}
                                         </div>
                                     )}
-                                    {item.name === 'Cobros' && pendingCollectionsCount > 0 && (
+                                    {item.name === 'Movimientos' && pendingCollectionsCount > 0 && (
                                         <div className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white z-10 shadow-md">
                                             {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
                                         </div>
@@ -287,7 +289,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1 h-full overflow-y-auto relative custom-scrollbar">
                 <div className="w-full max-w-[1400px] mx-auto px-4 md:px-12 pt-8 md:pt-12 pb-32 md:pb-12 h-auto min-h-full">
                     {/* Page Header (Premium Modern Layout) */}
-                    <div className="mb-12 flex flex-col gap-8 animate-in fade-in slide-in-from-top-6 duration-1000">
+                    <div>
                         {/* Top Action Bar - Aligned Right */}
                         <div className="flex justify-end items-center gap-2 md:gap-4 px-2 md:px-0" ref={notificationsRef}>
                             {!isGlobalAdmin && (
@@ -406,8 +408,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </div>
                         </div>
 
-                        {/* Page Header spacing fix */}
-                        <div className="mt-8"></div>
                     </div>
 
                     <div className="animate-in fade-in zoom-in-95 duration-700">
@@ -440,7 +440,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 {isActive && (
                                     <div className="absolute -bottom-1 w-1.5 h-1.5 bg-accent-primary rounded-full" />
                                 )}
-                                {item.name === 'Cobros' && pendingCollectionsCount > 0 && (
+                                {item.name === 'Movimientos' && pendingCollectionsCount > 0 && (
                                     <div className="absolute top-0 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-ui-bg flex items-center justify-center text-[8px] font-black text-white shadow-sm z-10">
                                         {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
                                     </div>

@@ -203,39 +203,41 @@ export default function SettingsScreen() {
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-start">
                 {/* Perfil Header - Bento Style */}
-                <div className="md:col-span-12 lg:col-span-4 ui-card border border-ui-border p-8 flex flex-col items-center text-center relative overflow-hidden group shadow-float">
-                    <div className="absolute inset-x-0 top-0 h-1 bg-accent-primary shadow-[0_0_20px_rgba(0,122,255,0.5)]" />
+                <div className="md:col-span-12 lg:col-span-5 xl:col-span-4 ui-card border border-ui-border/50 p-8 md:p-10 flex flex-col items-center text-center relative overflow-hidden group shadow-2xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+                    <div className="absolute inset-0 bg-linear-to-b from-accent-primary/10 to-transparent opacity-50 pointer-events-none" />
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-accent-primary via-accent-secondary to-accent-primary shadow-[0_0_20px_rgba(124,58,237,0.5)]" />
                     
-                    <div className="w-24 h-24 rounded-3xl bg-linear-to-tr from-accent-primary to-accent-secondary p-1 mb-6 shadow-xl group-hover:scale-105 transition-transform duration-500">
-                        <div className="w-full h-full bg-white dark:bg-black rounded-[22px] flex items-center justify-center">
-                            <span className="text-4xl font-black text-transparent bg-clip-text bg-linear-to-tr from-accent-primary to-accent-secondary italic">
-                                {user?.displayName?.[0] || 'U'}
+                    <div className="w-32 h-32 rounded-[2rem] bg-linear-to-tr from-accent-primary to-accent-secondary p-1 mb-6 shadow-2xl shadow-accent-primary/20 group-hover:scale-105 group-hover:rotate-3 transition-all duration-500 relative z-10">
+                        <div className="w-full h-full bg-ui-bg rounded-[30px] flex items-center justify-center overflow-hidden relative">
+                            <div className="absolute inset-0 bg-linear-to-tr from-accent-primary/20 to-transparent" />
+                            <span className="text-5xl font-black text-transparent bg-clip-text bg-linear-to-tr from-accent-primary to-accent-secondary italic relative z-10">
+                                {user?.displayName?.[0]?.toUpperCase() || 'U'}
                             </span>
                         </div>
                     </div>
 
-                    <h2 className="text-3xl font-black text-ui-text mb-1 uppercase tracking-tighter">
+                    <h2 className="text-3xl font-black text-ui-text mb-1 uppercase tracking-tighter relative z-10">
                         {user?.displayName || 'Usuario'}
                     </h2>
-                    <p className="text-[11px] font-bold text-ui-text-muted mb-6 uppercase tracking-[0.2em] opacity-80">
+                    <p className="text-xs font-bold text-ui-text-muted mb-6 uppercase tracking-[0.2em] relative z-10 break-all">
                         {user?.email}
                     </p>
 
-                    <div className="flex flex-wrap justify-center gap-2 mb-8">
+                    <div className="flex flex-wrap justify-center gap-2 mb-8 relative z-10">
                         {user?.role === 'admingod' ? (
-                            <span className="px-3 py-1 bg-amber-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg shadow-amber-500/20">⭐ Master</span>
+                            <span className="px-4 py-1.5 bg-amber-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg shadow-amber-500/20">⭐ Master</span>
                         ) : user?.role === 'admin' ? (
-                            <span className="px-3 py-1 bg-accent-primary text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg shadow-blue-500/20">Administrador</span>
+                            <span className="px-4 py-1.5 bg-accent-primary text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg shadow-blue-500/20">Administrador</span>
                         ) : (
-                            <span className="px-3 py-1 bg-accent-success text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full">Colaborador</span>
+                            <span className="px-4 py-1.5 bg-accent-success text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full">Colaborador</span>
                         )}
-                        <span className="px-3 py-1 bg-ui-bg dark:bg-white/5 border border-ui-border text-ui-text-muted text-[9px] font-black uppercase tracking-[0.2em] rounded-full">Activo</span>
+                        <span className="px-4 py-1.5 bg-ui-bg/50 border border-ui-border text-ui-text-muted text-[9px] font-black uppercase tracking-[0.2em] rounded-full backdrop-blur-sm">Activo</span>
                     </div>
 
                     <button
-                        className="ui-btn ui-btn-primary w-full gap-3 py-4 text-xs group/btn relative overflow-hidden"
+                        className="w-full py-4 px-6 bg-ui-bg/50 hover:bg-accent-primary border border-ui-border hover:border-accent-primary text-ui-text hover:text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 relative z-10 overflow-hidden group/btn"
                         onClick={() => {
                             setNewName(user?.displayName || '');
                             setNewEmail(user?.email || '');
@@ -244,81 +246,95 @@ export default function SettingsScreen() {
                             setProfileDialogVisible(true);
                         }}
                     >
-                        <Edit3 size={16} /> <span>Gestionar Identidad</span>
-                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                        <Edit3 size={16} /> <span className="relative z-10">Gestionar Identidad</span>
+                        <div className="absolute inset-0 bg-linear-to-r from-accent-primary to-accent-secondary opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 -z-10" />
                     </button>
                 </div>
 
-                <div className="md:col-span-12 lg:col-span-8 space-y-8">
+                <div className="md:col-span-12 lg:col-span-7 xl:col-span-8 space-y-6">
                     {/* Preferencias */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="ui-card border border-ui-border p-8 flex flex-col justify-between group cursor-pointer hover:border-accent-primary/30 transition-all shadow-bento" onClick={toggleTheme}>
-                            <div className="flex justify-between items-start mb-8">
-                                <div className={`p-4 rounded-2xl ${isDarkTheme ? 'bg-indigo-500/10 text-indigo-400' : 'bg-orange-500/10 text-orange-500'} group-hover:scale-110 transition-transform duration-500`}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                        {/* Apariencia */}
+                        <div 
+                            className="ui-card border border-ui-border/50 p-6 md:p-8 flex flex-col justify-between group cursor-pointer hover:border-accent-primary/50 transition-all shadow-lg shadow-black/5 bg-ui-surface backdrop-blur-xl hover:-translate-y-1 relative overflow-hidden" 
+                            onClick={toggleTheme}
+                        >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-accent-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-accent-primary/10 transition-colors duration-500" />
+                            <div className="flex justify-between items-start mb-12 relative z-10">
+                                <div className={`p-4 rounded-2xl ${isDarkTheme ? 'bg-indigo-500/10 text-indigo-400' : 'bg-amber-500/10 text-amber-500'} group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-inner`}>
                                     {isDarkTheme ? <Moon size={28} fill="currentColor" /> : <Sun size={28} fill="currentColor" />}
                                 </div>
-                                <div className={`w-12 h-6 rounded-full border border-ui-border p-1 flex items-center transition-colors ${isDarkTheme ? 'bg-accent-primary' : 'bg-ui-bg'}`}>
-                                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${isDarkTheme ? 'translate-x-6' : 'translate-x-0'}`} />
+                                <div className={`w-14 h-7 rounded-full p-1 flex items-center transition-colors duration-300 shadow-inner ${isDarkTheme ? 'bg-accent-primary' : 'bg-ui-border/50'}`}>
+                                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300 ${isDarkTheme ? 'translate-x-7' : 'translate-x-0'}`} />
                                 </div>
                             </div>
-                            <div>
-                                <h3 className="font-black text-ui-text uppercase tracking-tight text-xl mb-1">Apariencia</h3>
-                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">{isDarkTheme ? 'Modo Oscuro' : 'Modo Claro'} Activado</p>
+                            <div className="relative z-10">
+                                <h3 className="font-black text-ui-text uppercase tracking-tight text-xl md:text-2xl mb-1">Apariencia</h3>
+                                <p className="text-[10px] md:text-xs text-ui-text-muted font-bold uppercase tracking-widest">{isDarkTheme ? 'Modo Oscuro' : 'Modo Claro'} Activado</p>
                             </div>
                         </div>
 
-                        <div className="ui-card border border-ui-border p-8 flex flex-col justify-between group hover:border-red-500/30 transition-all shadow-bento cursor-pointer" onClick={handleLogout}>
-                            <div className="flex justify-between items-start mb-8">
-                                <div className="p-4 bg-red-500/10 rounded-2xl text-red-500 group-hover:scale-110 transition-transform duration-500">
+                        {/* Finalizar Sesión */}
+                        <div 
+                            className="ui-card border border-ui-border/50 p-6 md:p-8 flex flex-col justify-between group hover:border-red-500/50 transition-all shadow-lg shadow-black/5 bg-ui-surface backdrop-blur-xl hover:-translate-y-1 cursor-pointer relative overflow-hidden" 
+                            onClick={handleLogout}
+                        >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-red-500/10 transition-colors duration-500" />
+                            <div className="flex justify-between items-start mb-12 relative z-10">
+                                <div className="p-4 bg-red-500/10 rounded-2xl text-red-500 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500 shadow-inner">
                                     <LogOut size={28} />
                                 </div>
-                                <ChevronRight size={20} className="text-ui-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                <div className="w-10 h-10 rounded-full bg-red-500/5 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:bg-red-500/10 transition-all duration-300">
+                                    <ChevronRight size={20} className="text-red-500 translate-x-[-4px] group-hover:translate-x-0 transition-transform duration-300" />
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-black text-ui-text uppercase tracking-tight text-xl mb-1 text-red-500">Finalizar Sesión</h3>
-                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Desconectar cuenta actual</p>
+                            <div className="relative z-10">
+                                <h3 className="font-black text-red-500 uppercase tracking-tight text-xl md:text-2xl mb-1">Finalizar Sesión</h3>
+                                <p className="text-[10px] md:text-xs text-ui-text-muted font-bold uppercase tracking-widest group-hover:text-red-500/70 transition-colors">Desconectar cuenta actual</p>
                             </div>
                         </div>
 
                         {/* Administration Access - Mobile Shortcut */}
                         {(user?.role === 'admin' || user?.role === 'admingod' || (user?.uid && !user?.ownerId)) && (
-                            <div className="md:col-span-2 ui-card border border-ui-border p-8 flex flex-col justify-between group hover:border-accent-primary/30 transition-all shadow-premium cursor-pointer bg-linear-to-br from-accent-primary/5 to-transparent" onClick={() => router.push('/team')}>
-                                <div className="flex justify-between items-start mb-8">
-                                    <div className="p-4 bg-accent-primary/10 rounded-2xl text-accent-primary group-hover:scale-110 transition-transform duration-500">
+                            <div className="sm:col-span-2 ui-card border border-ui-border/50 p-6 md:p-8 flex flex-col justify-between group hover:border-accent-primary/50 transition-all shadow-lg shadow-black/5 bg-linear-to-br from-accent-primary/5 to-transparent backdrop-blur-xl hover:-translate-y-1 cursor-pointer relative overflow-hidden" onClick={() => router.push('/team')}>
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-accent-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 group-hover:bg-accent-primary/10 transition-colors duration-500" />
+                                <div className="flex justify-between items-start mb-8 relative z-10">
+                                    <div className="p-4 bg-accent-primary/10 rounded-2xl text-accent-primary group-hover:scale-110 transition-all duration-500 shadow-inner">
                                         <Users size={28} />
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-accent-primary opacity-0 group-hover:opacity-100 transition-opacity">Gestionar</span>
-                                        <ChevronRight size={20} className="text-accent-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                    <div className="flex items-center gap-3 bg-ui-bg/50 px-4 py-2 rounded-full border border-ui-border/50 group-hover:border-accent-primary/30 transition-colors">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-ui-text group-hover:text-accent-primary transition-colors">Gestionar Equipo</span>
+                                        <ChevronRight size={16} className="text-ui-text-muted group-hover:text-accent-primary group-hover:translate-x-1 transition-all" />
                                     </div>
                                 </div>
-                                <div>
-                                    <h3 className="font-black text-ui-text uppercase tracking-tight text-xl mb-1">Administración de Equipo</h3>
-                                    <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Sedes, Cajas y Personal Autorizado</p>
+                                <div className="relative z-10">
+                                    <h3 className="font-black text-ui-text uppercase tracking-tight text-xl md:text-2xl mb-1">Administración de Equipo</h3>
+                                    <p className="text-[10px] md:text-xs text-ui-text-muted font-bold uppercase tracking-widest">Sedes, Cajas y Personal Autorizado</p>
                                 </div>
                             </div>
                         )}
                     </div>
 
                     {/* Legal Info */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-black text-accent-primary uppercase tracking-[0.2em] mt-8 mb-4">Información Legal</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-4 pt-4">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Shield className="text-accent-primary" size={20} />
+                            <h3 className="text-sm font-black text-ui-text uppercase tracking-[0.2em]">Información Legal</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <button
                                 onClick={() => {
                                     setLegalModalTab('terms');
                                     setLegalModalOpen(true);
                                 }}
-                                className="ui-card border border-ui-border p-6 group hover:border-accent-primary/30 transition-all shadow-bento cursor-pointer"
+                                className="ui-card border border-ui-border/50 p-6 md:p-8 group hover:border-blue-500/50 hover:bg-blue-500/5 transition-all shadow-sm bg-ui-surface backdrop-blur-xl flex flex-col items-center text-center relative overflow-hidden"
                             >
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-blue-500/10 rounded-xl text-blue-500 group-hover:scale-110 transition-transform duration-500">
-                                        <FileText size={24} />
-                                    </div>
-                                    <ChevronRight size={16} className="text-ui-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                <div className="p-4 bg-blue-500/10 rounded-2xl text-blue-500 mb-6 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500">
+                                    <FileText size={24} />
                                 </div>
-                                <h3 className="font-black text-ui-text uppercase tracking-tight mb-1">Términos</h3>
-                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Términos y Condiciones</p>
+                                <h3 className="font-black text-ui-text uppercase tracking-tight text-lg mb-2">Términos</h3>
+                                <p className="text-[9px] text-ui-text-muted font-bold uppercase tracking-[0.2em] opacity-80 line-clamp-2">Términos y Condiciones Generales</p>
                             </button>
 
                             <button
@@ -326,16 +342,13 @@ export default function SettingsScreen() {
                                     setLegalModalTab('privacy');
                                     setLegalModalOpen(true);
                                 }}
-                                className="ui-card border border-ui-border p-6 group hover:border-accent-primary/30 transition-all shadow-bento cursor-pointer"
+                                className="ui-card border border-ui-border/50 p-6 md:p-8 group hover:border-green-500/50 hover:bg-green-500/5 transition-all shadow-sm bg-ui-surface backdrop-blur-xl flex flex-col items-center text-center relative overflow-hidden"
                             >
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-green-500/10 rounded-xl text-green-500 group-hover:scale-110 transition-transform duration-500">
-                                        <Shield size={24} />
-                                    </div>
-                                    <ChevronRight size={16} className="text-ui-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                <div className="p-4 bg-green-500/10 rounded-2xl text-green-500 mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                                    <Shield size={24} />
                                 </div>
-                                <h3 className="font-black text-ui-text uppercase tracking-tight mb-1">Privacidad</h3>
-                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Política de Privacidad</p>
+                                <h3 className="font-black text-ui-text uppercase tracking-tight text-lg mb-2">Privacidad</h3>
+                                <p className="text-[9px] text-ui-text-muted font-bold uppercase tracking-[0.2em] opacity-80 line-clamp-2">Nuestra Política de Privacidad</p>
                             </button>
 
                             <button
@@ -343,32 +356,32 @@ export default function SettingsScreen() {
                                     setLegalModalTab('disclaimer');
                                     setLegalModalOpen(true);
                                 }}
-                                className="ui-card border border-ui-border p-6 group hover:border-accent-primary/30 transition-all shadow-bento cursor-pointer"
+                                className="ui-card border border-ui-border/50 p-6 md:p-8 group hover:border-amber-500/50 hover:bg-amber-500/5 transition-all shadow-sm bg-ui-surface backdrop-blur-xl flex flex-col items-center text-center relative overflow-hidden"
                             >
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 group-hover:scale-110 transition-transform duration-500">
-                                        <AlertCircle size={24} />
-                                    </div>
-                                    <ChevronRight size={16} className="text-ui-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500 mb-6 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500">
+                                    <AlertCircle size={24} />
                                 </div>
-                                <h3 className="font-black text-ui-text uppercase tracking-tight mb-1">Aviso Legal</h3>
-                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Exención de Responsabilidad</p>
+                                <h3 className="font-black text-ui-text uppercase tracking-tight text-lg mb-2">Aviso Legal</h3>
+                                <p className="text-[9px] text-ui-text-muted font-bold uppercase tracking-[0.2em] opacity-80 line-clamp-2">Exención de Responsabilidad</p>
                             </button>
                         </div>
                     </div>
 
                     {/* Build Info */}
-                    <div className="ui-card border border-ui-border p-6 bg-black/5 dark:bg-white/5 flex items-center justify-between shadow-soft mt-8">
-                        <div className="flex items-center gap-4">
-                            <div className="p-2 bg-accent-primary/10 rounded-lg">
-                                <Shield className="text-accent-primary" size={18} />
+                    <div className="ui-card border border-ui-border/50 p-6 md:p-8 bg-ui-bg/50 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-inner mt-8 backdrop-blur-xl rounded-[2rem]">
+                        <div className="flex items-center gap-4 text-center sm:text-left">
+                            <div className="p-3 bg-accent-success/10 rounded-xl relative mx-auto sm:mx-0">
+                                <div className="absolute inset-0 border border-accent-success/30 rounded-xl animate-ping opacity-20" />
+                                <Shield className="text-accent-success" size={20} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-ui-text uppercase tracking-widest">Estado de Seguridad</p>
-                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-[0.1em]">Protección en tiempo real activa</p>
+                                <p className="text-[11px] font-black text-ui-text uppercase tracking-widest mb-0.5">Estado de Seguridad</p>
+                                <p className="text-[9px] text-accent-success font-bold uppercase tracking-[0.2em]">Protección en tiempo real activa</p>
                             </div>
                         </div>
-                        <span className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.2em] opacity-40">v{APP_VERSION}</span>
+                        <div className="px-4 py-2 bg-black/5 dark:bg-white/5 rounded-full border border-ui-border/50 mt-2 sm:mt-0">
+                            <span className="text-[9px] font-black text-ui-text-muted uppercase tracking-[0.3em]">v{APP_VERSION}</span>
+                        </div>
                     </div>
                 </div>
             </div>
