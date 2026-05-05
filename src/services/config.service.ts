@@ -1,5 +1,5 @@
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import { doc, onSnapshot, Firestore } from 'firebase/firestore';
+import { db } from '@/config/firebaseConfig';
 
 export const ConfigService = {
   /**
@@ -8,8 +8,14 @@ export const ConfigService = {
    * Expects a document with a 'latest' field (string).
    */
   subscribeToVersion: (callback: (latestVersion: string) => void) => {
+    // Ensure db is initialized before subscribing
+    if (!db) {
+      console.warn("Firestore not initialized yet, skipping version check");
+      return () => {};
+    }
+
     const versionDocRef = doc(db, 'app_config', 'version');
-    
+
     return onSnapshot(versionDocRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();

@@ -20,6 +20,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isProcessingRef = React.useRef(false);
 
     useEffect(() => {
+        // Ensure auth is initialized before subscribing
+        if (!auth) {
+            if (process.env.NODE_ENV === 'development') console.warn("Firebase Auth not initialized yet");
+            setIsLoading(false);
+            return;
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
             if (isProcessingRef.current) return;
             isProcessingRef.current = true;
