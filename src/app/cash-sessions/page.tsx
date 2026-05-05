@@ -4,7 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { CashSessionService } from '@/services/cashSession.service';
+import { SalesService } from '@/services/sales.service';
 import { CashSession } from '@/types/cashSession';
+import { Sale } from '@/types/sales';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
@@ -25,6 +27,7 @@ export default function CashSessionsPage() {
   const [openSession, setOpenSession] = useState<CashSession | null>(null);
   const [allSessions, setAllSessions] = useState<CashSession[]>([]);
   const [sessionStats, setSessionStats] = useState<any>(null);
+  const [salesWithoutCashbox, setSalesWithoutCashbox] = useState<Sale[]>([]);
   const [isOpeningSession, setIsOpeningSession] = useState(false);
   const [isClosingSession, setIsClosingSession] = useState(false);
   const [closeNotes, setCloseNotes] = useState('');
@@ -43,6 +46,20 @@ export default function CashSessionsPage() {
     });
 
     return () => unsubscribe();
+  }, [ownerId]);
+
+  // Load sales without cashbox
+  useEffect(() => {
+    if (!ownerId) return;
+
+    const loadSalesWithoutCashbox = async () => {
+      const sales = await SalesService.getSalesWithoutCashbox(ownerId);
+      setSalesWithoutCashbox(sales);
+    };
+
+    loadSalesWithoutCashbox();
+    const interval = setInterval(loadSalesWithoutCashbox, 10000);
+    return () => clearInterval(interval);
   }, [ownerId]);
 
   // Update session stats in real-time
@@ -230,6 +247,24 @@ export default function CashSessionsPage() {
       ) : (
         <Card className="border-dashed border-2">
           <CardContent className="p-8 text-center">
+            {salesWithoutCashbox.length > 0 && (
+              <div className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={18} />
+                  <div className="text-left">
+                    <p className="text-sm font-black text-amber-600 uppercase tracking-tight mb-2">
+                      {salesWithoutCashbox.length} Venta{salesWithoutCashbox.length === 1 ? '' : 's'} sin caja asignada
+                    </p>
+                    <p className="text-xs text-amber-600/80">
+                      Total: {formatPrice(salesWithoutCashbox.reduce((sum, s) => sum + s.total, 0))}
+                    </p>
+                    <p className="text-[11px] text-amber-600/70 mt-2">
+                      Se incluirán en el cierre cuando abras una nueva sesión.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <Clock size={40} className="mx-auto mb-4 text-ui-text-muted opacity-50" />
             <h2 className="text-lg font-black text-ui-text mb-2 uppercase tracking-tight">
               No hay sesión activa
@@ -265,6 +300,17 @@ export default function CashSessionsPage() {
             </div>
 
             <div className="space-y-4 mb-6">
+              {salesWithoutCashbox.length > 0 && (
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={16} />
+                    <p className="text-xs text-amber-600">
+                      ⚠️ Hay {salesWithoutCashbox.length} venta{salesWithoutCashbox.length === 1 ? '' : 's'} sin caja ({formatPrice(salesWithoutCashbox.reduce((sum, s) => sum + s.total, 0))}) que se incluirán en este cierre.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="text-xs font-black text-ui-text-muted uppercase tracking-widest block mb-2">
                   Notas (Opcional)

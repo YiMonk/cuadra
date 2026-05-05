@@ -471,4 +471,14 @@ export const SalesService = {
       byCashbox: Object.values(byCashbox).sort((a, b) => b.real - a.real || b.teorico - a.teorico),
     };
   },
+
+  getSalesWithoutCashbox: async (ownerId: string): Promise<Sale[]> => {
+    try {
+      const sales = await SalesService.getAllSales(ownerId);
+      return sales.filter(s => !s.cashboxId && s.status !== 'cancelled');
+    } catch (error) {
+      console.error('Error getting sales without cashbox:', error);
+      return [];
+    }
+  },
 };
