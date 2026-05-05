@@ -87,6 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             ownerId: meta.ownerId,
                             createdAt: meta.createdAt || Date.now(),
                             subscriptionEndsAt: meta.subscriptionEndsAt,
+                            termsAcceptedAt: meta.termsAcceptedAt,
                         };
 
                         setUser(userProfile);
@@ -149,6 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ownerId: meta.ownerId,
             createdAt: meta.createdAt || Date.now(),
             subscriptionEndsAt: meta.subscriptionEndsAt,
+            termsAcceptedAt: meta.termsAcceptedAt,
         };
         setUser(userProfile);
     };

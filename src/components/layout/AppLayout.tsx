@@ -26,16 +26,17 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { useCart } from '@/context/CartContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { UserService } from '@/services/user.service';
 import { BRAND_ASSETS } from '@/config/brand';
 import { DisclaimerBanner } from '@/components/DisclaimerBanner';
-import { TermsAcceptanceModal } from '@/components/TermsAcceptanceModal';
+import { TermsAcceptanceModal } from '@/components/legal/TermsAcceptanceModal';
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { user, isLoading, signOut } = useAuth();
+    const { user, isLoading, signOut, reloadUser } = useAuth();
     const { isDarkTheme, toggleTheme } = useAppTheme();
     const { items } = useCart();
     const { currency, exchangeRate, toggleCurrency, isLoading: currencyLoading } = useCurrency();
@@ -120,14 +121,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const handleAcceptTerms = async () => {
         if (user) {
             try {
-                const response = await fetch('/api/users/accept-terms', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: user.uid })
+                await UserService.updateUser(user.uid, {
+                    termsAcceptedAt: Date.now(),
                 });
-                if (response.ok) {
-                    setShowTermsModal(false);
-                }
+                // Update user context to reflect the change
+                await reloadUser();
+                setShowTermsModal(false);
             } catch (error) {
                 console.error('Error accepting terms:', error);
             }

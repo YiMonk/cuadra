@@ -32,7 +32,12 @@ export default function RegisterPage() {
 
     React.useEffect(() => {
         if (user) {
-            router.push('/dashboard');
+            const isGlobalAdmin = user.role === 'admingod' || user.role === 'admin';
+            if (isGlobalAdmin) {
+                router.push('/admin/dashboard');
+            } else {
+                router.push('/pos');
+            }
         }
     }, [user, router]);
 
@@ -72,7 +77,8 @@ export default function RegisterPage() {
                 role: 'admin', // Default to Admin (Store Owner)
                 ownerId: userCredential.user.uid, // Self-owned
                 active: true,
-                createdAt: Date.now()
+                createdAt: Date.now(),
+                termsAcceptedAt: Date.now()
             });
 
         } catch (error: any) {
