@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { SalesService } from '@/services/sales.service';
 import { ClientService } from '@/services/client.service';
-import { Search, Clock, FileText, MessageCircle, DollarSign, X, Camera, LayoutList } from 'lucide-react';
+import { Search, Clock, FileText, MessageCircle, DollarSign, X, Camera, LayoutList, History } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -11,8 +11,10 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useAuth } from '@/context/AuthContext';
+import { MovementHistory } from '@/components/movements/MovementHistory';
 
 export default function CollectionsScreen() {
+    const [activeTab, setActiveTab] = useState<'movements' | 'collections'>('collections');
     const router = useRouter();
     const { formatPrice } = useCurrency();
     const { user } = useAuth();
@@ -327,10 +329,50 @@ export default function CollectionsScreen() {
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500 pb-24">
 
+            {/* Header */}
+            <div className="space-y-4">
+                <div className="text-center md:text-left">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Movimientos</h1>
+                    <p className="text-foreground/50 font-medium tracking-wide mt-1 text-sm md:text-base">Historial de transacciones y gestión de cobranzas</p>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex gap-2 border-b border-ui-border">
+                    <button
+                        onClick={() => setActiveTab('movements')}
+                        className={`flex items-center gap-2 px-4 py-3 text-sm font-black uppercase tracking-widest transition-all border-b-2 ${
+                            activeTab === 'movements'
+                                ? 'border-accent-primary text-accent-primary'
+                                : 'border-transparent text-ui-text-muted hover:text-ui-text'
+                        }`}
+                    >
+                        <History size={16} />
+                        Historial
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('collections')}
+                        className={`flex items-center gap-2 px-4 py-3 text-sm font-black uppercase tracking-widest transition-all border-b-2 ${
+                            activeTab === 'collections'
+                                ? 'border-accent-primary text-accent-primary'
+                                : 'border-transparent text-ui-text-muted hover:text-ui-text'
+                        }`}
+                    >
+                        <DollarSign size={16} />
+                        Cobranzas
+                    </button>
+                </div>
+            </div>
+
+            {/* Movements Tab */}
+            {activeTab === 'movements' && <MovementHistory />}
+
+            {/* Collections Tab */}
+            {activeTab === 'collections' && (
+            <>
             <div className="liquid-glass rounded-[24px] p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
                 <div className="text-center md:text-left">
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Cobranzas</h1>
-                    <p className="text-foreground/50 font-medium tracking-wide mt-1 text-sm md:text-base">Gestión de créditos y cuentas por cobrar</p>
+                    <h2 className="text-xl font-bold tracking-tight text-foreground">Deudores Pendientes</h2>
+                    <p className="text-foreground/50 font-medium tracking-wide mt-1 text-sm">Clientes con deuda activa</p>
                 </div>
                 <div className="liquid-glass rounded-[18px] p-4 flex flex-col items-center justify-center min-w-[160px] self-center md:self-auto" style={{ border: '1px solid rgba(255,59,48,0.20)' }}>
                     <span className="text-[10px] md:text-[11px] font-black text-ios-red/70 tracking-widest uppercase mb-1">Total Deuda</span>
@@ -524,6 +566,9 @@ export default function CollectionsScreen() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            </>
             )}
 
             {reminderModal && (
