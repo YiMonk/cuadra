@@ -1030,17 +1030,17 @@ function ReportsScreen() {
 
             {/* Top Products Chart */}
             <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
-                <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                            <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Productos Más Vendidos</h2>
-                        </div>
-                        <div className="flex items-center gap-2">
+                <CardContent className="p-4 md:p-6">
+                    <div className="space-y-4 mb-6">
+                        <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">
+                          Productos Más Vendidos
+                        </h2>
+                        <div className="flex flex-wrap gap-2">
                             {['day', 'week', 'month', 'all'].map(period => (
                                 <button
                                     key={period}
                                     onClick={() => setProductChartPeriod(period as any)}
-                                    className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all ${
+                                    className={`flex-1 md:flex-initial px-2.5 md:px-3 py-1.5 rounded-lg font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all ${
                                         productChartPeriod === period
                                             ? 'bg-accent-primary text-white'
                                             : 'bg-ui-bg border border-ui-border text-ui-text hover:border-accent-primary'
@@ -1051,7 +1051,7 @@ function ReportsScreen() {
                             ))}
                         </div>
                     </div>
-                    <div className="h-80">
+                    <div className="h-60 md:h-80">
                         {topProductsData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={topProductsData}>
@@ -1060,13 +1060,13 @@ function ReportsScreen() {
                                         dataKey="name"
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fill: '#6B7280', fontSize: 11 }}
-                                        interval={0}
-                                        angle={-20}
-                                        textAnchor="end"
-                                        height={80}
+                                        tick={{ fill: '#6B7280', fontSize: window.innerWidth < 768 ? 9 : 11 }}
+                                        interval={window.innerWidth < 768 ? Math.floor(topProductsData.length / 3) : 0}
+                                        angle={window.innerWidth < 768 ? -45 : -20}
+                                        textAnchor={window.innerWidth < 768 ? 'end' : 'end'}
+                                        height={window.innerWidth < 768 ? 60 : 80}
                                     />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 10 }} />
                                     <Tooltip
                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                                         formatter={(value: any, name: string | undefined) => {
@@ -1080,7 +1080,7 @@ function ReportsScreen() {
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="h-full flex items-center justify-center text-gray-400 font-medium">No hay datos de productos vendidos</div>
+                            <div className="h-full flex items-center justify-center text-gray-400 font-medium text-sm">No hay datos de productos vendidos</div>
                         )}
                     </div>
                 </CardContent>
