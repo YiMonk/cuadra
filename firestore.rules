@@ -158,6 +158,15 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /cashSessions/{sessionId} {
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null));
+      allow delete: if isAdminGod()
+        || (isOwner() && request.auth.uid == resource.data.get('ownerId', null));
+    }
+
     match /app_config/{docId} {
       allow read: if docId == 'version' || isAdminGod();
       allow write: if isAdminGod();
