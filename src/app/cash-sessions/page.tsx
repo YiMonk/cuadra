@@ -56,6 +56,20 @@ export default function CashSessionsPage() {
 
   const ownerId = user?.ownerId || user?.uid || '';
 
+  // Helper function to reload all data
+  const reloadAllData = async () => {
+    if (!ownerId) return;
+    try {
+      const [sales, closings] = await Promise.all([
+        SalesService.getSalesWithoutCashbox(ownerId),
+        CashClosingService.subscribeToClosings(ownerId, setClosings) as any,
+      ]);
+      setSalesWithoutCashbox(sales);
+    } catch (error) {
+      console.error('Error reloading data:', error);
+    }
+  };
+
   // Subscribe to sessions
   useEffect(() => {
     if (!ownerId) return;
@@ -91,12 +105,21 @@ export default function CashSessionsPage() {
     return () => unsubscribe();
   }, [ownerId]);
 
-  // Subscribe to closings
+  // Subscribe to closings with polling fallback
   useEffect(() => {
     if (!ownerId) return;
 
     const unsubscribe = CashClosingService.subscribeToClosings(ownerId, setClosings);
-    return () => unsubscribe();
+
+    // Fallback polling in case subscription doesn't update immediately
+    const interval = setInterval(() => {
+      CashClosingService.subscribeToClosings(ownerId, setClosings);
+    }, 5000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
   }, [ownerId]);
 
   // Reset closing form when modal opens
@@ -230,15 +253,8 @@ export default function CashSessionsPage() {
 
       toast.success('Cierre de caja registrado');
 
-      // Reload unassigned sales
-      const updatedUnassigned = await SalesService.getSalesWithoutCashbox(ownerId);
-      setSalesWithoutCashbox(updatedUnassigned);
-
-      // Force refresh after a short delay to ensure Firestore has synced
-      setTimeout(() => {
-        const unsubscribe = CashClosingService.subscribeToClosings(ownerId, setClosings);
-        return () => unsubscribe();
-      }, 500);
+      // Reload all data after creating closing
+      await reloadAllData();
 
       setShowClosingModal(false);
       setClosingStep(1);
