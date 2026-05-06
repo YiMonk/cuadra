@@ -36,35 +36,20 @@ export class CashClosingService {
     ownerId: string,
     callback: (closings: (CashClosing & { id: string })[]) => void
   ): () => void {
-    try {
-      if (!db) {
-        console.warn('Firestore not initialized, skipping closings subscription');
-        return () => {};
+    // Use getAllClosings with polling instead of onSnapshot
+    const loadClosings = async () => {
+      try {
+        const closings = await this.getAllClosings(ownerId);
+        callback(closings);
+      } catch (error) {
+        console.error('Error loading closings:', error);
       }
+    };
 
-      const q = query(
-        collection(db, this.COLLECTION),
-        where('ownerId', '==', ownerId),
-        orderBy('closedAt', 'desc')
-      );
+    loadClosings();
+    const interval = setInterval(loadClosings, 2000);
 
-      return onSnapshot(
-        q,
-        (snap) => {
-          const closings = snap.docs.map((doc) => ({
-            ...doc.data(),
-            id: doc.id,
-          })) as (CashClosing & { id: string })[];
-          callback(closings);
-        },
-        (error) => {
-          console.error('Error in closings subscription:', error);
-        }
-      );
-    } catch (error) {
-      console.error('Error subscribing to closings:', error);
-      return () => {};
-    }
+    return () => clearInterval(interval);
   }
 
   static async getSalesForClosing(

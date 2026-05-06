@@ -105,27 +105,12 @@ export default function CashSessionsPage() {
     return () => unsubscribe();
   }, [ownerId]);
 
-  // Subscribe to closings with polling
+  // Poll closings every 2 seconds
   useEffect(() => {
     if (!ownerId) return;
 
-    // Try subscription first
     const unsubscribe = CashClosingService.subscribeToClosings(ownerId, setClosings);
-
-    // Polling every 3 seconds as fallback - loads data directly
-    const interval = setInterval(async () => {
-      try {
-        const closings = await CashClosingService.getAllClosings(ownerId);
-        setClosings(closings);
-      } catch (error) {
-        console.error('Error polling closings:', error);
-      }
-    }, 3000);
-
-    return () => {
-      unsubscribe();
-      clearInterval(interval);
-    };
+    return () => unsubscribe();
   }, [ownerId]);
 
   // Reset closing form when modal opens
