@@ -199,7 +199,7 @@ export default function CashSessionsPage() {
         }
       });
 
-      await CashClosingService.createClosing({
+      const closingId = await CashClosingService.createClosing({
         ownerId,
         closedAt: Date.now(),
         closedBy: user.uid,
@@ -219,7 +219,27 @@ export default function CashSessionsPage() {
         notes: closingNotes,
       });
 
+      // Mark unassigned sales as part of this closing
+      const unassignedSalesInClosing = previewSales.filter((s) => !s.cashboxId);
+      if (unassignedSalesInClosing.length > 0) {
+        await SalesService.updateMultipleSales(
+          unassignedSalesInClosing.map((s) => s.id || ''),
+          { closedInClosingId: closingId }
+        );
+      }
+
       toast.success('Cierre de caja registrado');
+
+      // Reload unassigned sales
+      const updatedUnassigned = await SalesService.getSalesWithoutCashbox(ownerId);
+      setSalesWithoutCashbox(updatedUnassigned);
+
+      // Force refresh after a short delay to ensure Firestore has synced
+      setTimeout(() => {
+        const unsubscribe = CashClosingService.subscribeToClosings(ownerId, setClosings);
+        return () => unsubscribe();
+      }, 500);
+
       setShowClosingModal(false);
       setClosingStep(1);
       setSelectedCashboxIds([]);

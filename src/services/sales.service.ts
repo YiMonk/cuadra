@@ -475,10 +475,22 @@ export const SalesService = {
   getSalesWithoutCashbox: async (ownerId: string): Promise<Sale[]> => {
     try {
       const sales = await SalesService.getAllSales(ownerId);
-      return sales.filter(s => !s.cashboxId && s.status !== 'cancelled');
+      return sales.filter(s => !s.cashboxId && s.status !== 'cancelled' && !s.closedInClosingId);
     } catch (error) {
       console.error('Error getting sales without cashbox:', error);
       return [];
+    }
+  },
+
+  updateMultipleSales: async (saleIds: string[], updates: Partial<Sale>) => {
+    try {
+      const updatePromises = saleIds.map((saleId) =>
+        updateDoc(doc(db, SALES_COLLECTION, saleId), updates)
+      );
+      await Promise.all(updatePromises);
+    } catch (error) {
+      console.error('Error updating multiple sales:', error);
+      throw error;
     }
   },
 };

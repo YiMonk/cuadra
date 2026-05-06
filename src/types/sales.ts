@@ -37,6 +37,7 @@ export interface Sale {
   discountAmount?: number;
   discountReason?: string;
   hasReturns?: boolean;
+  closedInClosingId?: string | null;
 }
 
 export interface ReturnItem {
