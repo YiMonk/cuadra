@@ -343,9 +343,9 @@ function POSScreen() {
 
             {/* Products Area (Left) — The Grid Canvas */}
             <div className="flex-1 flex flex-col min-h-0">
-                <div className="mb-8 space-y-6 shrink-0">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                        <div className="relative flex-1 max-w-xl">
+                <div className="mb-8 space-y-4 shrink-0">
+                    <div className="flex flex-col md:flex-row gap-4 w-full">
+                        <div className="relative flex-1">
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-ui-text-muted">
                                 <Search size={20} />
                             </div>
@@ -357,42 +357,40 @@ function POSScreen() {
                             />
                         </div>
 
-                        <div className="flex gap-4">
-                            <div className="w-56">
-                                <Select
-                                    options={[
-                                        { value: 'all', label: 'Todas las Sedes' },
-                                        ...locations.map(l => ({ value: l.id, label: l.name }))
-                                    ]}
-                                    value={selectedLocation}
-                                    onChange={(val) => setSelectedLocation(val)}
-                                    icon={<Home size={16} />}
-                                />
-                            </div>
+                        <div className="w-full md:w-64 shrink-0">
+                            <Select
+                                options={[
+                                    { value: 'all', label: 'Todas las Sedes' },
+                                    ...locations.map(l => ({ value: l.id, label: l.name }))
+                                ]}
+                                value={selectedLocation}
+                                onChange={(val) => setSelectedLocation(val)}
+                                icon={<Home size={16} />}
+                            />
                         </div>
-
-                        {categories.length > 0 && (
-                            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar-hide shrink-0">
-                                <button
-                                    onClick={() => setSelectedCategory(null)}
-                                    className={`px-6 h-14 rounded-2xl text-xs font-black tracking-widest uppercase transition-all flex items-center gap-2 border ${!selectedCategory ? 'bg-black text-white border-black' : 'bg-white/50 dark:bg-white/5 border-ui-border text-ui-text-muted hover:border-ui-text'}`}
-                                >
-                                    <LayoutGrid size={18} />
-                                    Todo
-                                </button>
-                                {categories.map(cat => (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setSelectedCategory(cat)}
-                                        className={`px-6 h-14 rounded-2xl text-xs font-black tracking-widest uppercase transition-all flex items-center gap-2 border ${selectedCategory === cat ? 'bg-black text-white border-black' : 'bg-white/50 dark:bg-white/5 border-ui-border text-ui-text-muted hover:border-ui-text'}`}
-                                    >
-                                        {getCategoryIcon(cat)}
-                                        {cat}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
                     </div>
+
+                    {categories.length > 0 && (
+                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar shrink-0 w-full">
+                            <button
+                                onClick={() => setSelectedCategory(null)}
+                                className={`px-6 h-12 rounded-xl text-xs font-black tracking-widest uppercase transition-all flex items-center gap-2 border whitespace-nowrap shrink-0 ${!selectedCategory ? 'bg-accent-primary text-white border-accent-primary shadow-lg shadow-accent-primary/30' : 'bg-white/50 dark:bg-white/5 border-ui-border text-ui-text-muted hover:border-ui-text hover:bg-white dark:hover:bg-white/10'}`}
+                            >
+                                <LayoutGrid size={18} />
+                                Todo
+                            </button>
+                            {categories.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-6 h-12 rounded-xl text-xs font-black tracking-widest uppercase transition-all flex items-center gap-2 border whitespace-nowrap shrink-0 ${selectedCategory === cat ? 'bg-accent-primary text-white border-accent-primary shadow-lg shadow-accent-primary/30' : 'bg-white/50 dark:bg-white/5 border-ui-border text-ui-text-muted hover:border-ui-text hover:bg-white dark:hover:bg-white/10'}`}
+                                >
+                                    {getCategoryIcon(cat)}
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto min-h-0 pb-20 md:pb-12 px-4 -mx-4 custom-scrollbar">

@@ -25,7 +25,10 @@
       "Bash(git reset *)",
       "Bash(npm --version)",
       "Bash(firebase --version)",
-      "Bash(firebase login *)"
+      "Bash(firebase login *)",
+      "Bash(node *)",
+      "Bash(firebase login:list)",
+      "Bash(gcloud auth *)"
     ]
   }
 }

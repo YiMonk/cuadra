@@ -66,6 +66,7 @@ export class CashClosingService {
 
       return allSales.filter((sale) => {
         if (sale.status === 'cancelled') return false;
+        if (sale.closedInClosingId) return false;
         if (sale.createdAt < options.from || sale.createdAt > options.to) return false;
 
         if (options.cashboxIds.length === 0 && !options.includesUnassigned) {

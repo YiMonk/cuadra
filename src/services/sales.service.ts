@@ -493,4 +493,25 @@ export const SalesService = {
       throw error;
     }
   },
+
+  getSalesByIds: async (saleIds: string[]): Promise<Sale[]> => {
+    if (!saleIds || saleIds.length === 0) return [];
+    try {
+      // Firestore 'in' operator supports max 30 items
+      const chunks: string[][] = [];
+      for (let i = 0; i < saleIds.length; i += 30) {
+        chunks.push(saleIds.slice(i, i + 30));
+      }
+      const results: Sale[] = [];
+      for (const chunk of chunks) {
+        const q = query(collection(db, SALES_COLLECTION), where('__name__', 'in', chunk));
+        const snapshot = await getDocs(q);
+        results.push(...snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Sale)));
+      }
+      return results;
+    } catch (error) {
+      console.error('Error getting sales by ids:', error);
+      return [];
+    }
+  },
 };
