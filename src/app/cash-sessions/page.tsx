@@ -399,6 +399,156 @@ export default function CashSessionsPage() {
         </Card>
       )}
 
+      {/* Closings History */}
+      {closings.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h2 className="text-lg font-black text-ui-text uppercase tracking-tight">Historial de Cierres</h2>
+            <div className="flex gap-2">
+              {(['day', 'week', 'month', 'all'] as const).map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setClosingPeriod(period)}
+                  className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors ${
+                    closingPeriod === period
+                      ? 'bg-accent-primary text-white'
+                      : 'bg-ui-bg border border-ui-border text-ui-text hover:border-accent-primary'
+                  }`}
+                >
+                  {period === 'day' ? 'Hoy' : period === 'week' ? 'Semana' : period === 'month' ? 'Mes' : 'Todo'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {closings
+              .filter((closing) => {
+                const now = Date.now();
+                const dayMs = 86400000;
+                const cutoff =
+                  closingPeriod === 'all'
+                    ? 0
+                    : closingPeriod === 'day'
+                      ? now - dayMs
+                      : closingPeriod === 'week'
+                        ? now - dayMs * 7
+                        : now - dayMs * 30;
+                return closing.closedAt >= cutoff;
+              })
+              .map((closing) => (
+                <Card key={closing.id} className="border-ui-border/50 hover:border-ui-border cursor-pointer transition-colors">
+                  <button
+                    onClick={() => setExpandedClosing(expandedClosing === closing.id ? null : closing.id)}
+                    className="w-full text-left"
+                  >
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center gap-2">
+                            <Archive size={16} className="text-accent-primary" />
+                            <p className="text-xs font-black text-ui-text-muted uppercase tracking-widest">
+                              {new Date(closing.closedAt).toLocaleDateString()}{' '}
+                              {new Date(closing.closedAt).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </p>
+                          </div>
+                          {closing.cashboxNames.length > 0 && (
+                            <span className="text-[9px] font-black bg-accent-primary/20 text-accent-primary px-2 py-1 rounded uppercase tracking-widest">
+                              {closing.cashboxNames.join(', ')}
+                            </span>
+                          )}
+                          {closing.includesUnassigned && (
+                            <span className="text-[9px] font-black bg-amber-600/20 text-amber-600 px-2 py-1 rounded uppercase tracking-widest">
+                              + Sin asignar
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-xs">
+                          <div>
+                            <p className="text-ui-text-muted uppercase tracking-widest font-bold mb-1">Total</p>
+                            <p className="text-lg font-black text-ui-text">{formatPrice(closing.totalSales)}</p>
+                          </div>
+                          <div>
+                            <p className="text-ui-text-muted uppercase tracking-widest font-bold mb-1">Ventas</p>
+                            <p className="text-lg font-black text-ui-text">{closing.salesCount}</p>
+                          </div>
+                          <div>
+                            <p className="text-ui-text-muted uppercase tracking-widest font-bold mb-1">Por Caja</p>
+                            <p className="text-xs text-ui-text-muted">
+                              {closing.cashboxIds.length === 0 && closing.includesUnassigned
+                                ? 'Sin asignar'
+                                : `${closing.cashboxIds.length} caja${closing.cashboxIds.length === 1 ? '' : 's'}`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronDown
+                        size={20}
+                        className={`text-ui-text-muted transition-transform ${expandedClosing === closing.id ? 'rotate-180' : ''}`}
+                      />
+                    </CardContent>
+                  </button>
+
+                  {/* Expanded Details */}
+                  {expandedClosing === closing.id && (
+                    <div className="border-t border-ui-border/50 p-4 space-y-4">
+                      {/* Desglose por método */}
+                      <div>
+                        <p className="text-xs font-black text-ui-text-muted uppercase tracking-widest mb-2">
+                          Desglose por Método
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {[
+                            { key: 'cash', label: '💵 Efectivo' },
+                            { key: 'transfer', label: '📲 Transf.' },
+                            { key: 'mobile_pay', label: '📱 P. Móvil' },
+                            { key: 'credit', label: '📝 Crédito' },
+                          ].map(({ key, label }) => (
+                            <div key={key} className="bg-ui-bg p-2 rounded-lg">
+                              <p className="text-[9px] font-bold text-ui-text-muted uppercase tracking-widest mb-1">
+                                {label}
+                              </p>
+                              <p className="text-sm font-black text-ui-text">
+                                {formatPrice(
+                                  closing.totalByMethod[key as keyof typeof closing.totalByMethod] || 0
+                                )}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Resumen */}
+                      <div>
+                        <p className="text-xs font-black text-ui-text-muted uppercase tracking-widest mb-2">Resumen</p>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-ui-text-muted">Pagadas:</span>
+                            <span className="font-black text-emerald-600">{formatPrice(closing.paidAmount)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-ui-text-muted">Deuda:</span>
+                            <span className="font-black text-accent-secondary">{formatPrice(closing.pendingAmount)}</span>
+                          </div>
+                          {closing.notes && (
+                            <div className="pt-2 border-t border-ui-border/50">
+                              <p className="text-ui-text-muted mb-1">Notas:</p>
+                              <p className="text-ui-text italic">{closing.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* Close Session Modal */}
       {showCloseModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">

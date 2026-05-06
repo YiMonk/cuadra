@@ -19,6 +19,9 @@ export class CashClosingService {
 
   static async createClosing(data: Omit<CashClosing, 'id'>): Promise<string> {
     try {
+      if (!db) {
+        throw new Error('Firestore not initialized');
+      }
       const docRef = await addDoc(collection(db, this.COLLECTION), {
         ...data,
       });
