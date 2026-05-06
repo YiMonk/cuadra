@@ -22,12 +22,15 @@ export default function Home() {
   }, [user, isLoading, router]);
 
   return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-850 text-gray-900 dark:text-white">
-      <div className="w-20 h-20 mb-6 bg-linear-to-tr from-blue-600 to-teal-400 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/30 animate-pulse">
-        <ShoppingCart size={36} color="white" />
+    <div className="h-full min-h-[80vh] w-full flex flex-col items-center justify-center">
+      <div className="w-24 h-24 mb-8 bg-linear-to-tr from-accent-primary to-accent-secondary p-1 rounded-3xl shadow-2xl shadow-accent-primary/20 animate-pulse">
+          <div className="w-full h-full bg-ui-bg rounded-[22px] flex items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-tr from-accent-primary/20 to-transparent" />
+              <ShoppingCart size={32} className="text-accent-primary relative z-10" />
+          </div>
       </div>
-      <h1 className="text-2xl font-black tracking-tight mb-2">Cargando Cuadra...</h1>
-      <p className="text-gray-500 font-medium tracking-wide">Preparando tu espacio de trabajo</p>
+      <h1 className="text-2xl font-black text-ui-text uppercase tracking-tighter mb-2">Cargando Cuadra...</h1>
+      <p className="text-xs text-ui-text-muted font-bold uppercase tracking-widest">Preparando tu espacio de trabajo</p>
     </div>
   );
 }
