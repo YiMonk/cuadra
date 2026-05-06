@@ -99,6 +99,20 @@ export default function CashSessionsPage() {
     return () => unsubscribe();
   }, [ownerId]);
 
+  // Reset closing form when modal opens
+  useEffect(() => {
+    if (showClosingModal) {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      setClosingDateFrom(startOfToday.getTime());
+      setClosingDateTo(Date.now());
+      setSelectedCashboxIds([]);
+      setIncludesUnassigned(false);
+      setClosingNotes('');
+      setClosingStep(1);
+    }
+  }, [showClosingModal]);
+
   // Update session stats in real-time
   useEffect(() => {
     if (!openSession || !ownerId) return;
