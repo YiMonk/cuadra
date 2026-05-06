@@ -125,4 +125,21 @@ export class CashClosingService {
       return null;
     }
   }
+
+  static async getAllClosings(ownerId: string): Promise<(CashClosing & { id: string })[]> {
+    try {
+      if (!db) return [];
+
+      const q = query(collection(db, this.COLLECTION), where('ownerId', '==', ownerId), orderBy('closedAt', 'desc'));
+      const snapshot = await getDocs(q);
+
+      return snapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      })) as (CashClosing & { id: string })[];
+    } catch (error) {
+      console.error('Error getting all closings:', error);
+      return [];
+    }
+  }
 }
