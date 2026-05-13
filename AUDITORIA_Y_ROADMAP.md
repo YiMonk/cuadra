@@ -890,6 +890,22 @@ Con un equipo de 2-3: 5-6 meses.
 
 ---
 
+### Fix: Sincronización Mobile/Desktop Navbar (2026-05-13)
+
+**Problema encontrado**: Mobile y desktop mostraban opciones de menú distintas
+
+**Causa**: El sheet modal de mobile siempre mostraba los children del **primer item con children** (Inventario), ignorando qué item se cliquea
+
+**Solución implementada**:
+- Agregar estado `mobileSelectedMenu` para tracking del menú seleccionado
+- Cambiar título del sheet modal dinámicamente según el menú
+- Mostrar children del item cliquado en lugar del primero
+- Limpiar estado al cerrar el sheet
+
+✅ **Resultado**: Mobile y desktop ahora muestran las MISMAS opciones de navegación consistentemente
+
+---
+
 ### Fix: Reglas de Seguridad Firestore (2026-05-13)
 
 **Problema encontrado**: Error "Missing or insufficient permissions" en snapshot listeners
