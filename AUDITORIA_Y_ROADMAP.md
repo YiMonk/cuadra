@@ -890,6 +890,29 @@ Con un equipo de 2-3: 5-6 meses.
 
 ---
 
+### Fix: Reglas de Seguridad Firestore (2026-05-13)
+
+**Problema encontrado**: Error "Missing or insufficient permissions" en snapshot listeners
+
+**Causa**: Nuevas colecciones de Fases 2, 5-8 sin reglas de seguridad definidas:
+- `expenses` (Fase 2: Gastos operativos)
+- `suppliers` (Fase 2: Proveedores)
+- `promotions` (Fase 7: Promociones)
+- `priceLists` (Fase 7: Listas de precios)
+- `coupons` (Fase 7: Cupones)
+- `stockTransfers` (Fase 8: Transferencias)
+
+**Solución implementada**:
+✅ Agregadas reglas de seguridad siguiendo el patrón existente:
+- `read`: `ownerIdMatches` o `isAdminGod`
+- `create`: `isAuthenticated` + `ownerIdMatches`
+- `update`: `ownerIdMatches`
+- `delete`: `isAdminGod` o (owner con UID coincidente)
+
+✅ Deploy a Firebase realizado exitosamente: `firebase deploy --only firestore:rules`
+
+---
+
 ### Auditoría de Navegación (2026-05-13)
 
 Se verificó que todas las páginas de Fases 5-8 sean accesibles en **desktop y mobile**:
