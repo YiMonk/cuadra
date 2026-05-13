@@ -11,6 +11,7 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 import { Cashbox } from '../types/cashbox';
 
 export type { Cashbox };
@@ -30,7 +31,7 @@ export const CashboxService = {
       return docRef.id;
     } catch (error) {
       console.error("Error adding cashbox: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -45,7 +46,7 @@ export const CashboxService = {
       return true;
     } catch (error) {
       console.error("Error updating cashbox: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -56,7 +57,7 @@ export const CashboxService = {
       return true;
     } catch (error) {
       console.error("Error deleting cashbox: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -119,7 +120,7 @@ export const CashboxService = {
       return { total, count: sales.length, byPaymentMethod: byMethod };
     } catch (error) {
       console.error('Error getting cashbox balance:', error);
-      throw error;
+      throw toServiceError(error);
     }
   }
 };

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useOwnerContext } from '@/hooks/useOwnerContext';
 import { useCurrency } from '@/context/CurrencyContext';
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -26,6 +27,7 @@ const COLORS = ['#7C3AED', '#C026D3', '#8B5CF6', '#D946EF', '#6366F1'];
 function ReportsScreen() {
     const router = useRouter();
     const { user, isLoading: authLoading } = useAuth();
+    const { ownerId } = useOwnerContext();
     const { formatPrice, fromUSD, currency } = useCurrency();
     
     const [loading, setLoading] = useState(true);
@@ -76,7 +78,6 @@ function ReportsScreen() {
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
-                const ownerId = user?.ownerId || user?.uid || '';
                 const [salesData, cashiersData] = await Promise.all([
                     SalesService.getAllSales(ownerId),
                     UserService.getUsers()

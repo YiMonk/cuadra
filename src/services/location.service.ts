@@ -11,6 +11,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 import { Location } from '../types/location';
 
 export type { Location };
@@ -30,7 +31,7 @@ export const LocationService = {
       return docRef.id;
     } catch (error) {
       console.error("Error adding location: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -45,7 +46,7 @@ export const LocationService = {
       return true;
     } catch (error) {
       console.error("Error updating location: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -56,7 +57,7 @@ export const LocationService = {
       return true;
     } catch (error) {
       console.error("Error deleting location: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 

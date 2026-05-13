@@ -1,4 +1,5 @@
 import { db } from '@/config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 import {
   collection,
   addDoc,
@@ -53,7 +54,7 @@ export class CashSessionService {
       return docRef.id;
     } catch (error) {
       console.error('Error opening cash session:', error);
-      throw error;
+      throw toServiceError(error);
     }
   }
 
@@ -105,7 +106,7 @@ export class CashSessionService {
       });
     } catch (error) {
       console.error('Error closing cash session:', error);
-      throw error;
+      throw toServiceError(error);
     }
   }
 

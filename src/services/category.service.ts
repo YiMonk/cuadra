@@ -11,6 +11,7 @@ import {
   getDocs
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 import { Category } from '../types/category';
 
 const CATEGORIES_COLLECTION = 'categories';
@@ -29,7 +30,7 @@ export const CategoryService = {
       return docRef.id;
     } catch (error) {
       console.error("Error adding category: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -43,7 +44,7 @@ export const CategoryService = {
       });
     } catch (error) {
       console.error("Error updating category: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -53,7 +54,7 @@ export const CategoryService = {
       await deleteDoc(doc(db, CATEGORIES_COLLECTION, id));
     } catch (error) {
       console.error("Error deleting category: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 

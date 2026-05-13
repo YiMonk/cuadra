@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { SalesService } from '@/services/sales.service';
 import { useCurrency } from '@/context/CurrencyContext';
-import { useAuth } from '@/context/AuthContext';
+import { useOwnerContext } from '@/hooks/useOwnerContext';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Search, CheckCircle, Clock, AlertCircle, RotateCcw, Trash2, CreditCard, FileText } from 'lucide-react';
@@ -21,15 +21,13 @@ interface Movement {
 }
 
 export const MovementHistory: React.FC = () => {
-  const { user } = useAuth();
+  const { ownerId } = useOwnerContext();
   const { formatPrice } = useCurrency();
   const [movements, setMovements] = useState<Movement[]>([]);
   const [filteredMovements, setFilteredMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'pending' | 'cancelled'>('all');
-
-  const ownerId = user?.ownerId || user?.uid || '';
 
   useEffect(() => {
     if (!ownerId) return;

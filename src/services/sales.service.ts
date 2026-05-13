@@ -13,18 +13,20 @@ import {
   limit,
   startAfter,
   QueryConstraint,
-  DocumentSnapshot
+  DocumentSnapshot,
+  DocumentReference,
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 import { Sale } from '../types/sales';
-import { ProductVariant } from '../types/inventory';
+import { Product, ProductVariant } from '../types/inventory';
 
 const SALES_COLLECTION = 'sales';
 const PRODUCTS_COLLECTION = 'products';
 const STOCK_MOVEMENTS_COLLECTION = 'stock_movements';
 
-type InventoryUpdate = { ref: ReturnType<typeof doc>; data: Record<string, unknown> };
-type MovementLog = { ref: ReturnType<typeof doc>; data: Record<string, unknown> };
+type InventoryUpdate = { ref: DocumentReference; data: Partial<Product> };
+type MovementLog = { ref: DocumentReference; data: Record<string, unknown> };
 
 export const SalesService = {
   createSale: async (sale: Omit<Sale, 'id' | 'createdAt' | 'status'>, creator?: { id: string; name: string }) => {
@@ -103,10 +105,10 @@ export const SalesService = {
 
         // 3. EXECUTE WRITES
         for (const update of inventoryUpdates) {
-          transaction.update(update.ref as any, update.data as any);
+          transaction.update(update.ref, update.data);
         }
         for (const mov of movementLogs) {
-          transaction.set(mov.ref as any, mov.data);
+          transaction.set(mov.ref, mov.data);
         }
 
         // Create sale document
@@ -135,7 +137,7 @@ export const SalesService = {
       return true;
     } catch (error) {
       console.error('Error creating sale: ', error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -203,7 +205,7 @@ export const SalesService = {
     const ownerId = typeof options === 'string' ? options : options.ownerId;
     const startDate = typeof options === 'object' ? options.startDate : undefined;
     const endDate = typeof options === 'object' ? options.endDate : undefined;
-    const pageSize = typeof options === 'object' ? (options.pageSize ?? 500) : 500;
+    const pageSize = typeof options === 'object' ? (options.pageSize ?? 50) : 50;
 
     try {
       const constraints: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(pageSize)];
@@ -273,7 +275,7 @@ export const SalesService = {
       return true;
     } catch (error) {
       console.error('Error updating sale status: ', error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -284,7 +286,7 @@ export const SalesService = {
       return true;
     } catch (error) {
       console.error('Error updating sale: ', error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -306,7 +308,7 @@ export const SalesService = {
       return true;
     } catch (error) {
       console.error('Error paying all debts: ', error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -327,7 +329,7 @@ export const SalesService = {
       return true;
     } catch (error) {
       console.error('Error paying specific debts: ', error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -412,10 +414,10 @@ export const SalesService = {
         }
 
         for (const update of inventoryUpdates) {
-          transaction.update(update.ref as any, update.data as any);
+          transaction.update(update.ref, update.data);
         }
         for (const mov of movementLogs) {
-          transaction.set(mov.ref as any, mov.data);
+          transaction.set(mov.ref, mov.data);
         }
 
         transaction.update(saleRef, {
@@ -428,7 +430,7 @@ export const SalesService = {
       return true;
     } catch (error) {
       console.error('Error cancelling sale: ', error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -490,7 +492,7 @@ export const SalesService = {
       await Promise.all(updatePromises);
     } catch (error) {
       console.error('Error updating multiple sales:', error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 

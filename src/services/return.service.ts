@@ -3,18 +3,20 @@ import {
   doc,
   getDoc,
   runTransaction,
+  DocumentReference,
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 import { Return, ReturnItem, Sale } from '../types/sales';
-import { ProductVariant } from '../types/inventory';
+import { Product, ProductVariant } from '../types/inventory';
 
 const RETURNS_COLLECTION = 'returns';
 const SALES_COLLECTION = 'sales';
 const PRODUCTS_COLLECTION = 'products';
 const STOCK_MOVEMENTS_COLLECTION = 'stock_movements';
 
-type InventoryUpdate = { ref: ReturnType<typeof doc>; data: Record<string, unknown> };
-type MovementLog = { ref: ReturnType<typeof doc>; data: Record<string, unknown> };
+type InventoryUpdate = { ref: DocumentReference; data: Partial<Product> };
+type MovementLog = { ref: DocumentReference; data: Record<string, unknown> };
 
 export const ReturnService = {
   createReturn: async (
@@ -119,10 +121,10 @@ export const ReturnService = {
 
         // 3. EXECUTE WRITES
         for (const update of inventoryUpdates) {
-          transaction.update(update.ref as any, update.data as any);
+          transaction.update(update.ref, update.data);
         }
         for (const mov of movementLogs) {
-          transaction.set(mov.ref as any, mov.data);
+          transaction.set(mov.ref, mov.data);
         }
 
         // Create return document
@@ -161,7 +163,7 @@ export const ReturnService = {
       return true;
     } catch (error) {
       console.error('Error creating return:', error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 

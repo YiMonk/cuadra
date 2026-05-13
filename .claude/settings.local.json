@@ -28,7 +28,12 @@
       "Bash(firebase login *)",
       "Bash(node *)",
       "Bash(firebase login:list)",
-      "Bash(gcloud auth *)"
+      "Bash(gcloud auth *)",
+      "PowerShell(python -m pip install graphifyy -q 2>&1 | Select-Object -Last 5)",
+      "PowerShell(python -c \"import graphify; print\\('graphify OK'\\)\")",
+      "Bash(Get-ChildItem -Path . -Recurse -Directory)",
+      "Bash(Select-Object -First 20)",
+      "Bash(Select-Object FullName)"
     ]
   }
 }

@@ -1,9 +1,8 @@
 import { db } from '@/config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 import {
   collection,
   addDoc,
-  updateDoc,
-  doc,
   query,
   where,
   orderBy,
@@ -12,7 +11,6 @@ import {
 } from 'firebase/firestore';
 import { CashClosing } from '@/types/cashClosing';
 import { Sale } from '@/types/sales';
-import { SalesService } from './sales.service';
 
 export class CashClosingService {
   private static COLLECTION = 'cashClosings';
@@ -28,7 +26,7 @@ export class CashClosingService {
       return docRef.id;
     } catch (error) {
       console.error('Error creating cash closing:', error);
-      throw error;
+      throw toServiceError(error);
     }
   }
 
@@ -36,20 +34,21 @@ export class CashClosingService {
     ownerId: string,
     callback: (closings: (CashClosing & { id: string })[]) => void
   ): () => void {
-    // Use getAllClosings with polling instead of onSnapshot
-    const loadClosings = async () => {
-      try {
-        const closings = await this.getAllClosings(ownerId);
-        callback(closings);
-      } catch (error) {
-        console.error('Error loading closings:', error);
+    if (!db) return () => {};
+    const q = query(
+      collection(db, this.COLLECTION),
+      where('ownerId', '==', ownerId),
+      orderBy('closedAt', 'desc')
+    );
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as CashClosing & { id: string })));
+      },
+      (error) => {
+        console.error('Error in subscribeToClosings:', error);
       }
-    };
-
-    loadClosings();
-    const interval = setInterval(loadClosings, 2000);
-
-    return () => clearInterval(interval);
+    );
   }
 
   static async getSalesForClosing(
@@ -62,16 +61,22 @@ export class CashClosingService {
     }
   ): Promise<Sale[]> {
     try {
-      const allSales = await SalesService.getAllSales(ownerId);
+      if (!db) return [];
+      // Query only the date range directly in Firestore instead of loading all sales
+      const q = query(
+        collection(db, 'sales'),
+        where('ownerId', '==', ownerId),
+        where('createdAt', '>=', options.from),
+        where('createdAt', '<=', options.to),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const sales = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Sale));
 
-      return allSales.filter((sale) => {
+      return sales.filter((sale) => {
         if (sale.status === 'cancelled') return false;
         if (sale.closedInClosingId) return false;
-        if (sale.createdAt < options.from || sale.createdAt > options.to) return false;
-
-        if (options.cashboxIds.length === 0 && !options.includesUnassigned) {
-          return false;
-        }
+        if (options.cashboxIds.length === 0 && !options.includesUnassigned) return false;
 
         const hasCashbox = options.cashboxIds.length > 0 && options.cashboxIds.includes(sale.cashboxId || '');
         const isUnassigned = !sale.cashboxId && options.includesUnassigned;

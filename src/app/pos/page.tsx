@@ -4,14 +4,13 @@ import { useRouter } from 'next/navigation';
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useOwnerContext } from '@/hooks/useOwnerContext';
+import { usePOSData } from '@/hooks/usePOSData';
 import { useCart } from '@/context/CartContext';
 import { ProductService } from '@/services/product.service';
 import { ClientService } from '@/services/client.service';
 import { SalesService } from '@/services/sales.service';
-import { LocationService } from '@/services/location.service';
-import { CashboxService } from '@/services/cashbox.service';
-import { storage } from '@/config/firebaseConfig';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { StorageService } from '@/services/storage.service';
 import { Product } from '@/types/inventory';
 import { Client } from '@/types/client';
 import {
@@ -52,6 +51,8 @@ const getCategoryIcon = (name: string) => {
 function POSScreen() {
     const router = useRouter();
     const { user: currentUser, isLoading: authLoading } = useAuth();
+    const { ownerId } = useOwnerContext();
+    const { products, clients, locations, cashboxes, isLoading: posDataLoading } = usePOSData(ownerId);
     const { items, total, selectedClient, setSelectedClient, addToCart, updateQuantity, clearCart } = useCart();
     const { formatPrice, fromUSD, toUSD, currency, exchangeRate } = useCurrency();
 
@@ -67,8 +68,6 @@ function POSScreen() {
         }
     }, [currentUser, authLoading, router]);
 
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -89,8 +88,7 @@ function POSScreen() {
     const [customTotalStr, setCustomTotalStr] = useState('');
     const [discountReason, setDiscountReason] = useState('');
 
-    // Clients
-    const [clients, setClients] = useState<Client[]>([]);
+    // Client search
     const [clientSearch, setClientSearch] = useState('');
 
     const [isCartMinimized, setIsCartMinimized] = useState(false);
@@ -119,22 +117,6 @@ function POSScreen() {
     // Context State
     const [selectedLocation, setSelectedLocation] = useState<string>('all');
     const [selectedCashbox, setSelectedCashbox] = useState<string>('default');
-    
-    // Dynamic Data
-    const [locations, setLocations] = useState<{id: string, name: string}[]>([]);
-    const [cashboxes, setCashboxes] = useState<{id: string, name: string}[]>([]);
-
-    useEffect(() => {
-        const ownerId = currentUser?.ownerId || currentUser?.uid || '';
-        if (!ownerId) return;
-        const unsubLoc = LocationService.subscribeToLocations(ownerId, data => {
-            setLocations(data);
-        });
-        const unsubBox = CashboxService.subscribeToCashboxes(ownerId, data => {
-            setCashboxes(data);
-        });
-        return () => { unsubLoc(); unsubBox(); };
-    }, [currentUser]);
 
     const handleEvidenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -159,22 +141,6 @@ function POSScreen() {
         return () => window.removeEventListener('toggle-cart', handleToggleCart);
     }, []);
 
-    useEffect(() => {
-        const ownerId = currentUser?.ownerId || currentUser?.uid || '';
-        if (!ownerId) return;
-        const unsubscribe = ProductService.subscribeToProducts(ownerId, (list) => {
-            setProducts(list);
-            setLoading(false);
-        });
-        const unsubscribeClients = ClientService.subscribeToClients(ownerId, (list) => {
-            setClients(list);
-        });
-
-        return () => {
-            unsubscribe();
-            unsubscribeClients();
-        };
-    }, [currentUser]);
 
     const categories = useMemo(() => {
         const cats = new Set<string>();
@@ -204,12 +170,7 @@ function POSScreen() {
         let result = products.filter(p => hasAvailableStock(p));
         if (searchQuery) result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
         if (selectedCategory) result = result.filter(p => p.category === selectedCategory);
-
-        // Filter by location if product has a location field
-        if (selectedLocation !== 'all') {
-            result = result.filter(p => (p as any).location === selectedLocation || !(p as any).location);
-        }
-
+        result = ProductService.getByLocation(result, selectedLocation);
         return result;
     }, [products, searchQuery, selectedCategory, selectedLocation]);
 
@@ -245,9 +206,7 @@ function POSScreen() {
         try {
             let evidenceUrl: string | null = null;
             if (evidenceFile && paymentMethod === 'transfer') {
-                const fileRef = storageRef(storage, `comprobantes/${Date.now()}_${evidenceFile.name}`);
-                await uploadBytes(fileRef, evidenceFile);
-                evidenceUrl = await getDownloadURL(fileRef);
+                evidenceUrl = await StorageService.uploadComprobante(evidenceFile);
             }
 
             const finalNotes = paymentCurrency === 'VES'
@@ -327,12 +286,12 @@ function POSScreen() {
         }
     };
 
-    if (loading || authLoading || (currentUser?.role === 'admin' || currentUser?.role === 'admingod')) {
+    if (posDataLoading || authLoading || (currentUser?.role === 'admin' || currentUser?.role === 'admingod')) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <span className="ml-3 text-gray-500 font-medium tracking-wide">
-                    {loading ? 'Iniciando Caja...' : 'Redirigiendo...'}
+                    {posDataLoading ? 'Iniciando Caja...' : 'Redirigiendo...'}
                 </span>
             </div>
         );

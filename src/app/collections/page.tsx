@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { SalesService } from '@/services/sales.service';
-import { ClientService } from '@/services/client.service';
+import { useOwnerContext } from '@/hooks/useOwnerContext';
+import { useClients } from '@/hooks/useClients';
+import { useSales } from '@/hooks/useSales';
 import { Search, Clock, FileText, MessageCircle, DollarSign, X, Camera, LayoutList, History } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -18,8 +20,9 @@ export default function CollectionsScreen() {
     const router = useRouter();
     const { formatPrice } = useCurrency();
     const { user } = useAuth();
-    const [loading, setLoading] = useState(true);
-    const [clients, setClients] = useState<any[]>([]);
+    const { ownerId } = useOwnerContext();
+    const { clients } = useClients(ownerId);
+    const { sales: pendingSales, isLoading: loading } = useSales(ownerId);
     const [debtors, setDebtors] = useState<any[]>([]);
     const [filteredDebtors, setFilteredDebtors] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -30,58 +33,40 @@ export default function CollectionsScreen() {
     const [isPaying, setIsPaying] = useState(false);
 
     useEffect(() => {
-        const ownerId = user?.ownerId || user?.uid || '';
-        if (!ownerId) return;
-        const unsubClients = ClientService.subscribeToClients(ownerId, (list) => {
-            setClients(list);
-        });
+        try {
+            const uniqueClientIds = Array.from(new Set(pendingSales.map((s: any) => s.clientId).filter(Boolean))) as string[];
+            const debtorsMap: Record<string, { debt: number, sales: any[], lastDate: number }> = {};
 
-        return () => unsubClients();
-    }, [user]);
-
-    useEffect(() => {
-        const ownerId = user?.ownerId || user?.uid || '';
-        if (!ownerId) return;
-        const unsubscribe = SalesService.subscribeToPendingSales(ownerId, (pendingSales: any[]) => {
-            try {
-                const uniqueClientIds = Array.from(new Set(pendingSales.map((s: any) => s.clientId).filter(Boolean))) as string[];
-                const debtorsMap: Record<string, { debt: number, sales: any[], lastDate: number }> = {};
-
-                pendingSales.forEach((sale: any) => {
-                    if (sale.clientId) {
-                        if (!debtorsMap[sale.clientId]) {
-                            debtorsMap[sale.clientId] = { debt: 0, sales: [], lastDate: 0 };
-                        }
-                        debtorsMap[sale.clientId].debt += sale.total;
-                        debtorsMap[sale.clientId].sales.push(sale);
-                        if (sale.createdAt > debtorsMap[sale.clientId].lastDate) {
-                            debtorsMap[sale.clientId].lastDate = sale.createdAt;
-                        }
+            pendingSales.forEach((sale: any) => {
+                if (sale.clientId) {
+                    if (!debtorsMap[sale.clientId]) {
+                        debtorsMap[sale.clientId] = { debt: 0, sales: [], lastDate: 0 };
                     }
-                });
-
-                const debtorsList: any[] = [];
-                for (const clientId of uniqueClientIds) {
-                    const client = clients.find(c => c.id === clientId);
-                    if (client) {
-                        debtorsList.push({
-                            client,
-                            debt: debtorsMap[clientId].debt,
-                            sales: debtorsMap[clientId].sales,
-                            lastSaleDate: debtorsMap[clientId].lastDate
-                        });
+                    debtorsMap[sale.clientId].debt += sale.total;
+                    debtorsMap[sale.clientId].sales.push(sale);
+                    if (sale.createdAt > debtorsMap[sale.clientId].lastDate) {
+                        debtorsMap[sale.clientId].lastDate = sale.createdAt;
                     }
                 }
-                setDebtors(debtorsList);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        });
+            });
 
-        return () => unsubscribe();
-    }, [clients, user]);
+            const debtorsList: any[] = [];
+            for (const clientId of uniqueClientIds) {
+                const client = clients.find((c: any) => c.id === clientId);
+                if (client) {
+                    debtorsList.push({
+                        client,
+                        debt: debtorsMap[clientId].debt,
+                        sales: debtorsMap[clientId].sales,
+                        lastSaleDate: debtorsMap[clientId].lastDate
+                    });
+                }
+            }
+            setDebtors(debtorsList);
+        } catch (error) {
+            console.error(error);
+        }
+    }, [pendingSales, clients]);
 
     useEffect(() => {
         let filtered = debtors.filter((d: any) =>

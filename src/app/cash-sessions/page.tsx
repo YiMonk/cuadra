@@ -2,14 +2,15 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useOwnerContext } from '@/hooks/useOwnerContext';
+import { useCashboxes } from '@/hooks/useCashboxes';
+import { useClosings } from '@/hooks/useClosings';
 import { useCurrency } from '@/context/CurrencyContext';
 import { CashSessionService } from '@/services/cashSession.service';
 import { CashClosingService } from '@/services/cashClosing.service';
-import { CashboxService } from '@/services/cashbox.service';
 import { SalesService } from '@/services/sales.service';
 import { CashSession } from '@/types/cashSession';
 import { CashClosing } from '@/types/cashClosing';
-import { Cashbox } from '@/types/cashbox';
 import { Sale } from '@/types/sales';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -38,6 +39,9 @@ const METHOD_LABELS: Record<string, { label: string; icon: React.ReactNode }> = 
 
 export default function CashSessionsPage() {
   const { user } = useAuth();
+  const { ownerId } = useOwnerContext();
+  const { cashboxes } = useCashboxes(ownerId);
+  const { closings } = useClosings(ownerId);
   const { formatPrice } = useCurrency();
 
   // Session states
@@ -48,9 +52,8 @@ export default function CashSessionsPage() {
   const [closeNotes, setCloseNotes] = useState('');
   const [showCloseModal, setShowCloseModal] = useState(false);
 
-  // Cashboxes and closings
-  const [cashboxes, setCashboxes] = useState<Cashbox[]>([]);
-  const [closings, setClosings] = useState<(CashClosing & { id: string })[]>([]);
+  // Sales without cashbox
+
   const [salesWithoutCashbox, setSalesWithoutCashbox] = useState<Sale[]>([]);
 
   // Closing modal states
@@ -71,8 +74,6 @@ export default function CashSessionsPage() {
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null);
   const [closingPeriod, setClosingPeriod] = useState<'day' | 'week' | 'month' | 'all'>('day');
 
-  const ownerId = user?.ownerId || user?.uid || '';
-
   // ─── Data loaders ────────────────────────────────────────────────────────────
 
   const loadSalesWithoutCashbox = useCallback(async () => {
@@ -81,15 +82,9 @@ export default function CashSessionsPage() {
     setSalesWithoutCashbox(sales);
   }, [ownerId]);
 
-  const loadClosings = useCallback(async () => {
-    if (!ownerId) return;
-    const data = await CashClosingService.getAllClosings(ownerId);
-    setClosings(data);
-  }, [ownerId]);
-
   const reloadAll = useCallback(async () => {
-    await Promise.all([loadSalesWithoutCashbox(), loadClosings()]);
-  }, [loadSalesWithoutCashbox, loadClosings]);
+    await loadSalesWithoutCashbox();
+  }, [loadSalesWithoutCashbox]);
 
   // ─── Subscriptions ───────────────────────────────────────────────────────────
 
@@ -103,13 +98,6 @@ export default function CashSessionsPage() {
     return () => unsub();
   }, [ownerId]);
 
-  // Cashboxes (real-time)
-  useEffect(() => {
-    if (!ownerId) return;
-    const unsub = CashboxService.subscribeToCashboxes(ownerId, setCashboxes);
-    return () => unsub();
-  }, [ownerId]);
-
   // Sales without cashbox — poll every 5s
   useEffect(() => {
     if (!ownerId) return;
@@ -117,14 +105,6 @@ export default function CashSessionsPage() {
     const id = setInterval(loadSalesWithoutCashbox, 5000);
     return () => clearInterval(id);
   }, [loadSalesWithoutCashbox]);
-
-  // Closings — poll every 3s
-  useEffect(() => {
-    if (!ownerId) return;
-    loadClosings();
-    const id = setInterval(loadClosings, 3000);
-    return () => clearInterval(id);
-  }, [loadClosings]);
 
   // Session stats — poll every 5s when session is open
   useEffect(() => {

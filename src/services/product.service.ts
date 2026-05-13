@@ -11,6 +11,7 @@ import {
   getDocs
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 import { Product } from '../types/inventory';
 
 const PRODUCTS_COLLECTION = 'products';
@@ -28,7 +29,7 @@ export const ProductService = {
       return docRef.id;
     } catch (error) {
       console.error("Error adding product: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -69,7 +70,7 @@ export const ProductService = {
           });
       } catch (error) {
           console.error("Error adjusting stock: ", error);
-          throw error;
+          throw toServiceError(error);
       }
   },
 
@@ -83,7 +84,7 @@ export const ProductService = {
       });
     } catch (error) {
       console.error("Error updating product: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -97,7 +98,7 @@ export const ProductService = {
       });
     } catch (error) {
       console.error("Error deleting product: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -122,6 +123,11 @@ export const ProductService = {
     );
   },
 
+  getByLocation: (products: Product[], locationId: string): Product[] => {
+    if (locationId === 'all') return products;
+    return products.filter(p => p.location === locationId || !p.location);
+  },
+
   // Fetch all products (One-time)
   getProducts: async (ownerId: string): Promise<Product[]> => {
     try {
@@ -137,7 +143,7 @@ export const ProductService = {
       } as Product));
     } catch (error) {
       console.error("Error fetching products: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   }
 };

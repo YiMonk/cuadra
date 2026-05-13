@@ -1,17 +1,19 @@
 import { 
-  collection, 
-  doc, 
-  setDoc, 
+  collection,
+  doc,
+  setDoc,
   getDoc,
-  getDocs, 
-  query, 
-  orderBy, 
+  getDocs,
+  query,
+  orderBy,
+  limit,
   onSnapshot,
   deleteDoc,
   updateDoc,
   where
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 
 export interface UserMetadata {
     id: string;
@@ -58,14 +60,14 @@ export const UserService = {
             return null;
         } catch (error) {
             console.error("Error fetching user:", error);
-            throw error;
+            throw toServiceError(error);
         }
     },
 
-    // Get all users
+    // Get all users (capped at 200 — use getUsersPaginated for larger datasets)
     getUsers: async (): Promise<UserMetadata[]> => {
         try {
-            const q = query(collection(db, USERS_COLLECTION), orderBy('createdAt', 'desc'));
+            const q = query(collection(db, USERS_COLLECTION), orderBy('createdAt', 'desc'), limit(200));
             const snapshot = await getDocs(q);
             return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as UserMetadata));
         } catch (error) {
@@ -96,7 +98,7 @@ export const UserService = {
             await updateDoc(userRef, updates);
         } catch (error) {
             console.error("Error updating user:", error);
-            throw error;
+            throw toServiceError(error);
         }
     },
 
@@ -122,7 +124,7 @@ export const UserService = {
             await deleteDoc(doc(db, USERS_COLLECTION, uid));
         } catch (error) {
             console.error("Error deleting user metadata:", error);
-            throw error;
+            throw toServiceError(error);
         }
     },
 

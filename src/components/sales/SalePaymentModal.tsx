@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { useCurrency } from '@/context/CurrencyContext';
-import { useAuth } from '@/context/AuthContext';
 import { Clock, CheckCircle2, X, Copy, MessageCircle, Camera, DollarSign, RotateCcw, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -27,7 +26,6 @@ export const SalePaymentModal: React.FC<SalePaymentModalProps> = ({
   onReturn,
 }) => {
   const { formatPrice, exchangeRate } = useCurrency();
-  const { user } = useAuth();
   const [isPayingPending, setIsPayingPending] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mobile_pay'>('cash');
   const [paymentReference, setPaymentReference] = useState('');

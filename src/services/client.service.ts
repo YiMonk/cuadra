@@ -12,6 +12,7 @@ import {
   limit
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
+import { toServiceError } from '@/lib/errors';
 import { Client } from '../types/client';
 
 const CLIENTS_COLLECTION = 'clients';
@@ -29,7 +30,7 @@ export const ClientService = {
       return docRef.id;
     } catch (error) {
       console.error("Error adding client: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -43,7 +44,7 @@ export const ClientService = {
       });
     } catch (error) {
       console.error("Error updating client: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 
@@ -67,7 +68,7 @@ export const ClientService = {
       });
     } catch (error) {
       console.error("Error deleting client: ", error);
-      throw error;
+      throw toServiceError(error);
     }
   },
 

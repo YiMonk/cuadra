@@ -6,25 +6,24 @@ import { Category } from '@/types/category';
 import { X, Plus, Trash2, Edit } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { useAuth } from '@/context/AuthContext';
+import { useOwnerContext } from '@/hooks/useOwnerContext';
 
 interface CategoryModalProps {
     onClose: () => void;
 }
 
 export function CategoryModal({ onClose }: CategoryModalProps) {
-    const { user } = useAuth();
+    const { ownerId } = useOwnerContext();
     const [categories, setCategories] = useState<Category[]>([]);
     const [name, setName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
 
     useEffect(() => {
-        const ownerId = user?.ownerId || user?.uid || '';
         if (!ownerId) return;
         const unsubscribe = CategoryService.subscribeToCategories(ownerId, setCategories);
         return () => unsubscribe();
-    }, [user]);
+    }, [ownerId]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,7 +34,6 @@ export function CategoryModal({ onClose }: CategoryModalProps) {
                 await CategoryService.updateCategory(editingId, { name: name.trim() });
                 setEditingId(null);
             } else {
-                const ownerId = user?.ownerId || user?.uid || '';
                 await CategoryService.addCategory({ name: name.trim() }, ownerId);
             }
             setName('');

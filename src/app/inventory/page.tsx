@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { ProductService } from '@/services/product.service';
+import { useOwnerContext } from '@/hooks/useOwnerContext';
+import { useInventory } from '@/hooks/useInventory';
 import { CategoryService } from '@/services/category.service';
 import { LocationService } from '@/services/location.service';
 import { Product } from '@/types/inventory';
@@ -20,7 +22,8 @@ import { useCurrency } from '@/context/CurrencyContext';
 export default function InventoryScreen() {
     const router = useRouter();
     const { user, isLoading: authLoading } = useAuth();
-    const [loading, setLoading] = useState(true);
+    const { ownerId } = useOwnerContext();
+    const { products, isLoading: loading } = useInventory(ownerId);
 
     useEffect(() => {
         if (!authLoading && user) {
@@ -30,7 +33,6 @@ export default function InventoryScreen() {
             }
         }
     }, [user, authLoading, router]);
-    const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
@@ -61,7 +63,6 @@ export default function InventoryScreen() {
     const [locations, setLocations] = useState<{id: string, name: string}[]>([]);
     
     useEffect(() => {
-        const ownerId = user?.ownerId || user?.uid || '';
         if (!ownerId) return;
         const unsub = LocationService.subscribeToLocations(ownerId, data => {
             setLocations(data);
@@ -70,7 +71,7 @@ export default function InventoryScreen() {
             }
         });
         return () => unsub();
-    }, [user]);
+    }, [ownerId]);
 
     // Form State (Stock Adjustment)
     const [adjustmentQuantity, setAdjustmentQuantity] = useState('');
@@ -79,16 +80,9 @@ export default function InventoryScreen() {
     const [isSavingStock, setIsSavingStock] = useState(false);
 
     useEffect(() => {
-        const ownerId = user?.ownerId || user?.uid || '';
         if (!ownerId) return;
         loadCategories(ownerId);
-        const unsubscribe = ProductService.subscribeToProducts(ownerId, (updatedProducts) => {
-            setProducts(updatedProducts);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [user]);
+    }, [ownerId]);
 
     const loadCategories = async (ownerId: string) => {
         try {
@@ -140,7 +134,7 @@ export default function InventoryScreen() {
         setStock(product.stock.toString());
         setMinStock((product.minStockAlert || 5).toString());
         setSelectedCategory(product.category || '');
-        setSelectedLocation((product as any).location || (locations.length > 0 ? locations[0].id : ''));
+        setSelectedLocation(product.location || (locations.length > 0 ? locations[0].id : ''));
         setProductModalVisible(true);
     };
 
@@ -184,7 +178,6 @@ export default function InventoryScreen() {
             const priceNum = parseFloat(price);
             const priceInUSD = priceCurrency === 'VES' ? toUSD(priceNum, 'VES') : priceNum;
 
-            const ownerId = user?.ownerId || user?.uid || '';
             if (editingProduct) {
                 const updatePayload: any = {
                     name,
@@ -206,7 +199,7 @@ export default function InventoryScreen() {
                     category: selectedCategory || 'General',
                     description: '',
                     location: selectedLocation
-                } as any, ownerId);
+                }, ownerId);
             }
             setProductModalVisible(false);
             toast.success(`¡Producto ${editingProduct ? 'actualizado' : 'registrado'} con éxito!`);

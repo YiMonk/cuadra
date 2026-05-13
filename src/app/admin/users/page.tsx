@@ -9,9 +9,7 @@ import { Search, Shield, User as UserIcon, ShieldAlert, ArrowRight, UserCog, Cal
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'sonner';
-import { initializeApp, getApps, deleteApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { firebaseConfig } from '@/config/firebaseConfig';
+import { AuthManagementService } from '@/services/authManagement.service';
 import { ActivityService } from '@/services/activity.service';
 
 export default function AdminUserManagementPage() {
@@ -60,34 +58,17 @@ export default function AdminUserManagementPage() {
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newName || !newEmail || !newPassword) return;
-        
+
         setIsSaving(true);
-        const secondaryAppName = `admin-reg-${Date.now()}`;
-        let secondaryApp;
-        
         try {
-            secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
-            const secondaryAuth = getAuth(secondaryApp);
-            
-            const userCredential = await createUserWithEmailAndPassword(secondaryAuth, newEmail.trim(), newPassword);
-            const uid = userCredential.user.uid;
-
-            const subscriptionEndsAt = Date.now() + (parseInt(subDays) * 24 * 60 * 60 * 1000);
-
-            // Create as 'owner' (Merchant) by default when created by global admin
-            await UserService.syncUserMetadata(uid, {
-                id: uid,
+            const uid = await AuthManagementService.createUser({
+                email: newEmail,
+                password: newPassword,
                 displayName: newName,
-                email: newEmail.trim(),
-                role: 'owner',
-                active: true,
-                ownerId: uid,
-                subscriptionEndsAt,
+                subscriptionDays: parseInt(subDays),
                 subscriptionPrice: parseFloat(subPrice) || 0,
-                createdAt: Date.now()
             });
 
-            // Log administrative action
             if (user) {
                 await ActivityService.logAction({
                     action: 'user_created',
@@ -109,7 +90,6 @@ export default function AdminUserManagementPage() {
             console.error(error);
             toast.error(error.message || "Error al crear usuario");
         } finally {
-            if (secondaryApp) await deleteApp(secondaryApp);
             setIsSaving(false);
         }
     };

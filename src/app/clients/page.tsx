@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ClientService } from '@/services/client.service';
 import { Search, UserPlus, Phone, User as UserIcon, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useOwnerContext } from '@/hooks/useOwnerContext';
+import { useClients } from '@/hooks/useClients';
 import { Client } from '@/types/client';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -14,9 +16,6 @@ import { useContactPicker } from '@/hooks/useContactPicker';
 import { Contact2 } from 'lucide-react';
 
 export default function ClientListScreen() {
-    const [clients, setClients] = useState<any[]>([]); // Using any[] temporarily if types are not fully resolved
-    const [filteredClients, setFilteredClients] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const router = useRouter();
@@ -26,6 +25,14 @@ export default function ClientListScreen() {
     const [isSaving, setIsSaving] = useState(false);
     
     const { user, isLoading: authLoading } = useAuth();
+    const { ownerId } = useOwnerContext();
+    const { clients, isLoading: loading } = useClients(ownerId);
+    const filteredClients = useMemo(() => {
+        if (!searchQuery) return clients;
+        return clients.filter(c =>
+            c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.phone.includes(searchQuery)
+        );
+    }, [clients, searchQuery]);
     const { isSupported, pickContact } = useContactPicker();
 
     const handlePickContact = async () => {
@@ -46,28 +53,8 @@ export default function ClientListScreen() {
         }
     }, [user, authLoading, router]);
 
-    useEffect(() => {
-        const ownerId = user?.ownerId || user?.uid || '';
-        if (!ownerId) return;
-        const unsubscribe = ClientService.subscribeToClients(ownerId, (updatedClients) => {
-            setClients(updatedClients);
-            setFilteredClients(updatedClients);
-            setLoading(false);
-        });
-        return () => unsubscribe();
-    }, [user]);
-
     const onChangeSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const query = e.target.value;
-        setSearchQuery(query);
-        if (!query) {
-            setFilteredClients(clients);
-        } else {
-            setFilteredClients(clients.filter(client =>
-                client.name.toLowerCase().includes(query.toLowerCase()) ||
-                client.phone.includes(query)
-            ));
-        }
+        setSearchQuery(e.target.value);
     };
 
     const handleCreateClient = async (e: React.FormEvent) => {
@@ -75,8 +62,7 @@ export default function ClientListScreen() {
         if (!newName || !newPhone) return;
         setIsSaving(true);
         try {
-            const ownerId = user?.ownerId || user?.uid || '';
-            await ClientService.addClient({ name: newName, phone: newPhone } as any, ownerId);
+            await ClientService.addClient({ name: newName, phone: newPhone, active: true }, ownerId);
             setModalVisible(false);
             setNewName('');
             setNewPhone('');

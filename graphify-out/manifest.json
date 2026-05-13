@@ -1,0 +1,402 @@
+{
+  "C:\\Users\\Jesus\\Documents\\cuadra\\eslint.config.mjs": {
+    "mtime": 1778505687.6055691,
+    "hash": "6c4307ffa009658f5c97f5629094c0c2"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\next.config.ts": {
+    "mtime": 1778505687.6124842,
+    "hash": "0e395d39c20e21db8da1af38071c3031"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\postcss.config.mjs": {
+    "mtime": 1778505687.6159887,
+    "hash": "481fac0fdecd70e1821cc30b86030c1a"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\functions\\src\\admin.ts": {
+    "mtime": 1778505687.609715,
+    "hash": "926f170ecdfcf6aa21a424fd72e14001"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\functions\\src\\index.ts": {
+    "mtime": 1778505687.6110604,
+    "hash": "0fa91090473d580b695bf6f7cfcf9d02"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\functions\\src\\onUserWrite.ts": {
+    "mtime": 1778505687.6110604,
+    "hash": "fe6085b6395c462d54682afbd8e7f8b3"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\functions\\src\\team.ts": {
+    "mtime": 1778505687.6110604,
+    "hash": "9a55a9663e240af351da2607c20c4582"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\sw.js": {
+    "mtime": 1778505687.6224859,
+    "hash": "aa335ddd7c06f077437c12bafc7dc117"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\scripts\\assign-sales-to-cashbox.js": {
+    "mtime": 1778505687.6254148,
+    "hash": "9f751fa37894f81946c71e51bab25998"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\middleware.ts": {
+    "mtime": 1778505687.6748607,
+    "hash": "0a20341a7105ef6424bfc51206785aa6"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\layout.tsx": {
+    "mtime": 1778505687.6402984,
+    "hash": "fe7b82b8ca9d93c8a1f22bd0eb04fd7c"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\page.tsx": {
+    "mtime": 1778505687.6413076,
+    "hash": "5aa0319b48e632c3833514c55cbd26e0"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\providers.tsx": {
+    "mtime": 1778505687.6448917,
+    "hash": "139d5d11566fbbff0984a5810c7ebe32"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\admin\\activities\\page.tsx": {
+    "mtime": 1778505687.6254148,
+    "hash": "b19df3ee378d5a3b896944e7fba13abc"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\admin\\dashboard\\page.tsx": {
+    "mtime": 1778505687.6268926,
+    "hash": "d1dafba14450e20fcacfdc7748b15dfd"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\admin\\users\\page.tsx": {
+    "mtime": 1778505687.629389,
+    "hash": "83ae7bde9c9bfaef21b6d002c13c67cd"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\admin\\users\\[userId]\\page.tsx": {
+    "mtime": 1778505687.6283777,
+    "hash": "6f017502785d220a162ddc94d4a38bfc"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\api\\bcv\\route.ts": {
+    "mtime": 1778505687.629389,
+    "hash": "38f2c1cb948f06620d8d28f496432136"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\api\\users\\accept-terms\\route.ts": {
+    "mtime": 1778505687.6307914,
+    "hash": "317dad7a4a38aa7e025d12f3f22d4a3d"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\auth\\login\\page.tsx": {
+    "mtime": 1778505687.631975,
+    "hash": "24a29a13baa35fac71d925c437ba12de"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\auth\\register\\page.tsx": {
+    "mtime": 1778505687.632986,
+    "hash": "652825b85f9b10146ba1be8ccc70ea45"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\auth\\reset-password\\page.tsx": {
+    "mtime": 1778505687.6339848,
+    "hash": "f691e48639fcf14979cf597c5a86c4ec"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\cash-sessions\\page.tsx": {
+    "mtime": 1778505687.6339848,
+    "hash": "6b2f52687e2df55cd2ef172149d58b22"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\clients\\page.tsx": {
+    "mtime": 1778505687.6362953,
+    "hash": "7b18701f9994de97a99edcc7b6a72c91"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\clients\\[clientId]\\page.tsx": {
+    "mtime": 1778505687.6362953,
+    "hash": "cb2793aff5d510baec6dcef42a377f7e"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\collections\\page.tsx": {
+    "mtime": 1778505687.6372943,
+    "hash": "16c478c9dc14c2598c19fe0fa8542ff2"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\disclaimer\\page.tsx": {
+    "mtime": 1778505687.6390069,
+    "hash": "68567cd360b4a409b44902c02ce47fa5"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\inventory\\page.tsx": {
+    "mtime": 1778505687.6402984,
+    "hash": "b34842fc0ae6d1db5b88e202ddcc6004"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\menu\\page.tsx": {
+    "mtime": 1778505687.6413076,
+    "hash": "145c8db70bb362e5bec2ea83cf564a90"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\pos\\page.tsx": {
+    "mtime": 1778505687.6427495,
+    "hash": "e6559a58eb1baaa506e09dbfb819faff"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\privacy\\page.tsx": {
+    "mtime": 1778505687.6448917,
+    "hash": "99514cc86a2ceac673a5f9e93ea568d8"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\reports\\page.tsx": {
+    "mtime": 1778505687.647064,
+    "hash": "07a1ef0a0dc34b0339aa4e72496a53b6"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\settings\\page.tsx": {
+    "mtime": 1778505687.649065,
+    "hash": "19b8674af83dbb91fc829f5f34cfa10a"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\team\\page.tsx": {
+    "mtime": 1778505687.6510649,
+    "hash": "238183bffb00e1fda2e7baf14cff14b1"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\app\\terms\\page.tsx": {
+    "mtime": 1778505687.6510649,
+    "hash": "9aabc0ccc4411e47a214f82c1d5fe938"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\DisclaimerBanner.tsx": {
+    "mtime": 1778505687.6524043,
+    "hash": "88f0bb98f95b8161ff41c04ad160f3df"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\TermsAcceptanceModal.tsx": {
+    "mtime": 1778505687.6524043,
+    "hash": "dc053cfa2b7f1515fa1def564f6c68e3"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\common\\ErrorBoundary.tsx": {
+    "mtime": 1778505687.6552773,
+    "hash": "d7baf126d705d2ff4f490cd3c594713b"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\common\\LogoSpinner.tsx": {
+    "mtime": 1778505687.6552773,
+    "hash": "3d96428f818af4190019466cfeaabfb5"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\common\\UpdateDetector.tsx": {
+    "mtime": 1778505687.6567817,
+    "hash": "28665c9e8be84a1bb7a3944a2ea6b75a"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\inventory\\CategoryModal.tsx": {
+    "mtime": 1778505687.657793,
+    "hash": "9fae97334f6d333914ab49546cda5af0"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\layout\\AppLayout.tsx": {
+    "mtime": 1778505687.6587923,
+    "hash": "e1cf92bcb4da4984f70987e694921e8a"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\legal\\LegalModal.tsx": {
+    "mtime": 1778505687.6599927,
+    "hash": "bc0fb387899507c9628035891adca9be"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\legal\\TermsAcceptanceModal.tsx": {
+    "mtime": 1778505687.6614935,
+    "hash": "bfcbc214a49d7bf029ef297507500bf6"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\movements\\MovementHistory.tsx": {
+    "mtime": 1778505687.6614935,
+    "hash": "5c012e0d1bbcf9cb5fac93e804ed2ad1"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\sales\\SalePaymentModal.tsx": {
+    "mtime": 1778505687.662979,
+    "hash": "728295a348e9aa1d5919c5c709d7843e"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\ui\\Button.tsx": {
+    "mtime": 1778505687.6640656,
+    "hash": "a4b1f9012da4b35d1d85575d44d0828a"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\ui\\Card.tsx": {
+    "mtime": 1778505687.6654124,
+    "hash": "d16cd506d717d86c96af425013f305cc"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\ui\\Input.tsx": {
+    "mtime": 1778505687.6665256,
+    "hash": "86b6d631a434e97d01f4fe68364b06f6"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\components\\ui\\Select.tsx": {
+    "mtime": 1778505687.6665256,
+    "hash": "23b8b73e66deaf4b9a0b3676a2b9fc44"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\config\\brand.ts": {
+    "mtime": 1778505687.6678848,
+    "hash": "03849b758e1c52d79ebb187aec65b720"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\config\\firebaseConfig.ts": {
+    "mtime": 1778505687.6691647,
+    "hash": "f8836f43546cde2c4579b8e973b2242f"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\config\\version.ts": {
+    "mtime": 1778505687.6691647,
+    "hash": "e355a4799cbec8ccc49ccc3d454f356d"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\context\\AuthContext.tsx": {
+    "mtime": 1778505687.6701748,
+    "hash": "3652dab8e3cac0ebff81d5202bcaaf20"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\context\\CartContext.tsx": {
+    "mtime": 1778505687.6711814,
+    "hash": "09313fb3bdf9e702a151a481374f4c4a"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\context\\CurrencyContext.tsx": {
+    "mtime": 1778505687.6721742,
+    "hash": "a1bf6250f7a3add4d2ddee33204c1b3f"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\context\\ThemeContext.tsx": {
+    "mtime": 1778505687.6721742,
+    "hash": "8463ac7792782cb5a556da923d218262"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\hooks\\useContactPicker.ts": {
+    "mtime": 1778505687.6736257,
+    "hash": "060c5751c5ec76f67c10383d5b2bc2a3"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\hooks\\useNotifications.ts": {
+    "mtime": 1778505687.6743183,
+    "hash": "3dbc5a892892d0fc9c5e8128cfeb22ca"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\activity.service.ts": {
+    "mtime": 1778505687.6758718,
+    "hash": "a79b4a9bea0e603185f9edf4a75f91ff"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\cashbox.service.ts": {
+    "mtime": 1778505687.6778698,
+    "hash": "9e059caaac905f636dbc01a67cb7be12"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\cashClosing.service.ts": {
+    "mtime": 1778505687.676873,
+    "hash": "9234f624e7b8be992b5d6632ca5321c2"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\cashSession.service.ts": {
+    "mtime": 1778505687.6778698,
+    "hash": "7281cfda819814c81050f857ae532947"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\category.service.ts": {
+    "mtime": 1778505687.6788747,
+    "hash": "63692784da16728c65fd18ebc5f93549"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\client.service.ts": {
+    "mtime": 1778505687.6788747,
+    "hash": "a7a14a67ff194bf5809eff54a1ab4eca"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\config.service.ts": {
+    "mtime": 1778505687.6798732,
+    "hash": "675fefc31da5fef155aa9ba38c923548"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\DataManager.ts": {
+    "mtime": 1778505687.6758718,
+    "hash": "8e0f48f57740ac569934fa9ff147e1a8"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\location.service.ts": {
+    "mtime": 1778505687.6798732,
+    "hash": "07e52b3cfa2cef78559b607edee5715c"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\migration.service.ts": {
+    "mtime": 1778505687.6808734,
+    "hash": "99c6c34cc91cb77a037e06cbb550189b"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\product.service.ts": {
+    "mtime": 1778505687.6818714,
+    "hash": "837f6f4ca208da921a4cdcadfb8eb035"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\return.service.ts": {
+    "mtime": 1778505687.6818714,
+    "hash": "e2518814a52db8d163415bdae68588f4"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\sales.service.ts": {
+    "mtime": 1778505687.6832418,
+    "hash": "96f60494a1aff7addf986573d07971ca"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\services\\user.service.ts": {
+    "mtime": 1778505687.6832418,
+    "hash": "88320a5c627c0450ca4237038b11f451"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\activity.ts": {
+    "mtime": 1778505687.6842518,
+    "hash": "6cdeb2184148965d903ac206c7e8df2c"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\auth.ts": {
+    "mtime": 1778505687.6854782,
+    "hash": "d802ce4ca1ea400152ec46d378979187"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\cashbox.ts": {
+    "mtime": 1778505687.6874218,
+    "hash": "d0a313ae95e9b5f7cf6d3a281cd0d3c8"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\cashClosing.ts": {
+    "mtime": 1778505687.6854782,
+    "hash": "02317e4e781bf3c46b2ffe6b3ad2973d"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\cashSession.ts": {
+    "mtime": 1778505687.6864913,
+    "hash": "a59b472b03cb2a2826b54e590a4e954b"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\category.ts": {
+    "mtime": 1778505687.6879296,
+    "hash": "5f14cef8a04ad51294fc6d1b7474811e"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\client.ts": {
+    "mtime": 1778505687.6879296,
+    "hash": "f75fd9ff76e3b3f7e5b3a4bbf27e2de0"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\inventory.ts": {
+    "mtime": 1778505687.6879296,
+    "hash": "37789d7a82ab79f2256d5391f0aad57d"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\location.ts": {
+    "mtime": 1778505687.688938,
+    "hash": "1a9f01b095812fcc9f3f552dea43e76a"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\src\\types\\sales.ts": {
+    "mtime": 1778505687.688938,
+    "hash": "e67b3b4b10a61ede598968a4c1739c3b"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\DISCLAIMER.md": {
+    "mtime": 1778505687.6024852,
+    "hash": "fd5cf0765b2884d3fe40a8b13c3cde97"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\LEGAL_COMPLIANCE_GUIDE.md": {
+    "mtime": 1778505687.604044,
+    "hash": "94fba5cf4ec37211af7cd7ea35f8f674"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\PRIVACY_POLICY.md": {
+    "mtime": 1778505687.604044,
+    "hash": "e3cbf6904a1b359454a9a15d4854479b"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\README.md": {
+    "mtime": 1778505687.605058,
+    "hash": "5cfe5099f0c0c9d675ad8ba0782de22d"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\TERMS_OF_SERVICE.md": {
+    "mtime": 1778505687.6055691,
+    "hash": "7a65816248935160e6bbc35b79685078"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\icon-192.png": {
+    "mtime": 1778505687.6199594,
+    "hash": "d1ce2ac7dc3b06600e355921ff02ccd0"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\icon-512-maskable.png": {
+    "mtime": 1778505687.6210437,
+    "hash": "4eb55248591e7f9a2d5758ba49fd2942"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\icon-512.png": {
+    "mtime": 1778505687.6210437,
+    "hash": "4eb55248591e7f9a2d5758ba49fd2942"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\icon.svg": {
+    "mtime": 1778505687.6210437,
+    "hash": "70ebcaafe1d351f8a3af2111113e875d"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\Logotipo.svg": {
+    "mtime": 1778505687.6184819,
+    "hash": "7597ec482a1263d7533c00af95511a50"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\Logotipo2.svg": {
+    "mtime": 1778505687.6184819,
+    "hash": "5762a1eec22ab9ead8f178b9b142cec1"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\Iconos\\1.svg": {
+    "mtime": 1778505687.6171772,
+    "hash": "f886300fa8742ef59cc966d0a44a9ae2"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\Iconos\\2.svg": {
+    "mtime": 1778505687.6171772,
+    "hash": "e32075ed0c59ee43e01a3a1d4599260c"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\Iconos\\3.svg": {
+    "mtime": 1778505687.6171772,
+    "hash": "59997c60a4ee52c05b31e86fc291570f"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\Iconos\\4.svg": {
+    "mtime": 1778505687.6184819,
+    "hash": "e9ea8e68776982f607581cc937ce7b96"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\public\\Iconos\\5.svg": {
+    "mtime": 1778505687.6184819,
+    "hash": "8d1e96f192a73edc78dea520efeb3b4d"
+  },
+  "C:\\Users\\Jesus\\Documents\\cuadra\\screenshots\\image copy 2.png": {
+    "mtime": 1778505687.624259,
+    "hash": "b2056327c0b72ef213635d4111aaac6b"
+  }
+}

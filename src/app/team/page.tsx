@@ -3,9 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useOwnerContext } from '@/hooks/useOwnerContext';
+import { useTeam } from '@/hooks/useTeam';
+import { useCashboxes } from '@/hooks/useCashboxes';
 import { UserService, UserMetadata } from '@/services/user.service';
 import { LocationService, Location } from '@/services/location.service';
-import { CashboxService, Cashbox } from '@/services/cashbox.service';
+import { CashboxService } from '@/services/cashbox.service';
 import { 
     Plus, Users, Mail, Shield, Trash2, X, ShieldCheck, 
     UserPlus, Key, Home, Smartphone, Settings2, AlertTriangle, Search
@@ -24,15 +27,16 @@ type AdminTab = 'team' | 'locations' | 'cashboxes';
 export default function AdministrationScreen() {
     const router = useRouter();
     const { user: owner, isLoading: authLoading } = useAuth();
-    
+    const { ownerId } = useOwnerContext();
+    const { members: allMembers, isLoading: loading } = useTeam(ownerId);
+    const { cashboxes } = useCashboxes(ownerId);
+    const team = allMembers.filter(m => m.id !== owner?.uid);
+
     // UI State
     const [activeTab, setActiveTab] = useState<AdminTab>('team');
-    const [loading, setLoading] = useState(true);
-    
+
     // Data State
-    const [team, setTeam] = useState<UserMetadata[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);
-    const [cashboxes, setCashboxes] = useState<Cashbox[]>([]);
 
     // Modals
     const [staffModalVisible, setStaffModalVisible] = useState(false);
@@ -65,28 +69,12 @@ export default function AdministrationScreen() {
     }, [owner, authLoading, router]);
 
     useEffect(() => {
-        if (!owner?.uid) return;
-
-        const unsubTeam = UserService.subscribeToTeam(owner.uid, (members) => {
-            setTeam(members.filter(m => m.id !== owner.uid));
-            setLoading(false);
-        });
-
-        const ownerId = owner.ownerId || owner.uid || '';
-        const unsubLocations = LocationService.subscribeToLocations(ownerId, (data) => {
+        if (!ownerId) return;
+        const unsub = LocationService.subscribeToLocations(ownerId, (data) => {
             setLocations(data);
         });
-
-        const unsubCashboxes = CashboxService.subscribeToCashboxes(ownerId, (data) => {
-            setCashboxes(data);
-        });
-
-        return () => {
-            unsubTeam();
-            unsubLocations();
-            unsubCashboxes();
-        };
-    }, [owner]);
+        return () => unsub();
+    }, [ownerId]);
 
     // ---- Handlers ----
     const handleCreateStaff = async (e: React.FormEvent) => {

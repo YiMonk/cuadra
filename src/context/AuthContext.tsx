@@ -1,13 +1,13 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
 import { AuthState, UserProfile } from '../types/auth';
 import { UserService } from '../services/user.service';
+import { SubscriptionService } from '../services/subscription.service';
 
 interface AuthContextType extends AuthState {
-    signIn: () => void;
     signOut: () => Promise<void>;
     reloadUser: () => Promise<void>;
 }
@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
         }
 
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
             if (isProcessingRef.current) return;
             isProcessingRef.current = true;
 
@@ -54,29 +54,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             meta.email = firebaseUser.email || '';
                         }
 
-                        if (!meta.active) {
-                            document.cookie = 'cuadra-session=; path=/; max-age=0';
-                            await auth.signOut();
-                            setUser(null);
-                            setIsLoading(false);
-                            isProcessingRef.current = false;
-                            return;
-                        }
-
-                        if (meta.role === 'staff' && meta.ownerId) {
-                            const owner = await UserService.getUserById(meta.ownerId);
-                            if (owner && (!owner.active || (owner.subscriptionEndsAt && owner.subscriptionEndsAt < Date.now()))) {
-                                document.cookie = 'cuadra-session=; path=/; max-age=0';
-                                await auth.signOut();
-                                setUser(null);
-                                setIsLoading(false);
-                                isProcessingRef.current = false;
-                                return;
+                        const access = await SubscriptionService.checkAccess(meta);
+                        if (!access.allowed) {
+                            if (process.env.NODE_ENV === 'development') {
+                                console.log('Access denied:', access.reason);
                             }
-                        }
-
-                        // Check subscription for owners
-                        if (meta.role === 'owner' && meta.subscriptionEndsAt && meta.subscriptionEndsAt < Date.now()) {
                             document.cookie = 'cuadra-session=; path=/; max-age=0';
                             await auth.signOut();
                             setUser(null);
@@ -162,13 +144,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(userProfile);
     };
 
-    const signIn = () => {}
-
     const value = {
         user,
         isLoading,
         isAuthenticated: !!user,
-        signIn,
         signOut,
         reloadUser,
     };

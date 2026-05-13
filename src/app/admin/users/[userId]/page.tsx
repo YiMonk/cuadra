@@ -3,6 +3,7 @@
 import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserService, UserMetadata } from '@/services/user.service';
+import { AuthManagementService } from '@/services/authManagement.service';
 import { useAuth } from '@/context/AuthContext';
 import { 
     ChevronLeft, Shield, User as UserIcon, Calendar, Clock, AlertCircle, 
@@ -157,11 +158,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
 
         setIsDeleting(true);
         try {
-            // Delete metadata from firestore
-            await UserService.deleteUserMetadata(userId);
+            await AuthManagementService.deleteUser(userId);
 
-            // Inform the user since client-side cannot delete other's auth profiles
-            // Inform the user since client-side cannot delete other's auth profiles
             if (currentUser) {
                 await ActivityService.logAction({
                     action: 'user_deleted',
