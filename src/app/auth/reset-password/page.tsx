@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth';
-import { auth } from '@/config/firebaseConfig';
+import { AuthService } from '@/services/auth.service';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -30,7 +29,7 @@ function ResetPasswordForm() {
             return;
         }
 
-        verifyPasswordResetCode(auth, oobCode)
+        AuthService.verifyPasswordResetCode(oobCode)
             .then((userEmail) => {
                 setEmail(userEmail);
                 setStatus('input');
@@ -59,7 +58,7 @@ function ResetPasswordForm() {
         setLoading(true);
         try {
             if (oobCode) {
-                await confirmPasswordReset(auth, oobCode, newPassword);
+                await AuthService.confirmPasswordReset(oobCode, newPassword);
                 setStatus('success');
             }
         } catch (error: any) {

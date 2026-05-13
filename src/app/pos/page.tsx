@@ -14,7 +14,7 @@ import { StorageService } from '@/services/storage.service';
 import { Product } from '@/types/inventory';
 import { Client } from '@/types/client';
 import {
-    Search, ShoppingCart, Minus, Plus, X, User as UserIcon, Camera, AlertCircle,
+    Search, ShoppingCart, Minus, Plus, X, User as UserIcon, Camera, AlertCircle, ScanLine,
     ChevronDown, ChevronUp, Tag, Coffee, Shirt, Utensils, Zap, Package,
     Smartphone, Home, LayoutGrid, Pizza, Briefcase, Gift, Droplets, Shield,
     Edit2, MessageSquareWarning
@@ -27,6 +27,13 @@ import { PlusCircle, Loader2, Contact2 } from 'lucide-react';
 import { useContactPicker } from '@/hooks/useContactPicker';
 import { useCurrency } from '@/context/CurrencyContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { BarcodeScannerModal } from '@/components/common/BarcodeScannerModal';
+import { usePermissions } from '@/hooks/usePermission';
+import { usePromotions, usePriceLists } from '@/hooks/usePricingData';
+import { applyPricing } from '@/lib/applyPricing';
+import { CouponService } from '@/services/promotion.service';
+import type { Coupon } from '@/types/promotion';
+import { getStockAtLocation, hasLocationStock } from '@/lib/stock';
 
 // Icon mapping for categories
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -70,6 +77,8 @@ function POSScreen() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [posScannerOpen, setPosScannerOpen] = useState(false);
+    const permissions = usePermissions(['applyDiscount', 'viewCosts']);
 
     // Modals
     const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
@@ -87,6 +96,49 @@ function POSScreen() {
     const [isPriceOverride, setIsPriceOverride] = useState(false);
     const [customTotalStr, setCustomTotalStr] = useState('');
     const [discountReason, setDiscountReason] = useState('');
+
+    // Cupón
+    const [couponInput, setCouponInput] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+    const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+
+    // Promociones y listas de precios
+    const { items: promotions } = usePromotions(ownerId);
+    const { items: priceLists } = usePriceLists(ownerId);
+
+    // Engine de pricing — se re-calcula cuando cambia carrito, cliente, promos o cupón
+    const pricingResult = useMemo(() => applyPricing({
+        items,
+        client: selectedClient,
+        promotions,
+        priceLists,
+        coupon: appliedCoupon,
+    }), [items, selectedClient, promotions, priceLists, appliedCoupon]);
+
+    const handleApplyCoupon = async () => {
+        const code = couponInput.trim();
+        if (!code) return;
+        setIsValidatingCoupon(true);
+        try {
+            const c = await CouponService.findByCode(ownerId, code);
+            if (!c) { toast.error('Cupón no encontrado'); return; }
+            if (!c.active) { toast.error('Cupón inactivo'); return; }
+            if (c.expiresAt && Date.now() > c.expiresAt) { toast.error('Cupón vencido'); return; }
+            if (c.usageLimit != null && c.usedCount >= c.usageLimit) { toast.error('Cupón agotado'); return; }
+            if (c.minCartTotal && total < c.minCartTotal) { toast.error(`Carrito mínimo: ${formatPrice(c.minCartTotal)}`); return; }
+            setAppliedCoupon(c);
+            toast.success(`Cupón ${c.code} aplicado`);
+        } catch {
+            toast.error('Error validando cupón');
+        } finally {
+            setIsValidatingCoupon(false);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setCouponInput('');
+    };
 
     // Client search
     const [clientSearch, setClientSearch] = useState('');
@@ -117,6 +169,19 @@ function POSScreen() {
     // Context State
     const [selectedLocation, setSelectedLocation] = useState<string>('all');
     const [selectedCashbox, setSelectedCashbox] = useState<string>('default');
+
+    // Auto-select de sucursal para el usuario que tiene una asignada por defecto
+    useEffect(() => {
+        if (currentUser?.defaultLocationId && selectedLocation === 'all') {
+            setSelectedLocation(currentUser.defaultLocationId);
+        }
+    }, [currentUser?.defaultLocationId]);
+
+    const isLocationLocked = !!currentUser?.defaultLocationId
+        && currentUser.role !== 'owner'
+        && currentUser.role !== 'admin'
+        && currentUser.role !== 'admingod'
+        && currentUser.role !== 'manager';
 
     const handleEvidenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -154,7 +219,10 @@ function POSScreen() {
         if (p.variants && p.variants.length > 0) {
             return p.variants.some(v => v.stock > 0);
         }
-        return p.stock > 0;
+        if (hasLocationStock(p) && selectedLocation !== 'all') {
+            return getStockAtLocation(p, selectedLocation) > 0;
+        }
+        return getStockAtLocation(p, selectedLocation) > 0 || p.stock > 0;
     };
 
     const handleProductClick = (product: Product) => {
@@ -190,13 +258,15 @@ function POSScreen() {
             return;
         }
 
-        const finalTotal = isPriceOverride ? parseFloat(customTotalStr) : total;
+        // Si hay override manual usa ese; si no, usa el total del engine (con promos/cupón/listas)
+        const engineTotal = pricingResult.total;
+        const finalTotal = isPriceOverride ? parseFloat(customTotalStr) : engineTotal;
         if (isPriceOverride) {
             if (isNaN(finalTotal) || finalTotal < 0) {
                 toast.error('El monto ingresado no es válido');
                 return;
             }
-            if (Math.abs(finalTotal - total) > 0.001 && !discountReason.trim()) {
+            if (Math.abs(finalTotal - engineTotal) > 0.001 && !discountReason.trim()) {
                 toast.error('Debes indicar el motivo del ajuste de precio');
                 return;
             }
@@ -213,11 +283,11 @@ function POSScreen() {
                 ? `[PAGO EN BS] Monto: Bs. ${(finalTotal * exchangeRate).toFixed(2)} (Tasa: ${exchangeRate}). ${paymentNotes}`
                 : paymentNotes;
 
-            const hasPriceAdjustment = isPriceOverride && Math.abs(finalTotal - total) > 0.001;
+            const hasPriceAdjustment = isPriceOverride && Math.abs(finalTotal - engineTotal) > 0.001;
 
             const ownerId = currentUser?.ownerId || currentUser?.uid || '';
             await SalesService.createSale({
-                items: items as any,
+                items: pricingResult.items,
                 total: finalTotal,
                 paymentMethod,
                 ownerId,
@@ -227,19 +297,34 @@ function POSScreen() {
                 notes: finalNotes || undefined,
                 cashboxId: selectedCashbox === 'default' ? (currentUser?.uid || '') : selectedCashbox,
                 cashboxName: cashboxes.find(c => c.id === selectedCashbox)?.name || currentUser?.displayName || 'Cajero',
-                // @ts-ignore
                 locationId: selectedLocation !== 'all' ? selectedLocation : null,
-                locationName: selectedLocation !== 'all' ? locations.find(l => l.id === selectedLocation)?.name : null,
+                locationName: selectedLocation !== 'all' ? (locations.find(l => l.id === selectedLocation)?.name ?? null) : null,
                 exchangeRateAtSale: exchangeRate,
                 paymentData: (paymentMethod === 'transfer' || paymentMethod === 'mobile_pay')
-                    ? Object.fromEntries(Object.entries({ reference: paymentReference, bank: paymentBank, date: paymentDate }).filter(([_, v]) => v))
+                    ? Object.fromEntries(Object.entries({ reference: paymentReference, bank: paymentBank, date: paymentDate }).filter(([, v]) => v))
                     : undefined,
+                ...(pricingResult.appliedPromotions.length > 0 ? {
+                    appliedPromotions: pricingResult.appliedPromotions,
+                    promotionSavings: pricingResult.totalSavings,
+                } : {}),
+                ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
                 ...(hasPriceAdjustment ? {
-                    originalTotal: total,
-                    discountAmount: total - finalTotal,
+                    originalTotal: engineTotal,
+                    discountAmount: engineTotal - finalTotal,
                     discountReason: discountReason.trim(),
                 } : {}),
-            } as any);
+            }, currentUser ? {
+                id: currentUser.uid,
+                name: currentUser.displayName || currentUser.email || 'Usuario',
+                commissionPct: currentUser.commissionPct,
+            } : undefined);
+
+            if (appliedCoupon) {
+                CouponService.incrementUsage(appliedCoupon.id, appliedCoupon.usedCount).catch(err => {
+                    console.error('No se pudo incrementar uso de cupón', err);
+                });
+            }
+
             clearCart();
             setPaymentNotes('');
             setPaymentReference('');
@@ -250,6 +335,8 @@ function POSScreen() {
             setIsPriceOverride(false);
             setCustomTotalStr('');
             setDiscountReason('');
+            setAppliedCoupon(null);
+            setCouponInput('');
             setCheckoutModalVisible(false);
             toast.success('¡Venta registrada con éxito!');
         } catch (error: any) {
@@ -312,20 +399,35 @@ function POSScreen() {
                                 placeholder="Buscar en el catálogo..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full h-14 pl-12 pr-6 rounded-2xl bg-white/50 dark:bg-white/5 border border-ui-border focus:bg-white dark:focus:bg-white/10 focus:ring-4 focus:ring-accent-primary/10 transition-all outline-none font-bold text-ui-text"
+                                className="w-full h-14 pl-12 pr-16 rounded-2xl bg-white/50 dark:bg-white/5 border border-ui-border focus:bg-white dark:focus:bg-white/10 focus:ring-4 focus:ring-accent-primary/10 transition-all outline-none font-bold text-ui-text"
                             />
+                            <button
+                                type="button"
+                                onClick={() => setPosScannerOpen(true)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-accent-primary/10 text-accent-primary hover:bg-accent-primary hover:text-white flex items-center justify-center transition-all"
+                                aria-label="Escanear código de barras"
+                            >
+                                <ScanLine size={18} />
+                            </button>
                         </div>
 
                         <div className="w-full md:w-64 shrink-0">
-                            <Select
-                                options={[
-                                    { value: 'all', label: 'Todas las Sedes' },
-                                    ...locations.map(l => ({ value: l.id, label: l.name }))
-                                ]}
-                                value={selectedLocation}
-                                onChange={(val) => setSelectedLocation(val)}
-                                icon={<Home size={16} />}
-                            />
+                            {isLocationLocked ? (
+                                <div className="ui-input-box flex items-center gap-2 px-4 py-3 text-sm font-bold text-ui-text">
+                                    <Home size={16} className="text-accent-primary" />
+                                    <span className="truncate">{locations.find(l => l.id === selectedLocation)?.name || 'Tu sucursal'}</span>
+                                </div>
+                            ) : (
+                                <Select
+                                    options={[
+                                        { value: 'all', label: 'Todas las Sedes' },
+                                        ...locations.map(l => ({ value: l.id, label: l.name }))
+                                    ]}
+                                    value={selectedLocation}
+                                    onChange={(val) => setSelectedLocation(val)}
+                                    icon={<Home size={16} />}
+                                />
+                            )}
                         </div>
                     </div>
 
@@ -396,6 +498,14 @@ function POSScreen() {
                                                 <span className="font-black text-2xl text-ui-text tracking-tighter">
                                                     {formatPrice(product.price)}
                                                 </span>
+                                                {permissions.viewCosts && product.costPrice != null && product.costPrice > 0 && product.price > 0 && (
+                                                    <span className="text-[9px] font-black uppercase tracking-widest mt-1">
+                                                        <span className="text-ui-text-muted/70">M: </span>
+                                                        <span className={product.price - product.costPrice >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                                                            {(((product.price - product.costPrice) / product.price) * 100).toFixed(0)}%
+                                                        </span>
+                                                    </span>
+                                                )}
                                             </div>
 
                                             {qtyInCart > 0 && (
@@ -412,7 +522,7 @@ function POSScreen() {
                 </div>
             </div>
 
-            {/* Cart Invoice Sidebar (Glass Bento Widget) */}
+            {/* Cart Summary Sidebar (Glass Bento Widget) */}
             <div className={`fixed inset-x-0 bottom-0 lg:relative lg:inset-x-auto lg:bottom-auto w-full lg:w-[450px] shrink-0 flex flex-col transition-all duration-700 z-50
                 ${items.length > 0 ? (isCartMinimized ? 'translate-y-[calc(100%-80px)] lg:translate-y-0' : 'translate-y-0') : 'translate-y-[120%] lg:translate-y-0'} h-[75vh] lg:h-full`}>
                 
@@ -495,10 +605,18 @@ function POSScreen() {
                         {selectedClient && <div onClick={(e) => { e.stopPropagation(); setSelectedClient(null); }} className="w-6 h-6 flex items-center justify-center text-[#FF3B30] bg-red-500/5 rounded-full hover:bg-red-500/10 active:scale-90 transition-all"><X size={12} strokeWidth={3} /></div>}
                     </button>
 
+                    {pricingResult.totalSavings > 0 && (
+                        <div className="flex justify-between items-center mb-1 px-1.5">
+                            <span className="text-emerald-500 font-black tracking-[0.1em] uppercase text-[9px]">Ahorro</span>
+                            <span className="text-sm font-black text-emerald-500 tracking-tighter">
+                                −{formatPrice(pricingResult.totalSavings)}
+                            </span>
+                        </div>
+                    )}
                     <div className="flex justify-between items-center mb-2.5 px-1.5">
                         <span className="text-ui-text-muted font-black tracking-[0.1em] uppercase text-[9px]">Total General</span>
                         <span className="text-xl md:text-2xl font-black text-ui-text tracking-tighter">
-                            {formatPrice(total)}
+                            {formatPrice(pricingResult.total)}
                         </span>
                     </div>
 
@@ -534,22 +652,31 @@ function POSScreen() {
                                                 onClick={() => setPaymentCurrency('VES')}
                                                 className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-widest transition-all ${paymentCurrency === 'VES' ? 'bg-orange-500 text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text-muted'}`}
                                             >VES</button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (!isPriceOverride) {
-                                                        setCustomTotalStr(total.toFixed(2));
-                                                    }
-                                                    setIsPriceOverride(p => !p);
-                                                    setDiscountReason('');
-                                                }}
-                                                className={`p-1.5 rounded-lg text-[10px] font-black transition-all ${isPriceOverride ? 'bg-amber-500 text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text-muted hover:text-amber-500'}`}
-                                                title="Modificar precio"
-                                            >
-                                                <Edit2 size={13} />
-                                            </button>
+                                            {permissions.applyDiscount && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (!isPriceOverride) {
+                                                            setCustomTotalStr(pricingResult.total.toFixed(2));
+                                                        }
+                                                        setIsPriceOverride(p => !p);
+                                                        setDiscountReason('');
+                                                    }}
+                                                    className={`p-1.5 rounded-lg text-[10px] font-black transition-all ${isPriceOverride ? 'bg-amber-500 text-white' : 'bg-black/5 dark:bg-white/10 text-ui-text-muted hover:text-amber-500'}`}
+                                                    title="Modificar precio"
+                                                >
+                                                    <Edit2 size={13} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
+
+                                    {pricingResult.totalSavings > 0 && !isPriceOverride && (
+                                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest pb-1">
+                                            <span className="text-ui-text-muted">Subtotal {formatPrice(pricingResult.baseTotal)}</span>
+                                            <span className="text-emerald-500">Ahorro −{formatPrice(pricingResult.totalSavings)}</span>
+                                        </div>
+                                    )}
 
                                     {isPriceOverride ? (
                                         <div className="space-y-2">
@@ -565,11 +692,11 @@ function POSScreen() {
                                                     autoFocus
                                                 />
                                             </div>
-                                            {parseFloat(customTotalStr) !== total && !isNaN(parseFloat(customTotalStr)) && (
+                                            {parseFloat(customTotalStr) !== pricingResult.total && !isNaN(parseFloat(customTotalStr)) && (
                                                 <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                                                    <span className="text-ui-text-muted">Original: {formatPrice(total)}</span>
-                                                    <span className={parseFloat(customTotalStr) < total ? 'text-green-500' : 'text-red-500'}>
-                                                        {parseFloat(customTotalStr) < total ? '▼' : '▲'} {formatPrice(Math.abs(total - parseFloat(customTotalStr)))}
+                                                    <span className="text-ui-text-muted">Original: {formatPrice(pricingResult.total)}</span>
+                                                    <span className={parseFloat(customTotalStr) < pricingResult.total ? 'text-green-500' : 'text-red-500'}>
+                                                        {parseFloat(customTotalStr) < pricingResult.total ? '▼' : '▲'} {formatPrice(Math.abs(pricingResult.total - parseFloat(customTotalStr)))}
                                                     </span>
                                                 </div>
                                             )}
@@ -578,12 +705,61 @@ function POSScreen() {
                                         <div className="flex items-center justify-between">
                                             <span className="text-3xl font-black text-ui-text">
                                                 {paymentCurrency === 'USD'
-                                                    ? `$ ${total.toFixed(2)}`
-                                                    : `Bs. ${(total * exchangeRate).toFixed(2)}`}
+                                                    ? `$ ${pricingResult.total.toFixed(2)}`
+                                                    : `Bs. ${(pricingResult.total * exchangeRate).toFixed(2)}`}
                                             </span>
                                             {paymentCurrency === 'VES' && (
                                                 <span className="text-[10px] font-black text-ui-text-muted opacity-50">Tasa: {exchangeRate}</span>
                                             )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Promociones aplicadas */}
+                                {pricingResult.appliedPromotions.length > 0 && (
+                                    <div className="ui-input-box px-4 py-3 space-y-2">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Promos aplicadas</p>
+                                        {pricingResult.appliedPromotions.map((ap, i) => (
+                                            <div key={i} className="flex items-center justify-between text-xs">
+                                                <span className="text-ui-text font-bold truncate">{ap.name}</span>
+                                                <span className="text-emerald-500 font-black ml-2 whitespace-nowrap">−{formatPrice(ap.amount)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Cupón */}
+                                <div className="ui-input-box px-4 py-3 space-y-2">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted">Cupón</p>
+                                    {appliedCoupon ? (
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <span className="text-sm font-black text-accent-primary font-mono">{appliedCoupon.code}</span>
+                                                <p className="text-[10px] text-ui-text-muted">
+                                                    {appliedCoupon.type === 'PERCENT' ? `${appliedCoupon.value}% off` : `${formatPrice(appliedCoupon.value)} off`}
+                                                </p>
+                                            </div>
+                                            <button type="button" onClick={handleRemoveCoupon} className="text-red-500 hover:underline text-[10px] font-black uppercase tracking-widest">
+                                                Quitar
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={couponInput}
+                                                onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                                                placeholder="Ingresa código"
+                                                className="flex-1 bg-transparent text-sm font-bold text-ui-text font-mono outline-none border-b border-ui-border focus:border-accent-primary pb-1"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleApplyCoupon}
+                                                disabled={!couponInput.trim() || isValidatingCoupon}
+                                                className="text-[10px] font-black uppercase tracking-widest text-accent-primary hover:underline disabled:opacity-30"
+                                            >
+                                                {isValidatingCoupon ? '...' : 'Aplicar'}
+                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -616,11 +792,11 @@ function POSScreen() {
                                 <div className="space-y-4">
                                     <p className="text-[11px] font-black uppercase tracking-widest text-ui-text-muted">Medio de Pago</p>
                                     <div className="grid grid-cols-2 gap-4">
-                                        {[
+                                        {([
                                             { id: 'cash', emoji: '💵', label: 'Efectivo' },
                                             { id: 'transfer', emoji: '📲', label: 'Transferencia' }
-                                        ].map(opt => (
-                                            <button key={opt.id} type="button" onClick={() => setPaymentMethod(opt.id as any)} className={`p-4 rounded-xl transition-all flex items-center justify-center gap-3 font-bold border-2 active:scale-95 ${paymentMethod === opt.id ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-transparent bg-black/5 dark:bg-white/5 text-ui-text-muted hover:bg-black/10 dark:hover:bg-white/10'}`}>
+                                        ] as const).map(opt => (
+                                            <button key={opt.id} type="button" onClick={() => setPaymentMethod(opt.id)} className={`p-4 rounded-xl transition-all flex items-center justify-center gap-3 font-bold border-2 active:scale-95 ${paymentMethod === opt.id ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-transparent bg-black/5 dark:bg-white/5 text-ui-text-muted hover:bg-black/10 dark:hover:bg-white/10'}`}>
                                                 <span className="text-xl">{opt.emoji}</span>
                                                 <span className="uppercase tracking-wide text-xs">{opt.label}</span>
                                             </button>
@@ -893,6 +1069,26 @@ function POSScreen() {
                     </div>
                 </div>
             )}
+
+            {/* Barcode Scanner — busca producto por código y lo agrega al carrito */}
+            <BarcodeScannerModal
+                open={posScannerOpen}
+                onClose={() => setPosScannerOpen(false)}
+                onDetect={(code) => {
+                    const match = products.find(p => p.barcode === code);
+                    if (!match) {
+                        toast.error(`Sin producto con código ${code}`);
+                        setSearchQuery(code);
+                        return;
+                    }
+                    if (!hasAvailableStock(match)) {
+                        toast.error(`"${match.name}" sin stock`);
+                        return;
+                    }
+                    handleProductClick(match);
+                    toast.success(`Agregado: ${match.name}`);
+                }}
+            />
         </div>
     );
 }

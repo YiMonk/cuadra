@@ -23,6 +23,11 @@
   --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
   --shadow-bento: 0 10px 30px rgba(0, 0, 0, 0.06);
   --shadow-float: 0 20px 50px rgba(0, 0, 0, 0.15);
+  --shadow-glow-violet: 0 0 15px rgba(124, 58, 237, 0.4);
+  --shadow-glow-orange: 0 0 15px rgba(249, 115, 22, 0.4);
+  --shadow-glow-blue: 0 0 15px rgba(59, 130, 246, 0.4);
+  --shadow-glow-green: 0 0 15px rgba(16, 185, 129, 0.4);
+  --shadow-glow-red: 0 0 15px rgba(239, 68, 68, 0.4);
 
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 
@@ -66,6 +71,12 @@
   --color-ios-blue: #7C3AED;
   --color-ios-red: #EF4444;
   --color-ios-green: #10B981;
+
+  --shadow-glow-violet: var(--shadow-glow-violet);
+  --shadow-glow-orange: var(--shadow-glow-orange);
+  --shadow-glow-blue: var(--shadow-glow-blue);
+  --shadow-glow-green: var(--shadow-glow-green);
+  --shadow-glow-red: var(--shadow-glow-red);
 }
 
 * {

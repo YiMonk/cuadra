@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "cuadra": "cuadra-bf832",
+    "default": "cuadra-bf832"
+  },
+  "targets": {},
+  "etags": {}
+}

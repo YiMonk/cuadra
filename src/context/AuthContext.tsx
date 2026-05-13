@@ -77,6 +77,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             createdAt: meta.createdAt || Date.now(),
                             subscriptionEndsAt: meta.subscriptionEndsAt,
                             termsAccepted: meta.termsAccepted,
+                            onboardingCompletedAt: meta.onboardingCompletedAt,
+                            businessName: meta.businessName,
+                            commissionPct: meta.commissionPct,
+                            defaultLocationId: meta.defaultLocationId,
                         };
 
                         setUser(userProfile);
@@ -140,6 +144,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             createdAt: meta.createdAt || Date.now(),
             subscriptionEndsAt: meta.subscriptionEndsAt,
             termsAccepted: meta.termsAccepted,
+            onboardingCompletedAt: meta.onboardingCompletedAt,
+            businessName: meta.businessName,
         };
         setUser(userProfile);
     };

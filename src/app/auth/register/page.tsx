@@ -4,9 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '@/config/firebaseConfig';
-import { UserService } from '@/services/user.service';
+import { AuthService } from '@/services/auth.service';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -67,20 +65,11 @@ export default function RegisterPage() {
 
         setLoading(true);
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
-            await updateProfile(userCredential.user, { displayName: name.trim() });
-
-            await UserService.syncUserMetadata(userCredential.user.uid, {
-                id: userCredential.user.uid,
-                displayName: name.trim(),
-                email: email.trim(),
-                role: 'admin', // Default to Admin (Store Owner)
-                ownerId: userCredential.user.uid, // Self-owned
-                active: true,
-                createdAt: Date.now(),
-                termsAccepted: false
+            await AuthService.registerOwner({
+                email,
+                password,
+                displayName: name,
             });
-
         } catch (error: any) {
             console.error(error);
             let message = 'Error en el registro';

@@ -1,6 +1,24 @@
 # Cuadra — Tu Negocio, Bajo Control
 
-POS moderno para comerciantes venezolanos. Ventas en USD y Bs con tasa BCV en tiempo real, inventario, cobranzas, reportes y multi-tenancy.
+**SaaS de gestión comercial** para emprendedores latinoamericanos. Ventas en USD y Bs con tasa BCV en tiempo real, inventario, cobranzas, reportes y multi-tenancy.
+
+> ⚠️ **Importante:** Cuadra es una herramienta de gestión administrativa interna. **No es un sistema de facturación fiscal homologado** ante el SENIAT ni autoridad equivalente. Los datos almacenados son de uso gerencial y carecen de valor probatorio fiscal. Cada usuario es responsable del cumplimiento tributario por su propio sistema fiscal autorizado. Ver [DISCLAIMER.md](./DISCLAIMER.md), [TERMS_OF_SERVICE.md](./TERMS_OF_SERVICE.md) y [LEGAL_COMPLIANCE_GUIDE.md](./LEGAL_COMPLIANCE_GUIDE.md).
+
+---
+
+## Qué es y qué no es
+
+### ✅ Cuadra **SÍ** es
+- Un asistente de gestión interna para emprendedores
+- Control de ventas, inventario, clientes y cobros
+- Gestor financiero gerencial con dual currency (USD/Bs + BCV)
+- Comprobantes internos sin valor fiscal
+
+### ❌ Cuadra **NO** es
+- Un sistema de facturación fiscal homologado
+- Un POS con emisión de facturas legales válidas ante SENIAT
+- Un sustituto del sistema fiscal de tu negocio
+- Generador de libros de Ventas/Compras formato SENIAT
 
 ---
 
@@ -23,10 +41,10 @@ POS moderno para comerciantes venezolanos. Ventas en USD y Bs con tasa BCV en ti
 ```
 cuadra/
 ├── src/                  # Next.js — frontend completo
-│   ├── app/              # Páginas (POS, inventario, reportes…)
+│   ├── app/              # Páginas (ventas, inventario, reportes…)
 │   ├── components/       # UI reutilizable
 │   ├── services/         # Lógica Firestore (products, sales, clients…)
-│   ├── context/          # AuthContext, BCVContext
+│   ├── context/          # AuthContext, CurrencyContext
 │   └── types/            # Tipos TypeScript compartidos
 ├── functions/            # Cloud Functions — backend serverless
 │   └── src/
@@ -112,7 +130,7 @@ firebase deploy --only firestore:indexes  # solo índices
 | `admingod` | Acceso total — panel maestro, wipeDatabase |
 | `admin` | Gestión de owners, activar/desactivar cuentas |
 | `owner` | Gestiona su propio negocio (productos, ventas, equipo) |
-| `staff` | Opera el POS y el inventario bajo el owner asignado |
+| `staff` | Opera ventas e inventario bajo el owner asignado |
 
 Los roles se asignan como JWT Custom Claims vía la función `syncUserClaims`.
 
@@ -120,9 +138,20 @@ Los roles se asignan como JWT Custom Claims vía la función `syncUserClaims`.
 
 ## Módulos
 
-- **POS** — Venta rápida con tasa BCV en tiempo real, métodos de pago múltiples
+- **Ventas** — Registro rápido de operaciones con tasa BCV en tiempo real, métodos de pago múltiples
 - **Inventario** — CRUD de productos, alertas de stock mínimo, soft-delete
-- **Clientes** — Historial, cobranzas pendientes
-- **Reportes** — Ventas, ingresos, exportación PDF/Excel
+- **Clientes** — Historial y cobranzas pendientes
+- **Cierre de Caja** — Sesiones de caja con apertura/cierre, auditoría interna
+- **Reportes** — Análisis gerencial de ventas, ingresos, exportación PDF/Excel (uso administrativo)
 - **Configuración** — Gestión de equipo, ubicaciones, caja
 - **Panel Admin** — Métricas globales, gestión de owners (solo admingod/admin)
+
+---
+
+## Documentación legal
+
+- [DISCLAIMER.md](./DISCLAIMER.md) — Aviso de uso no fiscal
+- [TERMS_OF_SERVICE.md](./TERMS_OF_SERVICE.md) — Términos del servicio SaaS
+- [PRIVACY_POLICY.md](./PRIVACY_POLICY.md) — Política de privacidad (PDVD)
+- [LEGAL_COMPLIANCE_GUIDE.md](./LEGAL_COMPLIANCE_GUIDE.md) — Guía completa de cumplimiento
+- [AUDITORIA_Y_ROADMAP.md](./AUDITORIA_Y_ROADMAP.md) — Roadmap y auditoría del producto

@@ -9,10 +9,18 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { SalesService } from '@/services/sales.service';
 import { ReturnService } from '@/services/return.service';
 import { UserService } from '@/services/user.service';
+import { ProductService } from '@/services/product.service';
+import { ExpenseService } from '@/services/expense.service';
+import { LocationService } from '@/services/location.service';
 import { Sale } from '@/types/sales';
+import { Product } from '@/types/inventory';
+import { Expense } from '@/types/expense';
 import { UserMetadata } from '@/services/user.service';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
-import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet, Eye, Info, AlertCircle, X, Clock, CreditCard, Wallet, Banknote, RotateCcw, Search, Copy, Camera } from 'lucide-react';
+import { DollarSign, FileText, ShoppingCart, TrendingUp, Calendar, Filter, User as UserIcon, Download, FileJson, FileSpreadsheet, Eye, Info, AlertCircle, X, Clock, CreditCard, Wallet, Banknote, RotateCcw, Search, Copy, Camera, MessageCircle } from 'lucide-react';
+import { ClientService } from '@/services/client.service';
+import { generateReceiptPdf, buildWhatsAppMessage, buildWhatsAppUrl } from '@/lib/receipt';
+import { can } from '@/lib/permissions';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
@@ -24,6 +32,14 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 const COLORS = ['#7C3AED', '#C026D3', '#8B5CF6', '#D946EF', '#6366F1'];
 
+// Sale.createdAt suele ser un número (epoch ms) pero al venir de Firestore puede
+// llegar como Timestamp con un método toDate(). Este helper normaliza ambos casos.
+type MaybeTimestamp = number | { toDate?: () => Date } | undefined | null;
+const toMillis = (v: MaybeTimestamp): number => {
+    if (typeof v === 'number') return v;
+    return v?.toDate?.()?.getTime() ?? 0;
+};
+
 function ReportsScreen() {
     const router = useRouter();
     const { user, isLoading: authLoading } = useAuth();
@@ -33,8 +49,12 @@ function ReportsScreen() {
     const [loading, setLoading] = useState(true);
     const [allSales, setAllSales] = useState<Sale[]>([]);
     const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
     const [cashiers, setCashiers] = useState<UserMetadata[]>([]);
     const [selectedCashier, setSelectedCashier] = useState<string>('all');
+    const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
+    const [selectedLocation, setSelectedLocation] = useState<string>('all');
 
     // Metrics
     const [metrics, setMetrics] = useState({ revenue: 0, pending: 0, count: 0, average: 0 });
@@ -72,18 +92,29 @@ function ReportsScreen() {
     // Product Chart State
     const [productChartPeriod, setProductChartPeriod] = useState<'day' | 'week' | 'month' | 'all'>('month');
 
+    // Commissions State
+    const currentMonthIso = (() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    })();
+    const [commissionMonth, setCommissionMonth] = useState<string>(currentMonthIso);
+
     // Share buttons state
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
-                const [salesData, cashiersData] = await Promise.all([
+                const [salesData, cashiersData, productsData, expensesData] = await Promise.all([
                     SalesService.getAllSales(ownerId),
-                    UserService.getUsers()
+                    UserService.getUsers(),
+                    ProductService.getProducts(ownerId),
+                    ExpenseService.getExpenses(ownerId),
                 ]);
                 setAllSales(salesData);
                 setCashiers(cashiersData);
+                setProducts(productsData);
+                setExpenses(expensesData);
             } catch (error) {
                 console.error("Error loading data:", error);
             } finally {
@@ -91,14 +122,22 @@ function ReportsScreen() {
             }
         };
 
-        if (user && user.role !== 'staff') {
+        if (user && can(user.role, 'viewReports')) {
             fetchInitialData();
         }
     }, [user]);
 
     useEffect(() => {
+        if (!ownerId) return;
+        const unsub = LocationService.subscribeToLocations(ownerId, (data) => {
+            setLocations(data.map(l => ({ id: l.id, name: l.name })));
+        });
+        return () => unsub();
+    }, [ownerId]);
+
+    useEffect(() => {
         if (!authLoading && user) {
-            if (user.role === 'staff') {
+            if (!can(user.role, 'viewReports')) {
                 router.replace('/pos');
             } else if (user.role === 'admin' || user.role === 'admingod') {
                 router.replace('/admin/dashboard');
@@ -109,6 +148,7 @@ function ReportsScreen() {
     useEffect(() => {
         let filtered = allSales.filter(s => {
             if (selectedCashier !== 'all' && s.cashboxId !== selectedCashier && s.createdBy !== selectedCashier) return false;
+            if (selectedLocation !== 'all' && (s.locationId ?? null) !== selectedLocation) return false;
             if (filterStatus !== 'all' && s.status !== filterStatus) return false;
             if (filterMethod !== 'all' && s.paymentMethod !== filterMethod) return false;
             if (searchQuery.trim()) {
@@ -121,16 +161,12 @@ function ReportsScreen() {
             return true;
         });
 
-        filtered.sort((a, b) => {
-            const timeA = typeof a.createdAt === 'number' ? a.createdAt : (a.createdAt as any)?.toDate?.()?.getTime() || 0;
-            const timeB = typeof b.createdAt === 'number' ? b.createdAt : (b.createdAt as any)?.toDate?.()?.getTime() || 0;
-            return timeB - timeA;
-        });
+        filtered.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 
         setFilteredSales(filtered);
         setCurrentPage(1);
         processStats(filtered);
-    }, [allSales, selectedCashier, filterStatus, filterMethod, searchQuery]);
+    }, [allSales, selectedCashier, selectedLocation, filterStatus, filterMethod, searchQuery]);
 
     const processStats = (data: Sale[]) => {
         const summary = SalesService.computeSummary(data);
@@ -144,7 +180,7 @@ function ReportsScreen() {
         // Line Chart Data — last 7 sales in chronological order
         const last7 = data.slice(0, 7).reverse();
         setChartData(last7.map(s => {
-            const time = typeof s.createdAt === 'number' ? s.createdAt : (s.createdAt as any)?.toDate?.()?.getTime() || 0;
+            const time = toMillis(s.createdAt);
             return {
                 name: time ? new Date(time).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '?',
                 total: Number(s.total) || 0,
@@ -194,6 +230,66 @@ function ReportsScreen() {
             .slice(0, 10);
     }, [allSales, productChartPeriod]);
 
+    const commissionsByMember = useMemo(() => {
+        const [yearStr, monthStr] = commissionMonth.split('-');
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10) - 1;
+        if (Number.isNaN(year) || Number.isNaN(month)) return [];
+        const start = new Date(year, month, 1).getTime();
+        const end = new Date(year, month + 1, 1).getTime();
+
+        const agg: Record<string, {
+            id: string;
+            name: string;
+            salesCount: number;
+            salesTotal: number;
+            commission: number;
+            pctSeen: Set<number>;
+        }> = {};
+
+        allSales.forEach(s => {
+            if (s.status !== 'paid') return;
+            const t = toMillis(s.createdAt);
+            if (t < start || t >= end) return;
+            const commission = Number(s.commissionAmount) || 0;
+            if (commission <= 0) return;
+            const id = s.createdBy || 'unknown';
+            const name = s.creatorName || cashiers.find(c => c.id === id)?.displayName || 'Sin asignar';
+            if (!agg[id]) agg[id] = { id, name, salesCount: 0, salesTotal: 0, commission: 0, pctSeen: new Set() };
+            agg[id].salesCount += 1;
+            agg[id].salesTotal += Number(s.total) || 0;
+            agg[id].commission += commission;
+            if (typeof s.commissionPct === 'number' && s.commissionPct > 0) agg[id].pctSeen.add(s.commissionPct);
+        });
+
+        return Object.values(agg)
+            .map(row => ({
+                ...row,
+                pctLabel: row.pctSeen.size === 1 ? `${[...row.pctSeen][0]}%` : (row.pctSeen.size > 1 ? 'Mixto' : '—'),
+            }))
+            .sort((a, b) => b.commission - a.commission);
+    }, [allSales, cashiers, commissionMonth]);
+
+    const commissionsTotal = useMemo(() => {
+        return commissionsByMember.reduce((acc, r) => ({
+            salesCount: acc.salesCount + r.salesCount,
+            salesTotal: acc.salesTotal + r.salesTotal,
+            commission: acc.commission + r.commission,
+        }), { salesCount: 0, salesTotal: 0, commission: 0 });
+    }, [commissionsByMember]);
+
+    const monthOptions = useMemo(() => {
+        const months: { value: string; label: string }[] = [];
+        const now = new Date();
+        for (let i = 0; i < 12; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const label = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            months.push({ value: v, label: label[0].toUpperCase() + label.slice(1) });
+        }
+        return months;
+    }, []);
+
     const handlePayPendingSale = async () => {
         if (!selectedSale?.id || !pendingPayMethod) {
             toast.error('Debes seleccionar un método de pago');
@@ -220,8 +316,8 @@ function ReportsScreen() {
             if ((pendingPayMethod === 'transfer' || pendingPayMethod === 'mobile_pay') &&
                 (pendingPayData.reference || pendingPayData.bank || pendingPayData.date)) {
                 updateData.paymentData = Object.fromEntries(
-                    Object.entries(pendingPayData).filter(([_, v]) => v)
-                ) as any;
+                    Object.entries(pendingPayData).filter(([, v]) => v)
+                ) as Sale['paymentData'];
             }
             await SalesService.updateSale(selectedSale.id, updateData);
             toast.success('Venta cobrada exitosamente');
@@ -237,6 +333,33 @@ function ReportsScreen() {
         } finally {
             setIsProcessingPayment(false);
         }
+    };
+
+    const handleDownloadReceipt = () => {
+        if (!selectedSale) return;
+        const doc = generateReceiptPdf(selectedSale, {
+            name: user?.displayName || undefined,
+        });
+        doc.save(`comprobante-${(selectedSale.id || 'venta').slice(0, 8)}.pdf`);
+        toast.success('Comprobante descargado');
+    };
+
+    const handleSendWhatsApp = async () => {
+        if (!selectedSale) return;
+        let phone: string | undefined;
+        if (selectedSale.clientId) {
+            try {
+                const client = await ClientService.getClientById(selectedSale.clientId);
+                phone = client?.phone || undefined;
+            } catch {
+                // sin teléfono: se abre wa.me sin destinatario
+            }
+        }
+        const msg = buildWhatsAppMessage(selectedSale, {
+            name: user?.displayName || undefined,
+        });
+        const url = buildWhatsAppUrl(phone, msg);
+        window.open(url, '_blank');
     };
 
     const handleCopyList = () => {
@@ -407,7 +530,7 @@ function ReportsScreen() {
     const exportToExcel = () => {
         try {
             const dataToExport = filteredSales.map(sale => {
-                const time = typeof sale.createdAt === 'number' ? sale.createdAt : (sale.createdAt as any)?.toDate?.()?.getTime() || 0;
+                const time = toMillis(sale.createdAt);
                 return {
                     ID: sale.id?.substring(0, 8) || 'N/A',
                     Fecha: new Date(time).toLocaleString(),
@@ -468,8 +591,10 @@ function ReportsScreen() {
                 margin: { left: 20, right: 20 }
             });
 
-            // Transactions list
-            const lastY = (doc as any).lastAutoTable.finalY || 100;
+            // Transactions list — jspdf-autotable extiende jsPDF con lastAutoTable
+            const lastY =
+                (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ??
+                100;
             doc.setFontSize(16);
             doc.text("Listado Detallado de Transacciones", 20, lastY + 20);
             
@@ -477,7 +602,7 @@ function ReportsScreen() {
                 startY: lastY + 25,
                 head: [['Fecha', 'Cajero', 'Método', 'Estado', 'Total']],
                 body: filteredSales.map(s => {
-                    const time = typeof s.createdAt === 'number' ? s.createdAt : (s.createdAt as any)?.toDate?.()?.getTime() || 0;
+                    const time = toMillis(s.createdAt);
                     return [
                         new Date(time).toLocaleDateString(),
                         s.creatorName || 'N/A',
@@ -499,7 +624,7 @@ function ReportsScreen() {
         }
     };
 
-    if (loading || authLoading || (user?.role === 'staff' || user?.role === 'admin' || user?.role === 'admingod')) {
+    if (loading || authLoading || !user || !can(user.role, 'viewReports') || user.role === 'admin' || user.role === 'admingod') {
         return (
             <div className="flex justify-center items-center h-[80vh]">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary"></div>
@@ -609,6 +734,19 @@ function ReportsScreen() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                    {locations.length > 0 && (
+                        <div className="w-full sm:w-56 z-30">
+                            <Select
+                                options={[
+                                    { value: 'all', label: 'Todas las sucursales' },
+                                    ...locations.map(l => ({ value: l.id, label: l.name }))
+                                ]}
+                                value={selectedLocation}
+                                onChange={(val) => setSelectedLocation(val)}
+                                icon={<UserIcon size={16} className="text-accent-primary" />}
+                            />
+                        </div>
+                    )}
                     <div className="w-full sm:w-64 z-30">
                         <Select
                             options={[
@@ -620,7 +758,7 @@ function ReportsScreen() {
                             icon={<UserIcon size={16} className="text-accent-primary" />}
                         />
                     </div>
-                    
+
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <Button variant="outline" onClick={exportToExcel} className="flex-1 sm:flex-none h-12 px-5 bg-white dark:bg-black/5 hover:bg-gray-50 border-ui-border/50 font-black uppercase tracking-widest text-[10px] rounded-xl flex items-center justify-center gap-2">
                             <FileSpreadsheet size={16} /> Excel
@@ -676,7 +814,7 @@ function ReportsScreen() {
                             <TrendingUp className="text-white" size={22} strokeWidth={2.5} />
                         </div>
                         <div className="mt-4 md:mt-6">
-                            <p className="text-[8px] md:text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.2em] mb-1">Ticket Prom.</p>
+                            <p className="text-[8px] md:text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.2em] mb-1">Venta Prom.</p>
                             <h3 className="text-xl md:text-3xl font-black text-ui-text tracking-tighter leading-none">{formatPrice(metrics.average)}</h3>
                         </div>
                     </CardContent>
@@ -828,6 +966,131 @@ function ReportsScreen() {
                 </CardContent>
             </Card>
 
+            {/* Comisiones Mensuales */}
+            <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+                <CardContent className="p-0">
+                    <div className="p-6 border-b border-ui-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Comisiones del Mes</h2>
+                            <p className="text-[10px] text-ui-text-muted font-bold tracking-wider mt-1">Solo ventas pagadas con comisión configurada</p>
+                        </div>
+                        <select
+                            value={commissionMonth}
+                            onChange={(e) => setCommissionMonth(e.target.value)}
+                            className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-ui-text focus:outline-none focus:border-accent-primary"
+                        >
+                            {monthOptions.map(o => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Desktop table */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-accent-primary/10 text-[10px] uppercase tracking-[0.2em] text-accent-primary font-black">
+                                    <th className="p-5 font-black">Miembro</th>
+                                    <th className="p-5 font-black text-right">% Comisión</th>
+                                    <th className="p-5 font-black text-right">Tx</th>
+                                    <th className="p-5 font-black text-right">Ventas</th>
+                                    <th className="p-5 font-black text-right">Comisión</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-ui-border/50">
+                                {commissionsByMember.length === 0 ? (
+                                    <tr><td colSpan={5} className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">Sin comisiones en este mes.</td></tr>
+                                ) : (
+                                    <>
+                                        {commissionsByMember.map(row => (
+                                            <tr key={row.id} className="hover:bg-accent-primary/[0.02] transition-colors group">
+                                                <td className="p-5 font-black text-ui-text uppercase tracking-tight group-hover:text-accent-primary transition-colors">{row.name}</td>
+                                                <td className="p-5 text-right text-ui-text-muted font-bold">{row.pctLabel}</td>
+                                                <td className="p-5 text-right">
+                                                    <span className="font-black text-ui-text-muted bg-ui-bg px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-widest">{row.salesCount}</span>
+                                                </td>
+                                                <td className="p-5 text-right font-black text-ui-text">{formatPrice(row.salesTotal)}</td>
+                                                <td className="p-5 text-right font-black text-accent-primary">{formatPrice(row.commission)}</td>
+                                            </tr>
+                                        ))}
+                                        <tr className="bg-accent-primary/5">
+                                            <td className="p-5 font-black text-ui-text uppercase tracking-tight">Total</td>
+                                            <td className="p-5"></td>
+                                            <td className="p-5 text-right font-black text-ui-text">{commissionsTotal.salesCount}</td>
+                                            <td className="p-5 text-right font-black text-ui-text">{formatPrice(commissionsTotal.salesTotal)}</td>
+                                            <td className="p-5 text-right font-black text-accent-primary">{formatPrice(commissionsTotal.commission)}</td>
+                                        </tr>
+                                    </>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Mobile */}
+                    <div className="md:hidden divide-y divide-ui-border/30">
+                        {commissionsByMember.length === 0 ? (
+                            <div className="p-12 text-center text-ui-text-muted font-bold uppercase tracking-widest text-[10px] opacity-60">Sin comisiones en este mes.</div>
+                        ) : (
+                            <>
+                                {commissionsByMember.map(row => (
+                                    <div key={row.id} className="p-5 space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-black text-ui-text uppercase tracking-tight text-sm">{row.name}</span>
+                                            <span className="px-3 py-1 bg-ui-bg text-[9px] font-black uppercase tracking-[0.2em] rounded-full text-ui-text-muted">{row.pctLabel}</span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2 text-center">
+                                            <div className="bg-white/5 dark:bg-black/20 p-2 rounded-xl border border-ui-border/30">
+                                                <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Tx</p>
+                                                <p className="text-sm font-black text-ui-text">{row.salesCount}</p>
+                                            </div>
+                                            <div className="bg-white/5 dark:bg-black/20 p-2 rounded-xl border border-ui-border/30">
+                                                <p className="text-[8px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Ventas</p>
+                                                <p className="text-sm font-black text-ui-text">{formatPrice(row.salesTotal)}</p>
+                                            </div>
+                                            <div className="bg-white/5 dark:bg-black/20 p-2 rounded-xl border border-ui-border/30">
+                                                <p className="text-[8px] font-black text-accent-primary uppercase tracking-widest mb-1">Comisión</p>
+                                                <p className="text-sm font-black text-accent-primary">{formatPrice(row.commission)}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div className="p-5 bg-accent-primary/5 flex justify-between items-center">
+                                    <span className="font-black text-ui-text uppercase tracking-tight text-sm">Total</span>
+                                    <span className="font-black text-accent-primary">{formatPrice(commissionsTotal.commission)}</span>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Margen por Categoría */}
+            <MarginByCategoryCard products={products} sales={filteredSales} formatPrice={formatPrice} />
+
+            {/* Utilidad Neta */}
+            <NetProfitCard products={products} sales={filteredSales} expenses={expenses} formatPrice={formatPrice} />
+
+            {/* Inventario Valorizado */}
+            <InventoryValueCard products={products} formatPrice={formatPrice} />
+
+            {/* Análisis ABC */}
+            <ABCAnalysisCard products={products} sales={filteredSales} formatPrice={formatPrice} />
+
+            {/* Rotación de Inventario */}
+            <InventoryTurnoverCard products={products} sales={filteredSales} />
+
+            {/* Frecuentemente Comprados Juntos */}
+            <FrequentlyBoughtTogetherCard sales={filteredSales} />
+
+            {/* Sugerencia de Reorden */}
+            <ReorderSuggestionCard products={products} sales={filteredSales} formatPrice={formatPrice} />
+
+            {/* Efectividad de Promociones */}
+            <PromotionEffectivenessCard sales={filteredSales} formatPrice={formatPrice} />
+
+            {/* Comparativo por Sucursal */}
+            <LocationComparisonCard sales={allSales} locations={locations} formatPrice={formatPrice} />
+
             {/* Top Products Chart */}
             <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
                 <CardContent className="p-4 md:p-6">
@@ -836,10 +1099,10 @@ function ReportsScreen() {
                           Productos Más Vendidos
                         </h2>
                         <div className="flex flex-wrap gap-2">
-                            {['day', 'week', 'month', 'all'].map(period => (
+                            {(['day', 'week', 'month', 'all'] as const).map(period => (
                                 <button
                                     key={period}
-                                    onClick={() => setProductChartPeriod(period as any)}
+                                    onClick={() => setProductChartPeriod(period)}
                                     className={`flex-1 md:flex-initial px-2.5 md:px-3 py-1.5 rounded-lg font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all ${
                                         productChartPeriod === period
                                             ? 'bg-accent-primary text-white'
@@ -1168,10 +1431,10 @@ function ReportsScreen() {
                             </div>
 
                             {/* Share Buttons */}
-                            <div className="flex items-center gap-3">
+                            <div className="grid grid-cols-2 gap-3">
                                 <button
                                     onClick={handleCopyList}
-                                    className="flex-1 py-2.5 px-4 bg-ui-bg border border-ui-border rounded-xl text-ui-text hover:border-ui-text hover:bg-ui-border/50 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    className="py-2.5 px-3 bg-ui-bg border border-ui-border rounded-xl text-ui-text hover:border-ui-text hover:bg-ui-border/50 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                                     title="Copiar lista de productos al portapapeles"
                                 >
                                     <Copy size={16} />
@@ -1180,11 +1443,27 @@ function ReportsScreen() {
                                 <button
                                     onClick={handleGenerateImage}
                                     disabled={isGeneratingImage}
-                                    className="flex-1 py-2.5 px-4 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-600 hover:bg-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    className="py-2.5 px-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-600 hover:bg-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                                     title="Generar y compartir imagen"
                                 >
                                     <Camera size={16} />
                                     {isGeneratingImage ? 'Generando...' : 'Imagen'}
+                                </button>
+                                <button
+                                    onClick={handleDownloadReceipt}
+                                    className="py-2.5 px-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-600 hover:bg-blue-500/20 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    title="Descargar comprobante en PDF"
+                                >
+                                    <Download size={16} />
+                                    PDF
+                                </button>
+                                <button
+                                    onClick={handleSendWhatsApp}
+                                    className="py-2.5 px-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-600 hover:bg-emerald-500/20 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    title="Enviar por WhatsApp"
+                                >
+                                    <MessageCircle size={16} />
+                                    WhatsApp
                                 </button>
                             </div>
 
@@ -1412,6 +1691,714 @@ function ReportsScreen() {
                 </div>
             )}
         </div>
+    );
+}
+
+function MarginByCategoryCard({
+    products,
+    sales,
+    formatPrice,
+}: {
+    products: Product[];
+    sales: Sale[];
+    formatPrice: (n: number) => string;
+}) {
+    const data = useMemo(() => {
+        const productById = new Map(products.map(p => [p.id, p]));
+        const byCategory = new Map<string, { revenue: number; cost: number; units: number }>();
+        for (const sale of sales) {
+            if (sale.status === 'cancelled') continue;
+            for (const item of sale.items || []) {
+                const product = productById.get(item.id);
+                const category = product?.category || item.category || 'Sin categoría';
+                const cost = product?.costPrice;
+                if (cost == null || cost <= 0) continue;
+                const entry = byCategory.get(category) ?? { revenue: 0, cost: 0, units: 0 };
+                const unitPrice = item.finalPrice ?? item.price ?? 0;
+                entry.revenue += unitPrice * item.quantity;
+                entry.cost += cost * item.quantity;
+                entry.units += item.quantity;
+                byCategory.set(category, entry);
+            }
+        }
+        return Array.from(byCategory.entries())
+            .map(([category, v]) => ({
+                category,
+                revenue: v.revenue,
+                cost: v.cost,
+                margin: v.revenue - v.cost,
+                marginPct: v.revenue > 0 ? ((v.revenue - v.cost) / v.revenue) * 100 : 0,
+                units: v.units,
+            }))
+            .sort((a, b) => b.margin - a.margin);
+    }, [products, sales]);
+
+    const totalMargin = data.reduce((s, d) => s + d.margin, 0);
+    const totalRevenue = data.reduce((s, d) => s + d.revenue, 0);
+
+    return (
+        <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+            <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">
+                        Margen por Categoría
+                    </h2>
+                    {totalRevenue > 0 && (
+                        <div className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted">
+                            Margen total:{' '}
+                            <span className={totalMargin >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                                {formatPrice(totalMargin)} ({((totalMargin / totalRevenue) * 100).toFixed(1)}%)
+                            </span>
+                        </div>
+                    )}
+                </div>
+                {data.length === 0 ? (
+                    <p className="text-xs text-ui-text-muted py-8 text-center">
+                        Sin datos de margen. Define el costo de tus productos en Inventario para ver esta métrica.
+                    </p>
+                ) : (
+                    <div className="space-y-2">
+                        {data.map(d => (
+                            <div key={d.category} className="p-3 rounded-xl border border-ui-border/30 bg-ui-bg/30">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-black uppercase tracking-tight text-ui-text">{d.category}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-ui-text-muted">
+                                        {d.units} und.
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-[10px] font-black uppercase tracking-widest">
+                                    <div>
+                                        <p className="text-ui-text-muted mb-1">Ingreso</p>
+                                        <p className="text-ui-text">{formatPrice(d.revenue)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-ui-text-muted mb-1">Costo</p>
+                                        <p className="text-ui-text-muted">{formatPrice(d.cost)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-ui-text-muted mb-1">Margen</p>
+                                        <p className={d.margin >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                                            {formatPrice(d.margin)} ({d.marginPct.toFixed(1)}%)
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function NetProfitCard({
+    products,
+    sales,
+    expenses,
+    formatPrice,
+}: {
+    products: Product[];
+    sales: Sale[];
+    expenses: Expense[];
+    formatPrice: (n: number) => string;
+}) {
+    const data = useMemo(() => {
+        const productById = new Map(products.map(p => [p.id, p]));
+        let revenue = 0;
+        let cost = 0;
+        let costCovered = 0; // suma de revenue solo de items con costo definido
+        for (const sale of sales) {
+            if (sale.status === 'cancelled') continue;
+            revenue += sale.total;
+            for (const item of sale.items || []) {
+                const product = productById.get(item.id);
+                if (product?.costPrice && product.costPrice > 0) {
+                    cost += product.costPrice * item.quantity;
+                    costCovered += (item.finalPrice ?? item.price ?? 0) * item.quantity;
+                }
+            }
+        }
+        // Si el rango de fechas no se filtra para expenses, usamos las fechas de sales
+        let totalExpenses = 0;
+        if (sales.length > 0) {
+            const times = sales.map(s => toMillis(s.createdAt)).filter(t => t > 0);
+            if (times.length > 0) {
+                const min = Math.min(...times);
+                const max = Math.max(...times);
+                totalExpenses = expenses
+                    .filter(e => e.paidAt >= min && e.paidAt <= max)
+                    .reduce((s, e) => s + e.amount, 0);
+            } else {
+                totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+            }
+        } else {
+            totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+        }
+        return {
+            revenue,
+            cost,
+            costCovered,
+            grossProfit: revenue - cost,
+            expenses: totalExpenses,
+            netProfit: revenue - cost - totalExpenses,
+        };
+    }, [products, sales, expenses]);
+
+    const hasCostData = data.cost > 0;
+    const coveragePct = data.revenue > 0 ? (data.costCovered / data.revenue) * 100 : 0;
+
+    return (
+        <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+            <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">
+                        Utilidad Neta
+                    </h2>
+                    {hasCostData && coveragePct < 100 && (
+                        <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">
+                            Cobertura de costo: {coveragePct.toFixed(0)}%
+                        </span>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                        <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Ingresos</p>
+                        <p className="text-base font-black text-emerald-600">{formatPrice(data.revenue)}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-ui-bg/60 border border-ui-border/50">
+                        <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Costo Productos</p>
+                        <p className="text-base font-black text-ui-text">{formatPrice(data.cost)}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/20">
+                        <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-1">Gastos</p>
+                        <p className="text-base font-black text-red-500">{formatPrice(data.expenses)}</p>
+                    </div>
+                    <div className={`p-3 rounded-xl border ${data.netProfit >= 0 ? 'bg-accent-primary/10 border-accent-primary/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${data.netProfit >= 0 ? 'text-accent-primary' : 'text-red-500'}`}>
+                            Utilidad Neta
+                        </p>
+                        <p className={`text-base font-black ${data.netProfit >= 0 ? 'text-accent-primary' : 'text-red-500'}`}>
+                            {formatPrice(data.netProfit)}
+                        </p>
+                    </div>
+                </div>
+
+                <p className="text-[9px] font-black uppercase tracking-widest text-ui-text-muted/70">
+                    Fórmula: Ingresos − Costo de productos vendidos − Gastos operativos.
+                    {!hasCostData && ' Define costos en Inventario para una utilidad más precisa.'}
+                </p>
+            </CardContent>
+        </Card>
+    );
+}
+
+function InventoryValueCard({ products, formatPrice }: { products: Product[]; formatPrice: (n: number) => string; }) {
+    const data = useMemo(() => {
+        let totalUnits = 0;
+        let costValue = 0;
+        let saleValue = 0;
+        let costCoveredUnits = 0;
+        let productsWithCost = 0;
+        let productsWithoutCost = 0;
+        for (const p of products) {
+            if (p.active === false || p.deletedAt) continue;
+            const rootStock = Number(p.stock) || 0;
+            const variantStock = (p.variants || []).reduce((s, v) => s + (Number(v.stock) || 0), 0);
+            const stock = rootStock + variantStock;
+            totalUnits += stock;
+            saleValue += stock * (Number(p.price) || 0);
+            if (typeof p.costPrice === 'number' && p.costPrice > 0) {
+                costValue += stock * p.costPrice;
+                costCoveredUnits += stock;
+                productsWithCost += 1;
+            } else {
+                productsWithoutCost += 1;
+            }
+        }
+        const coveragePct = totalUnits > 0 ? (costCoveredUnits / totalUnits) * 100 : 0;
+        return { totalUnits, costValue, saleValue, coveragePct, productsWithCost, productsWithoutCost };
+    }, [products]);
+
+    return (
+        <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+            <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">Inventario Valorizado</h2>
+                    {data.coveragePct < 100 && (
+                        <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">
+                            Cobertura de costo: {data.coveragePct.toFixed(0)}%
+                        </span>
+                    )}
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-xl bg-accent-primary/5 border border-accent-primary/20">
+                        <p className="text-[9px] font-black text-accent-primary uppercase tracking-widest mb-1">Unidades en stock</p>
+                        <p className="text-lg font-black text-accent-primary">{data.totalUnits.toLocaleString()}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-ui-bg/60 border border-ui-border/50">
+                        <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Valor al costo</p>
+                        <p className="text-lg font-black text-ui-text">{formatPrice(data.costValue)}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                        <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Valor a precio venta</p>
+                        <p className="text-lg font-black text-emerald-600">{formatPrice(data.saleValue)}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-ui-bg/60 border border-ui-border/50">
+                        <p className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mb-1">Margen latente</p>
+                        <p className="text-lg font-black text-ui-text">{formatPrice(data.saleValue - data.costValue)}</p>
+                    </div>
+                </div>
+                {data.productsWithoutCost > 0 && (
+                    <p className="text-[10px] text-ui-text-muted mt-3 font-bold">
+                        {data.productsWithoutCost} producto{data.productsWithoutCost === 1 ? '' : 's'} sin costo definido — define el costo en Inventario para mejorar la precisión.
+                    </p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function ABCAnalysisCard({ products, sales, formatPrice }: { products: Product[]; sales: Sale[]; formatPrice: (n: number) => string; }) {
+    const data = useMemo(() => {
+        const productById = new Map(products.map(p => [p.id, p]));
+        const revenueByProduct = new Map<string, { name: string; revenue: number; units: number }>();
+        for (const sale of sales) {
+            if (sale.status === 'cancelled') continue;
+            for (const item of sale.items || []) {
+                const key = item.id;
+                const product = productById.get(key);
+                const name = product?.name || item.name || 'Sin nombre';
+                const lineRevenue = (item.finalPrice ?? item.price ?? 0) * item.quantity;
+                const entry = revenueByProduct.get(key) ?? { name, revenue: 0, units: 0 };
+                entry.revenue += lineRevenue;
+                entry.units += item.quantity;
+                revenueByProduct.set(key, entry);
+            }
+        }
+        const rows = Array.from(revenueByProduct.entries())
+            .map(([id, v]) => ({ id, ...v }))
+            .sort((a, b) => b.revenue - a.revenue);
+        const total = rows.reduce((s, r) => s + r.revenue, 0);
+        let cumulative = 0;
+        const classified = rows.map(r => {
+            cumulative += r.revenue;
+            const cumPct = total > 0 ? (cumulative / total) * 100 : 0;
+            const sharePct = total > 0 ? (r.revenue / total) * 100 : 0;
+            const klass: 'A' | 'B' | 'C' = cumPct <= 80 ? 'A' : cumPct <= 95 ? 'B' : 'C';
+            return { ...r, cumPct, sharePct, klass };
+        });
+        const summary = { A: 0, B: 0, C: 0 } as Record<'A' | 'B' | 'C', number>;
+        const counts = { A: 0, B: 0, C: 0 } as Record<'A' | 'B' | 'C', number>;
+        classified.forEach(r => {
+            summary[r.klass] += r.revenue;
+            counts[r.klass] += 1;
+        });
+        return { rows: classified, total, summary, counts };
+    }, [products, sales]);
+
+    const KLASS_COLOR = { A: 'bg-emerald-500/15 text-emerald-600', B: 'bg-amber-500/15 text-amber-600', C: 'bg-red-500/15 text-red-600' };
+
+    return (
+        <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+            <CardContent className="p-4 md:p-6">
+                <div className="mb-4">
+                    <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">Análisis ABC</h2>
+                    <p className="text-[10px] text-ui-text-muted font-bold tracking-wider mt-1">A = 80% ingreso · B = 95% · C = resto</p>
+                </div>
+                {data.rows.length === 0 ? (
+                    <p className="text-xs text-ui-text-muted py-8 text-center">Sin ventas en el período seleccionado.</p>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                            {(['A', 'B', 'C'] as const).map(k => (
+                                <div key={k} className={`p-3 rounded-xl ${KLASS_COLOR[k]} border border-current/20`}>
+                                    <p className="text-[9px] font-black uppercase tracking-widest mb-1">Clase {k}</p>
+                                    <p className="text-base font-black">{data.counts[k]} prod.</p>
+                                    <p className="text-[10px] font-bold opacity-80">{formatPrice(data.summary[k])}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="space-y-1 max-h-64 overflow-y-auto">
+                            {data.rows.slice(0, 30).map(r => (
+                                <div key={r.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-ui-bg/40 border border-ui-border/30">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${KLASS_COLOR[r.klass]}`}>{r.klass}</span>
+                                        <span className="text-xs font-bold text-ui-text truncate">{r.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 flex-shrink-0 text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-ui-text-muted">{r.units} u</span>
+                                        <span className="text-ui-text">{formatPrice(r.revenue)}</span>
+                                        <span className="text-ui-text-muted w-12 text-right">{r.sharePct.toFixed(1)}%</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        {data.rows.length > 30 && (
+                            <p className="text-[10px] text-ui-text-muted mt-3 font-bold text-center">Mostrando top 30 de {data.rows.length}</p>
+                        )}
+                    </>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function InventoryTurnoverCard({ products, sales }: { products: Product[]; sales: Sale[]; }) {
+    const data = useMemo(() => {
+        const productById = new Map(products.map(p => [p.id, p]));
+        const unitsSold = new Map<string, number>();
+        for (const sale of sales) {
+            if (sale.status === 'cancelled') continue;
+            for (const item of sale.items || []) {
+                unitsSold.set(item.id, (unitsSold.get(item.id) || 0) + item.quantity);
+            }
+        }
+        const times = sales.map(s => toMillis(s.createdAt)).filter(t => t > 0);
+        const periodDays = times.length > 0
+            ? Math.max(1, Math.ceil((Math.max(...times) - Math.min(...times)) / 86400000) + 1)
+            : 30;
+
+        const rows: { id: string; name: string; sold: number; stock: number; turnover: number; daysOfCover: number }[] = [];
+        for (const p of products) {
+            if (p.active === false || p.deletedAt) continue;
+            const rootStock = Number(p.stock) || 0;
+            const variantStock = (p.variants || []).reduce((s, v) => s + (Number(v.stock) || 0), 0);
+            const stock = rootStock + variantStock;
+            const sold = unitsSold.get(p.id) || 0;
+            const avgDaily = sold / periodDays;
+            const turnover = stock > 0 ? sold / stock : (sold > 0 ? Infinity : 0);
+            const daysOfCover = avgDaily > 0 ? stock / avgDaily : Infinity;
+            if (sold > 0 || stock > 0) {
+                rows.push({ id: p.id, name: p.name, sold, stock, turnover, daysOfCover });
+            }
+        }
+        rows.sort((a, b) => b.turnover - a.turnover);
+        return { rows, periodDays };
+    }, [products, sales]);
+
+    return (
+        <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+            <CardContent className="p-4 md:p-6">
+                <div className="mb-4">
+                    <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">Rotación de Inventario</h2>
+                    <p className="text-[10px] text-ui-text-muted font-bold tracking-wider mt-1">
+                        Período: {data.periodDays} día{data.periodDays === 1 ? '' : 's'} · Rotación = unidades vendidas / stock actual
+                    </p>
+                </div>
+                {data.rows.length === 0 ? (
+                    <p className="text-xs text-ui-text-muted py-8 text-center">Sin movimientos para calcular rotación.</p>
+                ) : (
+                    <div className="space-y-1 max-h-72 overflow-y-auto">
+                        {data.rows.slice(0, 30).map(r => {
+                            const isHot = r.turnover >= 1;
+                            const isStale = r.turnover === 0 && r.stock > 0;
+                            const cover = Number.isFinite(r.daysOfCover) ? `${r.daysOfCover.toFixed(0)}d` : '∞';
+                            const turnoverLabel = Number.isFinite(r.turnover) ? r.turnover.toFixed(2) : '∞';
+                            return (
+                                <div key={r.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-ui-bg/40 border border-ui-border/30">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isHot ? 'bg-emerald-500' : isStale ? 'bg-red-500' : 'bg-amber-500'}`} />
+                                        <span className="text-xs font-bold text-ui-text truncate">{r.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 flex-shrink-0 text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-ui-text-muted">Vend: {r.sold}</span>
+                                        <span className="text-ui-text-muted">Stock: {r.stock}</span>
+                                        <span className="text-ui-text">Rot: {turnoverLabel}</span>
+                                        <span className="text-ui-text-muted w-12 text-right">{cover}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function FrequentlyBoughtTogetherCard({ sales }: { sales: Sale[]; }) {
+    const data = useMemo(() => {
+        const pairs = new Map<string, { a: string; b: string; count: number; aName: string; bName: string }>();
+        const singles = new Map<string, number>();
+        for (const sale of sales) {
+            if (sale.status === 'cancelled') continue;
+            const items = sale.items || [];
+            const uniqueIds = new Map<string, string>();
+            for (const it of items) {
+                if (!uniqueIds.has(it.id)) uniqueIds.set(it.id, it.name);
+            }
+            const ids = Array.from(uniqueIds.keys());
+            ids.forEach(id => singles.set(id, (singles.get(id) || 0) + 1));
+            for (let i = 0; i < ids.length; i++) {
+                for (let j = i + 1; j < ids.length; j++) {
+                    const [a, b] = ids[i] < ids[j] ? [ids[i], ids[j]] : [ids[j], ids[i]];
+                    const key = `${a}|${b}`;
+                    const existing = pairs.get(key);
+                    if (existing) existing.count += 1;
+                    else pairs.set(key, { a, b, count: 1, aName: uniqueIds.get(a)!, bName: uniqueIds.get(b)! });
+                }
+            }
+        }
+        return Array.from(pairs.values())
+            .filter(p => p.count >= 2)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 15);
+    }, [sales]);
+
+    return (
+        <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+            <CardContent className="p-4 md:p-6">
+                <div className="mb-4">
+                    <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">Comprados Juntos</h2>
+                    <p className="text-[10px] text-ui-text-muted font-bold tracking-wider mt-1">Top pares con ≥2 co-ocurrencias en la misma venta</p>
+                </div>
+                {data.length === 0 ? (
+                    <p className="text-xs text-ui-text-muted py-8 text-center">No hay suficientes ventas multi-producto para detectar patrones.</p>
+                ) : (
+                    <div className="space-y-2">
+                        {data.map((p, i) => (
+                            <div key={`${p.a}-${p.b}`} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-ui-bg/40 border border-ui-border/30">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <span className="text-[10px] font-black text-ui-text-muted bg-ui-bg w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-black text-ui-text truncate">{p.aName}</p>
+                                        <p className="text-[10px] font-bold text-ui-text-muted truncate">+ {p.bName}</p>
+                                    </div>
+                                </div>
+                                <span className="text-[10px] font-black text-accent-primary bg-accent-primary/10 px-3 py-1.5 rounded-lg uppercase tracking-widest flex-shrink-0">
+                                    {p.count}×
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function ReorderSuggestionCard({ products, sales, formatPrice }: { products: Product[]; sales: Sale[]; formatPrice: (n: number) => string; }) {
+    const data = useMemo(() => {
+        const unitsSold = new Map<string, number>();
+        for (const sale of sales) {
+            if (sale.status === 'cancelled') continue;
+            for (const item of sale.items || []) {
+                unitsSold.set(item.id, (unitsSold.get(item.id) || 0) + item.quantity);
+            }
+        }
+        const times = sales.map(s => toMillis(s.createdAt)).filter(t => t > 0);
+        const periodDays = times.length > 0
+            ? Math.max(1, Math.ceil((Math.max(...times) - Math.min(...times)) / 86400000) + 1)
+            : 30;
+
+        const rows: { id: string; name: string; stock: number; avgDaily: number; daysOfCover: number; suggestedQty: number; cost: number }[] = [];
+        for (const p of products) {
+            if (p.active === false || p.deletedAt) continue;
+            const rootStock = Number(p.stock) || 0;
+            const variantStock = (p.variants || []).reduce((s, v) => s + (Number(v.stock) || 0), 0);
+            const stock = rootStock + variantStock;
+            const sold = unitsSold.get(p.id) || 0;
+            if (sold === 0) continue;
+            const avgDaily = sold / periodDays;
+            const daysOfCover = avgDaily > 0 ? stock / avgDaily : Infinity;
+            if (daysOfCover > 14) continue;
+            const suggestedQty = Math.max(1, Math.ceil(avgDaily * 30 - stock));
+            rows.push({ id: p.id, name: p.name, stock, avgDaily, daysOfCover, suggestedQty, cost: p.costPrice || 0 });
+        }
+        rows.sort((a, b) => a.daysOfCover - b.daysOfCover);
+        const totalCost = rows.reduce((s, r) => s + r.suggestedQty * r.cost, 0);
+        return { rows, periodDays, totalCost };
+    }, [products, sales]);
+
+    return (
+        <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+            <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">Sugerencia de Reorden</h2>
+                        <p className="text-[10px] text-ui-text-muted font-bold tracking-wider mt-1">
+                            Stock con cobertura ≤14 días al ritmo actual · proyectado a 30 días
+                        </p>
+                    </div>
+                    {data.totalCost > 0 && (
+                        <div className="text-right">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-ui-text-muted">Costo estimado</p>
+                            <p className="text-sm font-black text-accent-primary">{formatPrice(data.totalCost)}</p>
+                        </div>
+                    )}
+                </div>
+                {data.rows.length === 0 ? (
+                    <p className="text-xs text-ui-text-muted py-8 text-center">Sin productos urgentes para reordenar.</p>
+                ) : (
+                    <div className="space-y-1 max-h-72 overflow-y-auto">
+                        {data.rows.map(r => {
+                            const isCritical = r.daysOfCover <= 3;
+                            const cover = Number.isFinite(r.daysOfCover) ? `${r.daysOfCover.toFixed(0)}d` : '—';
+                            return (
+                                <div key={r.id} className={`flex items-center justify-between gap-2 p-2.5 rounded-lg border ${isCritical ? 'bg-red-500/5 border-red-500/30' : 'bg-amber-500/5 border-amber-500/30'}`}>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isCritical ? 'bg-red-500' : 'bg-amber-500'}`} />
+                                        <span className="text-xs font-bold text-ui-text truncate">{r.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 flex-shrink-0 text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-ui-text-muted">Stock: {r.stock}</span>
+                                        <span className={isCritical ? 'text-red-500' : 'text-amber-600'}>Cobertura: {cover}</span>
+                                        <span className="text-accent-primary">Pedir: {r.suggestedQty}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function PromotionEffectivenessCard({ sales, formatPrice }: { sales: Sale[]; formatPrice: (n: number) => string; }) {
+    const data = useMemo(() => {
+        const promos = new Map<string, { name: string; uses: number; savings: number; type: string }>();
+        let totalSavings = 0;
+        let totalSalesWithPromo = 0;
+        for (const s of sales) {
+            if (s.status === 'cancelled') continue;
+            if (!s.appliedPromotions || s.appliedPromotions.length === 0) continue;
+            totalSalesWithPromo += 1;
+            totalSavings += s.promotionSavings || 0;
+            for (const ap of s.appliedPromotions) {
+                const key = ap.promotionId || `coupon:${ap.couponCode}` || ap.name;
+                const entry = promos.get(key) ?? { name: ap.name, uses: 0, savings: 0, type: String(ap.type) };
+                entry.uses += 1;
+                entry.savings += ap.amount;
+                promos.set(key, entry);
+            }
+        }
+        return {
+            rows: Array.from(promos.values()).sort((a, b) => b.savings - a.savings),
+            totalSavings,
+            totalSalesWithPromo,
+        };
+    }, [sales]);
+
+    return (
+        <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+            <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">Efectividad de Promociones</h2>
+                        <p className="text-[10px] text-ui-text-muted font-bold tracking-wider mt-1">
+                            {data.totalSalesWithPromo} venta{data.totalSalesWithPromo === 1 ? '' : 's'} con descuento aplicado
+                        </p>
+                    </div>
+                    {data.totalSavings > 0 && (
+                        <div className="text-right">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Ahorro entregado</p>
+                            <p className="text-sm font-black text-emerald-600">{formatPrice(data.totalSavings)}</p>
+                        </div>
+                    )}
+                </div>
+                {data.rows.length === 0 ? (
+                    <p className="text-xs text-ui-text-muted py-8 text-center">Sin promociones aplicadas en este período.</p>
+                ) : (
+                    <div className="space-y-1">
+                        {data.rows.map((r, i) => (
+                            <div key={i} className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-ui-bg/40 border border-ui-border/30">
+                                <div className="min-w-0">
+                                    <p className="text-xs font-black text-ui-text truncate">{r.name}</p>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-ui-text-muted mt-0.5">{r.type}</p>
+                                </div>
+                                <div className="flex items-center gap-3 flex-shrink-0 text-[10px] font-black uppercase tracking-widest">
+                                    <span className="text-ui-text-muted">{r.uses} uso{r.uses === 1 ? '' : 's'}</span>
+                                    <span className="text-emerald-600">{formatPrice(r.savings)}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function LocationComparisonCard({ sales, locations, formatPrice }: {
+    sales: Sale[];
+    locations: { id: string; name: string }[];
+    formatPrice: (n: number) => string;
+}) {
+    const data = useMemo(() => {
+        if (locations.length === 0) return [];
+        const map = new Map<string, { id: string; name: string; revenue: number; pending: number; count: number; lastSaleAt: number }>();
+        for (const l of locations) {
+            map.set(l.id, { id: l.id, name: l.name, revenue: 0, pending: 0, count: 0, lastSaleAt: 0 });
+        }
+        const unassigned = { id: '__none', name: 'Sin sucursal', revenue: 0, pending: 0, count: 0, lastSaleAt: 0 };
+        for (const s of sales) {
+            if (s.status === 'cancelled') continue;
+            const bucket = s.locationId ? (map.get(s.locationId) ?? unassigned) : unassigned;
+            const t = toMillis(s.createdAt);
+            if (s.status === 'paid') bucket.revenue += s.total || 0;
+            else if (s.status === 'pending') bucket.pending += s.total || 0;
+            bucket.count += 1;
+            if (t > bucket.lastSaleAt) bucket.lastSaleAt = t;
+        }
+        const rows = Array.from(map.values());
+        if (unassigned.count > 0) rows.push(unassigned);
+        return rows.sort((a, b) => b.revenue - a.revenue);
+    }, [sales, locations]);
+
+    const totalRevenue = data.reduce((s, r) => s + r.revenue, 0);
+
+    if (locations.length === 0) return null;
+
+    return (
+        <Card className="overflow-hidden border-0 shadow-xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+            <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-xs md:text-sm font-black text-ui-text uppercase tracking-widest">Comparativo por Sucursal</h2>
+                        <p className="text-[10px] text-ui-text-muted font-bold tracking-wider mt-1">Considera todas las ventas (no afectado por filtros activos)</p>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    {data.map(row => {
+                        const share = totalRevenue > 0 ? (row.revenue / totalRevenue) * 100 : 0;
+                        return (
+                            <div key={row.id} className="p-3 rounded-xl border border-ui-border/30 bg-ui-bg/30 space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="font-black text-sm text-ui-text uppercase tracking-tight truncate">{row.name}</span>
+                                    <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">
+                                        {share.toFixed(1)}%
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-[10px] font-black uppercase tracking-widest">
+                                    <div>
+                                        <p className="text-ui-text-muted mb-0.5">Ingreso</p>
+                                        <p className="text-ui-text">{formatPrice(row.revenue)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-ui-text-muted mb-0.5">Por cobrar</p>
+                                        <p className="text-amber-600">{formatPrice(row.pending)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-ui-text-muted mb-0.5">Ventas</p>
+                                        <p className="text-ui-text">{row.count}</p>
+                                    </div>
+                                </div>
+                                <div className="h-1.5 bg-ui-bg rounded-full overflow-hidden">
+                                    <div className="h-full bg-accent-primary" style={{ width: `${share}%` }} />
+                                </div>
+                                {row.lastSaleAt > 0 && (
+                                    <p className="text-[9px] font-bold text-ui-text-muted">
+                                        Última venta: {new Date(row.lastSaleAt).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
+                                    </p>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </CardContent>
+        </Card>
     );
 }
 

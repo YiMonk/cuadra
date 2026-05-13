@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { ClientService } from '@/services/client.service';
-import { Search, UserPlus, Phone, User as UserIcon, ChevronRight } from 'lucide-react';
+import { Search, UserPlus, Phone, User as UserIcon, ChevronRight, Tag, Download, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
@@ -15,24 +15,80 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { useContactPicker } from '@/hooks/useContactPicker';
 import { Contact2 } from 'lucide-react';
 
+const TAG_SUGGESTIONS = ['VIP', 'Mayorista', 'Moroso', 'Frecuente', 'Nuevo'];
+
+const parseTagsInput = (raw: string): string[] => {
+    return raw
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
+        .map(t => t.length > 30 ? t.slice(0, 30) : t);
+};
+
+const exportClientsCsv = (clients: Client[]) => {
+    const rows = [['Nombre', 'Teléfono', 'Tags', 'Notas', 'Creado']];
+    clients.forEach(c => {
+        rows.push([
+            c.name || '',
+            c.phone || '',
+            (c.tags || []).join('; '),
+            (c.notes || '').replace(/\n/g, ' '),
+            new Date(c.createdAt).toLocaleDateString('es-VE'),
+        ]);
+    });
+    const csv = rows.map(r =>
+        r.map(cell => {
+            const s = String(cell);
+            return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        }).join(',')
+    ).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clientes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
 export default function ClientListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
+    const [activeTags, setActiveTags] = useState<string[]>([]);
     const router = useRouter();
 
     const [newName, setNewName] = useState('');
     const [newPhone, setNewPhone] = useState('');
+    const [newTagsRaw, setNewTagsRaw] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-    
+
     const { user, isLoading: authLoading } = useAuth();
     const { ownerId } = useOwnerContext();
     const { clients, isLoading: loading } = useClients(ownerId);
+
+    const allTags = useMemo(() => {
+        const set = new Set<string>();
+        clients.forEach(c => (c.tags || []).forEach(t => set.add(t)));
+        return Array.from(set).sort((a, b) => a.localeCompare(b));
+    }, [clients]);
+
     const filteredClients = useMemo(() => {
-        if (!searchQuery) return clients;
-        return clients.filter(c =>
-            c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.phone.includes(searchQuery)
-        );
-    }, [clients, searchQuery]);
+        return clients.filter(c => {
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                if (!c.name.toLowerCase().includes(q) && !c.phone.includes(searchQuery)) return false;
+            }
+            if (activeTags.length > 0) {
+                const clientTags = c.tags || [];
+                if (!activeTags.every(t => clientTags.includes(t))) return false;
+            }
+            return true;
+        });
+    }, [clients, searchQuery, activeTags]);
+
+    const toggleTag = (t: string) => {
+        setActiveTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+    };
     const { isSupported, pickContact } = useContactPicker();
 
     const handlePickContact = async () => {
@@ -62,10 +118,17 @@ export default function ClientListScreen() {
         if (!newName || !newPhone) return;
         setIsSaving(true);
         try {
-            await ClientService.addClient({ name: newName, phone: newPhone, active: true }, ownerId);
+            const tags = parseTagsInput(newTagsRaw);
+            await ClientService.addClient({
+                name: newName,
+                phone: newPhone,
+                active: true,
+                ...(tags.length > 0 ? { tags } : {}),
+            }, ownerId);
             setModalVisible(false);
             setNewName('');
             setNewPhone('');
+            setNewTagsRaw('');
             toast.success('Cliente registrado con éxito');
         } catch (err) {
             toast.error("Error creando cliente");
@@ -88,12 +151,27 @@ export default function ClientListScreen() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Clientes</h1>
-                    <p className="text-foreground/60 font-medium tracking-wide">Directorio de Clientes Registrados</p>
+                    <p className="text-xs text-foreground/50 mt-1">
+                        {filteredClients.length} de {clients.length} cliente{clients.length === 1 ? '' : 's'}
+                    </p>
                 </div>
-                <Button onClick={() => setModalVisible(true)} className="gap-2 shadow-md hover:shadow-lg transition-all" size="lg">
-                    <UserPlus size={20} />
-                    Nuevo Cliente
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        variant="ghost"
+                        onClick={() => exportClientsCsv(filteredClients)}
+                        disabled={filteredClients.length === 0}
+                        className="gap-2"
+                        size="lg"
+                        title="Exportar a CSV"
+                    >
+                        <Download size={18} />
+                        <span className="hidden md:inline">Exportar CSV</span>
+                    </Button>
+                    <Button onClick={() => setModalVisible(true)} className="gap-2 shadow-md hover:shadow-lg transition-all" size="lg">
+                        <UserPlus size={20} />
+                        Nuevo Cliente
+                    </Button>
+                </div>
             </div>
 
             <Input
@@ -103,6 +181,33 @@ export default function ClientListScreen() {
                 value={searchQuery}
                 onChange={onChangeSearch}
             />
+
+            {allTags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                    <Tag size={14} className="text-foreground/50" />
+                    {allTags.map(t => (
+                        <button
+                            key={t}
+                            onClick={() => toggleTag(t)}
+                            className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border transition-colors ${
+                                activeTags.includes(t)
+                                    ? 'bg-ios-blue text-white border-ios-blue'
+                                    : 'bg-transparent text-foreground/70 border-foreground/20 hover:border-ios-blue'
+                            }`}
+                        >
+                            {t}
+                        </button>
+                    ))}
+                    {activeTags.length > 0 && (
+                        <button
+                            onClick={() => setActiveTags([])}
+                            className="text-[10px] font-bold text-foreground/50 hover:text-foreground inline-flex items-center gap-1"
+                        >
+                            <X size={12} /> Limpiar
+                        </button>
+                    )}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredClients.length === 0 ? (
@@ -126,6 +231,18 @@ export default function ClientListScreen() {
                                     <Phone size={12} className="mr-1.5 opacity-60" />
                                     <span>{client.phone}</span>
                                 </div>
+                                {client.tags && client.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                        {client.tags.slice(0, 3).map(t => (
+                                            <span key={t} className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-ios-blue/10 text-ios-blue">
+                                                {t}
+                                            </span>
+                                        ))}
+                                        {client.tags.length > 3 && (
+                                            <span className="text-[9px] font-bold text-foreground/40">+{client.tags.length - 3}</span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <ChevronRight className="text-foreground/25 group-hover:text-ios-blue group-hover:translate-x-0.5 transition-all shrink-0" size={18} />
                         </button>
@@ -154,8 +271,8 @@ export default function ClientListScreen() {
                                     type="tel"
                                     required
                                     rightIcon={isSupported ? (
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             onClick={handlePickContact}
                                             className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors text-ios-blue"
                                             title="Importar de contactos"
@@ -164,6 +281,39 @@ export default function ClientListScreen() {
                                         </button>
                                     ) : undefined}
                                 />
+                                <div>
+                                    <Input
+                                        label="Tags (separados por coma)"
+                                        value={newTagsRaw}
+                                        onChange={(e) => setNewTagsRaw(e.target.value)}
+                                        placeholder="Ej: VIP, Mayorista"
+                                    />
+                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                        {TAG_SUGGESTIONS.map(t => {
+                                            const current = parseTagsInput(newTagsRaw);
+                                            const active = current.includes(t);
+                                            return (
+                                                <button
+                                                    key={t}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const next = active
+                                                            ? current.filter(x => x !== t)
+                                                            : [...current, t];
+                                                        setNewTagsRaw(next.join(', '));
+                                                    }}
+                                                    className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-colors ${
+                                                        active
+                                                            ? 'bg-ios-blue text-white border-ios-blue'
+                                                            : 'bg-transparent text-foreground/60 border-foreground/20 hover:border-ios-blue'
+                                                    }`}
+                                                >
+                                                    {t}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                                 <div className="flex gap-3 pt-4">
                                     <Button type="button" variant="ghost" className="flex-1" onClick={() => setModalVisible(false)} disabled={isSaving}>
                                         Cancelar

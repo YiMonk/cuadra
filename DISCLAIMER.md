@@ -2,25 +2,49 @@
 
 ## Sobre Cuadra
 
-**Cuadra** es una herramienta de **gestión empresarial, control de inventario y análisis de operaciones**.
+**Cuadra** es un **SaaS (Software as a Service) de gestión comercial interna** orientado a emprendedores y pequeños negocios. Permite llevar el control administrativo de ventas, inventario, clientes y cobros para uso gerencial.
 
-**NO es un sistema de facturación fiscal autorizado, ni un POS registrado ante el SENIAT, ni reemplaza obligaciones fiscales o legales de tu negocio.**
+**Cuadra NO es:**
+- ❌ Un sistema de facturación fiscal homologado ante SENIAT (Venezuela) o autoridad equivalente
+- ❌ Un POS (Point of Sale) fiscal registrado
+- ❌ Un emisor de documentos con valor probatorio tributario
+- ❌ Sustituto de tu sistema fiscal autorizado
+- ❌ Generador de libros oficiales de Ventas/Compras
+- ❌ Asesor legal, contable o fiscal
+
+**Cuadra SÍ es:**
+- ✅ Una herramienta administrativa de uso interno
+- ✅ Un asistente de gestión gerencial
+- ✅ Generador de comprobantes internos **sin valor fiscal**
+- ✅ Repositorio de información operativa de tu negocio
 
 ---
 
 ## Responsabilidades del usuario
 
 ### Cumplimiento fiscal y legal
-- **Tú eres responsable** de cumplir con todas las leyes fiscales, tributarias, laborales y comerciales de tu jurisdicción
+- **Tú eres el único responsable** de cumplir con todas las leyes fiscales, tributarias, laborales y comerciales de tu jurisdicción
 - Los reportes y registros de Cuadra son **únicamente para referencia interna y gestión operativa**
 - Si tu negocio está obligado a registrarse ante el SENIAT u otras autoridades, **debes hacerlo independientemente de usar Cuadra**
 - Cuadra no reemplaza ni exime de cumplir con regulaciones locales
+- **Reconoces y aceptas que debes llevar tus libros fiscales por tu sistema homologado independiente**, separado de Cuadra
 
 ### Registros y documentación
 - Los datos registrados en Cuadra son **internos y propios de tu negocio**
 - Si eres obligado a mantener registros fiscales oficiales, **debes mantenerlos separados** de Cuadra
-- Los reportes generados en Cuadra no son documentos fiscales ni pueden ser presentados a autoridades como tales
+- Los reportes generados en Cuadra **NO son documentos fiscales** y **NO pueden ser presentados a autoridades tributarias** como tales
+- Los comprobantes generados por Cuadra incluyen la leyenda "DOCUMENTO INTERNO SIN VALOR FISCAL" y son únicamente referenciales
 - La responsabilidad de mantener registros legales recae completamente en ti
+
+### Uso prohibido del servicio
+**Reconoces y aceptas que NO usarás Cuadra para:**
+- Emitir facturas con apariencia de validez fiscal
+- Presentar reportes de Cuadra como documentos oficiales a autoridades tributarias
+- Sustituir tu obligación de llevar contabilidad formal
+- Engañar a clientes haciéndoles creer que reciben una factura fiscal válida
+- Cualquier uso que pretenda otorgarle valor probatorio fiscal a los datos almacenados
+
+**Cuadra se reserva el derecho de suspender o terminar tu cuenta sin previo aviso ni reembolso** si detecta cualquiera de los usos prohibidos descritos arriba.
 
 ### Datos y privacidad
 - Los datos de tu negocio se almacenan en servidores en la nube (Google Cloud/Firebase)

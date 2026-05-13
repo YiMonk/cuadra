@@ -133,7 +133,7 @@ function AdminGodDashboardPage() {
                                 { value: 'all', label: 'Todo el tiempo' }
                             ]}
                             value={timeRange}
-                            onChange={(val) => setTimeRange(val as any)}
+                            onChange={(val) => setTimeRange(val as '7d' | '30d' | 'all')}
                         />
                     </div>
 

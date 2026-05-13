@@ -3,6 +3,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
+interface ContactInfo {
+    name?: string[];
+    tel?: string[];
+}
+interface ContactsManager {
+    select(properties: string[], options?: { multiple?: boolean }): Promise<ContactInfo[]>;
+}
+type NavigatorWithContacts = Navigator & { contacts?: ContactsManager };
+
 /**
  * Hook to use the Contact Picker API.
  * Ref: https://developer.mozilla.org/en-US/docs/Web/API/Contact_Picker_API
@@ -11,8 +20,9 @@ export const useContactPicker = () => {
     const [isSupported, setIsSupported] = useState(false);
 
     useEffect(() => {
-        // Only run on client side and check for API support
-        if (typeof window !== 'undefined' && 'contacts' in navigator && 'select' in (navigator as any).contacts) {
+        if (typeof window === 'undefined') return;
+        const nav = navigator as NavigatorWithContacts;
+        if (nav.contacts && typeof nav.contacts.select === 'function') {
             setIsSupported(true);
         }
     }, []);
@@ -27,9 +37,9 @@ export const useContactPicker = () => {
             // We want name and telephone
             const props = ['name', 'tel'];
             const opts = { multiple: false };
-            
-            // The API returns a promise with an array of contacts
-            const contacts = await (navigator as any).contacts.select(props, opts);
+
+            const nav = navigator as NavigatorWithContacts;
+            const contacts = (await nav.contacts!.select(props, opts)) ?? [];
 
             if (contacts && contacts.length > 0) {
                 const contact = contacts[0];

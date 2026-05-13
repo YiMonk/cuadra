@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { initializeFirestore, getFirestore, Firestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -43,4 +43,5 @@ if (typeof window !== 'undefined' || getApps().length > 0) {
 }
 
 export { auth, db, initializeFirebaseIfNeeded };
-export const storage = getApps().length > 0 ? getStorage(getApp()) : (null as any);
+export const storage: FirebaseStorage | null =
+  getApps().length > 0 ? getStorage(getApp()) : null;

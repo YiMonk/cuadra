@@ -6,8 +6,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
 import { UserService } from '@/services/user.service';
 import { auth } from '@/config/firebaseConfig';
-import { updateProfile, verifyBeforeUpdateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { AuthService } from '@/services/auth.service';
 import { LegalModal } from '@/components/legal/LegalModal';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight, Users, FileText, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -73,6 +74,7 @@ export default function SettingsScreen() {
     const [updating, setUpdating] = useState(false);
     const [legalModalOpen, setLegalModalOpen] = useState(false);
     const [legalModalTab, setLegalModalTab] = useState<'terms' | 'privacy' | 'disclaimer'>('terms');
+    const [onboardingOpen, setOnboardingOpen] = useState(false);
 
     const handleLogout = () => {
         toast.custom((t) => (
@@ -137,8 +139,7 @@ export default function SettingsScreen() {
         try {
             // Re-auth if sensitive changes
             if ((newEmail.trim() !== currentUser.email || newPassword.trim()) && currentPassword) {
-                const credential = EmailAuthProvider.credential(currentUser.email!, currentPassword);
-                await reauthenticateWithCredential(currentUser, credential);
+                await AuthService.reauthenticateWithPassword(currentUser, currentPassword);
             } else if ((newEmail.trim() !== currentUser.email || newPassword.trim()) && !currentPassword) {
                 toast.error('Para cambiar tu correo o contraseña, debes ingresar tu contraseña actual.');
                 setUpdating(false);
@@ -147,18 +148,18 @@ export default function SettingsScreen() {
 
             // Update Name
             if (newName.trim() !== currentUser.displayName) {
-                await updateProfile(currentUser, { displayName: newName.trim() });
+                await AuthService.updateCurrentUserProfile(currentUser, newName.trim());
             }
 
             // Update Email
             if (newEmail.trim() !== currentUser.email) {
-                await verifyBeforeUpdateEmail(currentUser, newEmail.trim());
+                await AuthService.verifyBeforeUpdateEmail(currentUser, newEmail.trim());
                 emailChanged = true;
             }
 
             // Update Password
             if (newPassword.trim()) {
-                await updatePassword(currentUser, newPassword.trim());
+                await AuthService.updateCurrentUserPassword(currentUser, newPassword.trim());
             }
 
             // Sync Firestore
@@ -314,6 +315,14 @@ export default function SettingsScreen() {
                             </div>
                         )}
                     </div>
+
+                    {/* Tutorial */}
+                    <button
+                        onClick={() => setOnboardingOpen(true)}
+                        className="w-full py-4 px-6 bg-accent-primary/5 hover:bg-accent-primary/10 border border-accent-primary/30 text-accent-primary rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3"
+                    >
+                        <Settings2 size={16} /> Repetir tutorial de bienvenida
+                    </button>
 
                     {/* Legal Info */}
                     <div className="space-y-4 pt-4">
@@ -472,6 +481,11 @@ export default function SettingsScreen() {
                 initialTab={legalModalTab}
                 showAcceptButton={false}
             />
+
+            {/* Onboarding (re-acceso) */}
+            {onboardingOpen && (
+                <OnboardingWizard onClose={() => setOnboardingOpen(false)} />
+            )}
         </div>
     );
 }

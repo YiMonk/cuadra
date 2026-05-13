@@ -20,6 +20,7 @@ import { db } from '../config/firebaseConfig';
 import { toServiceError } from '@/lib/errors';
 import { Sale } from '../types/sales';
 import { Product, ProductVariant } from '../types/inventory';
+import { hasLocationStock } from '@/lib/stock';
 
 const SALES_COLLECTION = 'sales';
 const PRODUCTS_COLLECTION = 'products';
@@ -29,7 +30,10 @@ type InventoryUpdate = { ref: DocumentReference; data: Partial<Product> };
 type MovementLog = { ref: DocumentReference; data: Record<string, unknown> };
 
 export const SalesService = {
-  createSale: async (sale: Omit<Sale, 'id' | 'createdAt' | 'status'>, creator?: { id: string; name: string }) => {
+  createSale: async (
+    sale: Omit<Sale, 'id' | 'createdAt' | 'status'>,
+    creator?: { id: string; name: string; commissionPct?: number }
+  ) => {
     if (!sale.items || sale.items.length === 0) {
       throw new Error('No hay productos en la venta');
     }
@@ -74,17 +78,34 @@ export const SalesService = {
               data: { variants: updatedVariants, updatedAt: Date.now() },
             });
           } else {
-            // Handle root stock
-            const currentStock = productData.stock || 0;
-            if (currentStock < item.quantity) {
-              throw new Error(
-                `Stock insuficiente para "${item.name}". Disponible: ${currentStock}`
-              );
+            const productForStock = productData as Product;
+            const saleLocationId = sale.locationId ?? null;
+            if (hasLocationStock(productForStock) && saleLocationId) {
+              const map = { ...(productForStock.stockByLocation || {}) };
+              const current = Number(map[saleLocationId]) || 0;
+              if (current < item.quantity) {
+                throw new Error(
+                  `Stock insuficiente para "${item.name}" en la sucursal seleccionada. Disponible: ${current}`
+                );
+              }
+              map[saleLocationId] = current - item.quantity;
+              const newTotal = Object.values(map).reduce((s, v) => s + (Number(v) || 0), 0);
+              inventoryUpdates.push({
+                ref: productRefs[i],
+                data: { stockByLocation: map, stock: newTotal, updatedAt: Date.now() },
+              });
+            } else {
+              const currentStock = productData.stock || 0;
+              if (currentStock < item.quantity) {
+                throw new Error(
+                  `Stock insuficiente para "${item.name}". Disponible: ${currentStock}`
+                );
+              }
+              inventoryUpdates.push({
+                ref: productRefs[i],
+                data: { stock: currentStock - item.quantity, updatedAt: Date.now() },
+              });
             }
-            inventoryUpdates.push({
-              ref: productRefs[i],
-              data: { stock: currentStock - item.quantity, updatedAt: Date.now() },
-            });
           }
 
           // Log stock movement for traceability
@@ -98,6 +119,7 @@ export const SalesService = {
               reason: 'sale',
               variantId: item.variantId || null,
               variantName: item.variantName || null,
+              locationId: sale.locationId ?? null,
               createdAt: Date.now(),
             },
           });
@@ -121,6 +143,11 @@ export const SalesService = {
         );
         const isPaid = sale.paymentMethod !== 'credit';
 
+        const pct = typeof creator?.commissionPct === 'number' && creator.commissionPct > 0
+          ? creator.commissionPct
+          : 0;
+        const commissionAmount = pct > 0 ? +(sale.total * pct / 100).toFixed(2) : 0;
+
         transaction.set(newSaleRef, {
           ...saleData,
           items: sanitizedItems,
@@ -131,6 +158,8 @@ export const SalesService = {
           cashboxId: isPaid ? (sale.cashboxId || null) : null,
           cashboxName: isPaid ? (sale.cashboxName || null) : null,
           paidAt: isPaid ? Date.now() : null,
+          commissionPct: pct,
+          commissionAmount,
         });
       });
 
@@ -196,6 +225,11 @@ export const SalesService = {
     }
   },
 
+  /**
+   * Lista ventas. Si `pageSize` está definido, aplica limit; si no, trae todas
+   * (paginando internamente en bloques para evitar OOM).
+   * Para paginación con cursor usar `getAllSalesPaginated`.
+   */
   getAllSales: async (options: {
     ownerId?: string;
     startDate?: number;
@@ -205,16 +239,39 @@ export const SalesService = {
     const ownerId = typeof options === 'string' ? options : options.ownerId;
     const startDate = typeof options === 'object' ? options.startDate : undefined;
     const endDate = typeof options === 'object' ? options.endDate : undefined;
-    const pageSize = typeof options === 'object' ? (options.pageSize ?? 50) : 50;
+    const pageSize = typeof options === 'object' ? options.pageSize : undefined;
 
     try {
-      const constraints: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(pageSize)];
-      if (ownerId) constraints.unshift(where('ownerId', '==', ownerId));
-      if (startDate !== undefined) constraints.push(where('createdAt', '>=', startDate));
-      if (endDate !== undefined) constraints.push(where('createdAt', '<=', endDate));
+      // Caller solicita una página explícita: query única con limit.
+      if (pageSize !== undefined) {
+        const constraints: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(pageSize)];
+        if (ownerId) constraints.unshift(where('ownerId', '==', ownerId));
+        if (startDate !== undefined) constraints.push(where('createdAt', '>=', startDate));
+        if (endDate !== undefined) constraints.push(where('createdAt', '<=', endDate));
+        const snapshot = await getDocs(query(collection(db, SALES_COLLECTION), ...constraints));
+        return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Sale));
+      }
 
-      const snapshot = await getDocs(query(collection(db, SALES_COLLECTION), ...constraints));
-      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Sale));
+      // Sin pageSize: traer todo paginando con cursor (sin limit silencioso).
+      const all: Sale[] = [];
+      let lastDoc: DocumentSnapshot | null = null;
+      const BATCH = 500;
+      // bucle defensivo: detiene cuando una página viene vacía o más corta que BATCH.
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const page = await SalesService.getAllSalesPaginated({
+          ownerId,
+          startDate,
+          endDate,
+          pageSize: BATCH,
+          startAfterDoc: lastDoc ?? undefined,
+        });
+        if (page.sales.length === 0) break;
+        all.push(...page.sales);
+        if (page.sales.length < BATCH || !page.lastDoc) break;
+        lastDoc = page.lastDoc;
+      }
+      return all;
     } catch (error) {
       console.error('Error getting all sales: ', error);
       return [];
@@ -347,6 +404,33 @@ export const SalesService = {
       },
       error => {
         console.error('Error en subscribeToPendingSales:', error);
+      }
+    );
+  },
+
+  /**
+   * Reactive listener for recent sales. Replaces setInterval polling.
+   * Returns the most recent `pageSize` sales for `ownerId`, sorted by createdAt desc.
+   */
+  subscribeToRecentSales: (
+    ownerId: string,
+    pageSize: number,
+    callback: (sales: Sale[]) => void
+  ) => {
+    const q = query(
+      collection(db, SALES_COLLECTION),
+      where('ownerId', '==', ownerId),
+      orderBy('createdAt', 'desc'),
+      limit(pageSize)
+    );
+    return onSnapshot(
+      q,
+      snapshot => {
+        const sales = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Sale));
+        callback(sales);
+      },
+      error => {
+        console.error('Error en subscribeToRecentSales:', error);
       }
     );
   },

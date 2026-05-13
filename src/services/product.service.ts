@@ -8,7 +8,8 @@ import {
   orderBy,
   where,
   runTransaction,
-  getDocs
+  getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { toServiceError } from '@/lib/errors';
@@ -29,6 +30,38 @@ export const ProductService = {
       return docRef.id;
     } catch (error) {
       console.error("Error adding product: ", error);
+      throw toServiceError(error);
+    }
+  },
+
+  /**
+   * Inserción masiva en batches de 500 (límite de Firestore writeBatch).
+   * Reporta progreso vía callback opcional con índice procesado.
+   */
+  bulkAddProducts: async (
+    products: Array<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>,
+    ownerId: string,
+    onProgress?: (processed: number, total: number) => void
+  ): Promise<{ inserted: number }> => {
+    const now = Date.now();
+    const total = products.length;
+    let inserted = 0;
+    const CHUNK = 500;
+    try {
+      for (let i = 0; i < total; i += CHUNK) {
+        const batch = writeBatch(db);
+        const slice = products.slice(i, i + CHUNK);
+        slice.forEach(p => {
+          const ref = doc(collection(db, PRODUCTS_COLLECTION));
+          batch.set(ref, { ...p, ownerId, createdAt: now, updatedAt: now });
+        });
+        await batch.commit();
+        inserted += slice.length;
+        onProgress?.(inserted, total);
+      }
+      return { inserted };
+    } catch (error) {
+      console.error('Error in bulkAddProducts:', error);
       throw toServiceError(error);
     }
   },

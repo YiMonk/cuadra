@@ -33,7 +33,26 @@
       "PowerShell(python -c \"import graphify; print\\('graphify OK'\\)\")",
       "Bash(Get-ChildItem -Path . -Recurse -Directory)",
       "Bash(Select-Object -First 20)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "PowerShell(Get-Item *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Jesus\\\\Documents\\\\cuadra\" -Force -File | Where-Object { $_.Name -match \"env\" } | Select-Object Name, Length)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 20)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 10)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 15)",
+      "PowerShell(New-Item *)",
+      "PowerShell(Move-Item *)",
+      "PowerShell(head *)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(timeout 2)",
+      "Bash(Get-Process node *)",
+      "Bash(Stop-Process -Force -ErrorAction SilentlyContinue)",
+      "Bash(Start-Sleep -Seconds 2)",
+      "Bash(\"C:/Users/Jesus/AppData/Local/Programs/Python/Python313/python.exe\" .graphify_step_incr.py)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npx next *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(grep -E \"page\\\\.tsx$\")",
+      "Bash(git config *)"
     ]
   }
 }

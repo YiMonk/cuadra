@@ -26,7 +26,15 @@ export class CashSessionService {
     cashboxName?: string
   ): Promise<string> {
     try {
-      // Get current pending debts
+      const existing = await this.getOpenSessionForCashbox(ownerId, cashboxId ?? null);
+      if (existing) {
+        throw new Error(
+          cashboxId
+            ? `Ya hay una sesión abierta para esta caja por ${existing.cashierName}`
+            : 'Ya hay una sesión abierta sin caja asignada'
+        );
+      }
+
       const allSales = await SalesService.getAllSales(ownerId);
       const pendingSales = allSales.filter(s => s.status === 'pending');
       const debtPending = pendingSales.reduce((sum, s) => sum + s.total, 0);
@@ -66,11 +74,13 @@ export class CashSessionService {
       if (!sessionSnap.exists()) throw new Error('Session not found');
       const sessionData = sessionSnap.data() as CashSession;
 
-      // Get all sales since session opened
       const allSales = await SalesService.getAllSales(sessionData.ownerId);
-      const sessionSales = allSales.filter(s => s.createdAt >= sessionData.openedAt);
+      const sessionCashboxId = sessionData.cashboxId ?? null;
+      const sessionSales = allSales.filter(s => {
+        if (s.createdAt < sessionData.openedAt) return false;
+        return (s.cashboxId ?? null) === sessionCashboxId;
+      });
 
-      // Calculate totals
       let totalSales = 0;
       const totalByMethod = { cash: 0, transfer: 0, mobile_pay: 0, credit: 0 };
       let debtCollected = 0;
@@ -128,6 +138,30 @@ export class CashSessionService {
       console.error('Error getting open session:', error);
       return null;
     }
+  }
+
+  static async getOpenSessions(ownerId: string): Promise<(CashSession & { id: string })[]> {
+    try {
+      const q = query(
+        collection(db, this.COLLECTION),
+        where('ownerId', '==', ownerId),
+        where('status', '==', 'open'),
+        orderBy('openedAt', 'desc')
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ ...d.data(), id: d.id })) as (CashSession & { id: string })[];
+    } catch (error) {
+      console.error('Error getting open sessions:', error);
+      return [];
+    }
+  }
+
+  static async getOpenSessionForCashbox(
+    ownerId: string,
+    cashboxId: string | null
+  ): Promise<(CashSession & { id: string }) | null> {
+    const open = await this.getOpenSessions(ownerId);
+    return open.find(s => (s.cashboxId ?? null) === (cashboxId ?? null)) || null;
   }
 
   static async getSessionReport(sessionId: string): Promise<(SessionReport & { id: string }) | null> {
@@ -194,10 +228,12 @@ export class CashSessionService {
 
       const session = sessionSnap.data() as CashSession;
       const allSales = await SalesService.getAllSales(ownerId);
+      const sessionCashboxId = session.cashboxId ?? null;
 
-      // Get all sales since session opened
       const sessionSales = allSales.filter(
-        s => s.createdAt >= session.openedAt && s.status !== 'cancelled'
+        s => s.createdAt >= session.openedAt
+          && s.status !== 'cancelled'
+          && (s.cashboxId ?? null) === sessionCashboxId
       );
 
       let totalSales = 0;

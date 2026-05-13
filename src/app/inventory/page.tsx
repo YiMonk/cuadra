@@ -8,13 +8,15 @@ import { CategoryService } from '@/services/category.service';
 import { LocationService } from '@/services/location.service';
 import { Product } from '@/types/inventory';
 import { Category } from '@/types/category';
-import { Search, Plus, PackageOpen, AlertCircle, XCircle, Edit, Trash2, PackagePlus, ArrowRightLeft, LayoutGrid, X } from 'lucide-react';
+import { Search, Plus, PackageOpen, AlertCircle, XCircle, Edit, Trash2, PackagePlus, ArrowRightLeft, LayoutGrid, X, ScanLine } from 'lucide-react';
+import { BarcodeScannerModal } from '@/components/common/BarcodeScannerModal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions } from '@/hooks/usePermission';
 import { Select } from '@/components/ui/Select';
 import { CategoryModal } from '@/components/inventory/CategoryModal';
 import { useCurrency } from '@/context/CurrencyContext';
@@ -23,6 +25,7 @@ export default function InventoryScreen() {
     const router = useRouter();
     const { user, isLoading: authLoading } = useAuth();
     const { ownerId } = useOwnerContext();
+    const { manageInventory: canManageInventory, viewCosts: canViewCosts } = usePermissions(['manageInventory', 'viewCosts']);
     const { products, isLoading: loading } = useInventory(ownerId);
 
     useEffect(() => {
@@ -53,6 +56,9 @@ export default function InventoryScreen() {
     const { formatPrice, toUSD, currency: globalCurrency, fromUSD } = useCurrency();
     const [name, setName] = useState('');
     const [price, setPrice] = useState('');
+    const [costPrice, setCostPrice] = useState('');
+    const [barcode, setBarcode] = useState('');
+    const [scannerOpen, setScannerOpen] = useState(false);
     const [priceCurrency, setPriceCurrency] = useState<'USD' | 'VES'>('USD');
     const [stock, setStock] = useState('');
     const [minStock, setMinStock] = useState('5');
@@ -119,6 +125,8 @@ export default function InventoryScreen() {
         setEditingProduct(null);
         setName('');
         setPrice('');
+        setCostPrice('');
+        setBarcode('');
         setStock('');
         setMinStock('5');
         setSelectedCategory('');
@@ -130,6 +138,8 @@ export default function InventoryScreen() {
         setEditingProduct(product);
         setName(product.name);
         setPrice(product.price.toString());
+        setCostPrice(product.costPrice != null ? product.costPrice.toString() : '');
+        setBarcode(product.barcode || '');
         setPriceCurrency('USD');
         setStock(product.stock.toString());
         setMinStock((product.minStockAlert || 5).toString());
@@ -177,15 +187,21 @@ export default function InventoryScreen() {
         try {
             const priceNum = parseFloat(price);
             const priceInUSD = priceCurrency === 'VES' ? toUSD(priceNum, 'VES') : priceNum;
+            const costRaw = costPrice.trim() === '' ? null : parseFloat(costPrice);
+            const costInUSD = costRaw == null || Number.isNaN(costRaw)
+                ? null
+                : priceCurrency === 'VES' ? toUSD(costRaw, 'VES') : costRaw;
 
             if (editingProduct) {
-                const updatePayload: any = {
+                const updatePayload: Partial<Product> = {
                     name,
                     price: priceInUSD,
                     minStockAlert: parseInt(minStock) || 5,
                     category: selectedCategory || 'General',
-                    location: selectedLocation
+                    location: selectedLocation,
+                    barcode: barcode.trim() || undefined,
                 };
+                if (costInUSD != null) updatePayload.costPrice = costInUSD;
                 if (stock.trim() !== '') {
                     updatePayload.stock = stockVal;
                 }
@@ -194,11 +210,13 @@ export default function InventoryScreen() {
                 await ProductService.addProduct({
                     name,
                     price: priceInUSD,
+                    ...(costInUSD != null ? { costPrice: costInUSD } : {}),
                     stock: stockVal,
                     minStockAlert: parseInt(minStock) || 5,
                     category: selectedCategory || 'General',
                     description: '',
-                    location: selectedLocation
+                    location: selectedLocation,
+                    ...(barcode.trim() ? { barcode: barcode.trim() } : {}),
                 }, ownerId);
             }
             setProductModalVisible(false);
@@ -258,18 +276,27 @@ export default function InventoryScreen() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3 w-full md:w-auto">
-                    {user?.role !== 'staff' && (
+                    {canManageInventory && (
                         <>
-                            <button 
-                                onClick={() => setCategoryModalVisible(true)} 
+                            <button
+                                onClick={() => setCategoryModalVisible(true)}
                                 className="flex-1 md:flex-none ui-card hover:ui-card-hover border border-white/20 active:scale-95 transition-all duration-400 px-4 md:px-6 h-12 md:h-16 flex items-center justify-center gap-2 min-w-0 md:min-w-[140px] group shadow-premium"
                             >
                                 <LayoutGrid size={18} className="text-ui-text-muted group-hover:text-accent-primary transition-colors" />
                                 <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-ui-text-muted group-hover:text-ui-text truncate">Categorías</span>
                             </button>
-                            
-                            <button 
-                                onClick={openCreateModal} 
+
+                            <button
+                                onClick={() => router.push('/inventory/import')}
+                                className="flex-1 md:flex-none ui-card hover:ui-card-hover border border-white/20 active:scale-95 transition-all duration-400 px-4 md:px-6 h-12 md:h-16 flex items-center justify-center gap-2 min-w-0 md:min-w-[140px] group shadow-premium"
+                                title="Importar productos desde CSV"
+                            >
+                                <PackagePlus size={18} className="text-ui-text-muted group-hover:text-accent-primary transition-colors" />
+                                <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-ui-text-muted group-hover:text-ui-text truncate">Importar</span>
+                            </button>
+
+                            <button
+                                onClick={openCreateModal}
                                 className="flex-1 md:flex-none bg-accent-primary text-white hover:scale-[1.03] active:scale-95 transition-all duration-400 rounded-xl md:rounded-2xl px-5 md:px-8 h-12 md:h-16 flex items-center justify-center gap-2 min-w-0 md:min-w-[180px] shadow-premium"
                             >
                                 <Plus size={20} strokeWidth={3} />
@@ -353,11 +380,25 @@ export default function InventoryScreen() {
                                     
                                     <h3 className="text-xl md:text-2xl font-black text-ui-text tracking-tight mb-2 leading-none">{item.name}</h3>
                                     
-                                    <div className="flex items-baseline gap-2 mb-6">
+                                    <div className="flex items-baseline gap-2 mb-2">
                                         <span className="text-3xl font-black text-ui-text tracking-tighter">
                                             {formatPrice(item.price)}
                                         </span>
                                     </div>
+                                    {canViewCosts && item.costPrice != null && item.costPrice > 0 && (
+                                        <div className="mb-6 text-[10px] font-black uppercase tracking-widest">
+                                            <span className="text-ui-text-muted">Margen: </span>
+                                            <span className={item.price - item.costPrice >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                                                {formatPrice(item.price - item.costPrice)}
+                                            </span>
+                                            <span className="text-ui-text-muted/70">
+                                                {' '}({(((item.price - item.costPrice) / item.price) * 100).toFixed(1)}%)
+                                            </span>
+                                        </div>
+                                    )}
+                                    {!(canViewCosts && item.costPrice != null && item.costPrice > 0) && (
+                                        <div className="mb-6" />
+                                    )}
 
                                     <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest
                                         ${isOutOfStock ? 'bg-red-500 text-white shadow-[0_4px_12px_rgba(239,68,68,0.3)]'
@@ -371,7 +412,7 @@ export default function InventoryScreen() {
                                 </div>
 
                                 <div className="flex justify-between items-center mt-8 pt-6 border-t border-ui-border">
-                                    {user?.role !== 'staff' ? (
+                                    {canManageInventory ? (
                                         <>
                                             <button
                                                 onClick={() => openStockModal(item)}
@@ -478,6 +519,30 @@ export default function InventoryScreen() {
                                     </div>
                                 </div>
 
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input
+                                        label={`Costo Unitario (${priceCurrency}) — opcional`}
+                                        value={costPrice}
+                                        onChange={(e) => setCostPrice(e.target.value)}
+                                        placeholder="0.00"
+                                        type="number"
+                                        step="0.01"
+                                    />
+                                    <div className="flex flex-col justify-end">
+                                        {price && costPrice && parseFloat(price) > 0 && (
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-ui-text-muted">
+                                                Margen:{' '}
+                                                <span className={parseFloat(price) - parseFloat(costPrice) >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                                                    {(parseFloat(price) - parseFloat(costPrice)).toFixed(2)} {priceCurrency}
+                                                </span>{' '}
+                                                <span className="text-ui-text-muted/70">
+                                                    ({(((parseFloat(price) - parseFloat(costPrice)) / parseFloat(price)) * 100).toFixed(1)}%)
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
                                     <p className="text-[11px] font-black uppercase tracking-widest text-ui-text-muted">Ubicación / Sede</p>
                                     <Select
@@ -486,6 +551,23 @@ export default function InventoryScreen() {
                                         onChange={(val) => setSelectedLocation(val)}
                                     />
                                 </div>
+
+                                <Input
+                                    label="Código de Barras (opcional)"
+                                    value={barcode}
+                                    onChange={(e) => setBarcode(e.target.value)}
+                                    placeholder="Escanea o escribe..."
+                                    rightIcon={
+                                        <button
+                                            type="button"
+                                            onClick={() => setScannerOpen(true)}
+                                            className="px-2 py-1 bg-accent-primary/10 text-accent-primary rounded hover:bg-accent-primary/20"
+                                            aria-label="Escanear código"
+                                        >
+                                            <ScanLine size={16} />
+                                        </button>
+                                    }
+                                />
 
                                 <div className="grid grid-cols-2 gap-4 pt-2">
                                     <Input
@@ -607,6 +689,16 @@ export default function InventoryScreen() {
             {categoryModalVisible && (
                 <CategoryModal onClose={() => setCategoryModalVisible(false)} />
             )}
+
+            {/* Barcode Scanner */}
+            <BarcodeScannerModal
+                open={scannerOpen}
+                onClose={() => setScannerOpen(false)}
+                onDetect={(code) => {
+                    setBarcode(code);
+                    toast.success(`Código detectado: ${code}`);
+                }}
+            />
         </div>
     );
 }

@@ -4,8 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/config/firebaseConfig';
+import { AuthService } from '@/services/auth.service';
 import { UserService } from '@/services/user.service';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -44,19 +43,19 @@ export default function LoginPage() {
 
         setLoading(true);
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+            const userCredential = await AuthService.signIn(email, password);
             const userMeta = await UserService.getUserById(userCredential.user.uid);
 
             if (userMeta) {
                 if (!userMeta.active) {
-                    await auth.signOut();
+                    await AuthService.signOut();
                     setErrorMsg('La cuenta se encuentra inactiva, por favor comuníquese con el staff.');
                     setLoading(false);
                     return;
                 }
 
                 if (userMeta.role === 'owner' && userMeta.subscriptionEndsAt && userMeta.subscriptionEndsAt < Date.now()) {
-                    await auth.signOut();
+                    await AuthService.signOut();
                     setErrorMsg('Tu suscripción ha vencido. Por favor comunícate con el staff de soporte.');
                     setLoading(false);
                     return;
@@ -65,7 +64,7 @@ export default function LoginPage() {
                 if (userMeta.role === 'staff' && userMeta.ownerId) {
                     const owner = await UserService.getUserById(userMeta.ownerId);
                     if (owner && (!owner.active || (owner.subscriptionEndsAt && owner.subscriptionEndsAt < Date.now()))) {
-                        await auth.signOut();
+                        await AuthService.signOut();
                         setErrorMsg('La cuenta principal de tu negocio está inactiva o vencida. Contacta a tu administrador.');
                         setLoading(false);
                         return;
@@ -98,7 +97,7 @@ export default function LoginPage() {
 
         setLoading(true);
         try {
-            await sendPasswordResetEmail(auth, email.trim());
+            await AuthService.sendPasswordReset(email);
             setSuccessMsg(`¡Hecho! Hemos enviado un enlace de recuperación a ${email}. No olvides revisar la bandeja de SPAM si no lo visualizas en la principal.`);
             setLoading(false);
         } catch (error: any) {

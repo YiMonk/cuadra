@@ -1,4 +1,5 @@
 import { Product } from './inventory';
+import { AppliedPromotion } from './promotion';
 
 export interface CartItem extends Product {
   quantity: number;
@@ -32,12 +33,19 @@ export interface Sale {
   notes?: string;
   cashboxId?: string | null;
   cashboxName?: string | null;
+  locationId?: string | null;
+  locationName?: string | null;
   exchangeRateAtSale?: number;
   originalTotal?: number;
   discountAmount?: number;
   discountReason?: string;
   hasReturns?: boolean;
   closedInClosingId?: string | null;
+  commissionPct?: number;
+  commissionAmount?: number;
+  appliedPromotions?: AppliedPromotion[];
+  promotionSavings?: number;
+  couponCode?: string;
 }
 
 export interface ReturnItem {

@@ -29,6 +29,7 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
 
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
+    const [tagsRaw, setTagsRaw] = useState('');
 
     const [payModalVisible, setPayModalVisible] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mobile_pay'>('cash');
@@ -57,6 +58,7 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
                 setClient(clientData);
                 setName(clientData.name);
                 setPhone(clientData.phone);
+                setTagsRaw((clientData.tags || []).join(', '));
 
                 const clientSales = await SalesService.getSalesByClient(clientId);
                 setSales(clientSales);
@@ -73,10 +75,15 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
             alert('Nombre y teléfono son obligatorios');
             return;
         }
+        const tags = tagsRaw
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
+            .map(t => t.length > 30 ? t.slice(0, 30) : t);
         try {
-            await ClientService.updateClient(clientId, { name, phone });
+            await ClientService.updateClient(clientId, { name, phone, tags });
             setIsEditing(false);
-            setClient((prev: any) => prev ? { ...prev, name, phone } : null);
+            setClient((prev: any) => prev ? { ...prev, name, phone, tags } : null);
         } catch (error) {
             alert('No se pudo actualizar el perfil');
         }
@@ -249,6 +256,7 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
                                     <div className="space-y-3 mb-2 w-full min-w-[200px]">
                                         <Input value={name} onChange={(e) => setName(e.target.value)} className="font-bold text-lg" autoFocus placeholder="Nombre" />
                                         <Input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="Teléfono" />
+                                        <Input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} placeholder="Tags (separados por coma)" />
                                     </div>
                                 ) : (
                                     <>
@@ -257,6 +265,15 @@ export default function ClientProfileScreen({ params }: { params: Promise<{ clie
                                             <Phone size={14} className="mr-2 text-blue-500" />
                                             {client.phone}
                                         </p>
+                                        {client.tags && client.tags.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 mt-3 justify-center sm:justify-start">
+                                                {client.tags.map((t: string) => (
+                                                    <span key={t} className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                                        {t}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>

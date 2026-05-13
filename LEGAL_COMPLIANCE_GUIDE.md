@@ -2,9 +2,11 @@
 
 ## Resumen ejecutivo
 
-Cuadra ha sido reposicionado como una **herramienta de gestión empresarial** (Modelo SaaS con Disclaimers) en lugar de un "Sistema de Punto de Venta" fiscal. Esto permite comercializarlo sin necesidad de registro inmediato ante el SENIAT, mientras se mantiene transparencia total sobre limitaciones legales.
+Cuadra es un **SaaS de gestión comercial interna** orientado a emprendedores latinoamericanos. Está posicionado explícitamente como **herramienta administrativa NO fiscal**, lo que permite comercializarlo sin necesidad de homologación SENIAT, mientras se mantiene total transparencia sobre sus limitaciones legales.
 
-**Estado:** ✅ Implementado completamente
+**Estado:** ✅ Posicionamiento legal implementado (Fase 0 completada)
+
+> Ver también: [AUDITORIA_Y_ROADMAP.md](./AUDITORIA_Y_ROADMAP.md) sección 2 (Reposicionamiento Legal URGENTE) para el detalle de las decisiones tomadas y prohibiciones explícitas.
 
 ---
 
@@ -90,12 +92,30 @@ Cuadra ha sido reposicionado como una **herramienta de gestión empresarial** (M
 
 ### Ahora (Legalmente seguro)
 ```
-"Cuadra - Herramienta de gestión empresarial e inventario"
-+ Disclaimer claro
-+ Términos de servicio con limitación de responsabilidad
-+ USUARIO es responsable de obligaciones fiscales
-→ Puede commercializarse sin registro SENIAT inmediato
+"Cuadra - SaaS de gestión comercial para emprendedores latinoamericanos"
++ Disclaimer claro y reforzado (DOCUMENTO INTERNO SIN VALOR FISCAL)
++ Términos de servicio con prohibiciones explícitas de uso fiscal
++ USUARIO único responsable de obligaciones fiscales
++ Cuadra se reserva derecho a suspender cuentas con uso fiscal indebido
+→ Puede comercializarse sin registro SENIAT
 ```
+
+### Funcionalidades prohibidas (NO se agregarán nunca)
+
+Para mantener la posición de "no fiscal", **Cuadra nunca implementará**:
+
+- ❌ Emisión de facturas con formato fiscal venezolano (número de control, retenciones)
+- ❌ Conexión a impresoras fiscales homologadas (Bematech, Epson TM, etc.)
+- ❌ Cálculo automático de IVA/ISLR como retención obligatoria
+- ❌ Reportes formato Libros de Ventas/Compras del SENIAT
+- ❌ Firma digital fiscal o certificados SENIAT
+- ❌ Numeración correlativa obligatoria de comprobantes
+
+**SÍ permitido (sin riesgo):**
+- ✅ Comprobantes internos PDF/imagen con leyenda "DOCUMENTO INTERNO SIN VALOR FISCAL"
+- ✅ Cálculo de impuestos como referencia gerencial opcional
+- ✅ Reportes formato libre Excel/PDF (sin formato fiscal)
+- ✅ Numeración interna no correlativa estricta
 
 ---
 

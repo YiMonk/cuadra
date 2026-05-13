@@ -4,17 +4,29 @@
 
 Al acceder y usar Cuadra, aceptas estar vinculado por estos Términos de Servicio. Si no estás de acuerdo, no uses la aplicación.
 
+**Cuadra es un SaaS de gestión administrativa interna**, no un sistema fiscal homologado. Ver [DISCLAIMER.md](./DISCLAIMER.md) para detalles sobre limitaciones legales.
+
 ---
 
 ## 2. Licencia de uso
 
-Cuadra te otorga una licencia **revocable, no exclusiva, no transferible** para usar la aplicación con fines empresariales legales.
+Cuadra te otorga una licencia **revocable, no exclusiva, no transferible** para usar la aplicación con fines de **gestión administrativa interna legal**.
 
-**Se prohíbe:**
+**Se prohíbe expresamente:**
 - Reproducir, distribuir o modificar Cuadra sin autorización
 - Intentar acceder a sistemas o datos no autorizados
 - Usar la app para actividades ilegales
 - Compartir credenciales o acceso con personas no autorizadas
+- **Usar Cuadra como sustituto de un sistema fiscal homologado**
+- **Presentar reportes o comprobantes de Cuadra a autoridades tributarias como documentos oficiales**
+- **Engañar a terceros (clientes, proveedores) sobre la naturaleza fiscal de los documentos emitidos por Cuadra**
+
+### Naturaleza no fiscal del servicio
+Reconoces y aceptas que:
+- Cuadra es un servicio de **gestión gerencial interna**
+- Los documentos generados (comprobantes, recibos internos, reportes) **NO tienen valor fiscal ni probatorio tributario**
+- Debes contar con tu propio sistema de facturación fiscal homologado, separado e independiente de Cuadra
+- Es tu responsabilidad llevar la contabilidad formal de tu negocio conforme a la normativa aplicable
 
 ---
 
@@ -66,11 +78,13 @@ No somos responsables por:
 
 ## 6. Suspensión de cuenta
 
-Podemos suspender tu cuenta si:
+Podemos **suspender o terminar tu cuenta sin previo aviso ni reembolso** si:
 - Violas estos términos
 - Realizas actividades ilegales
 - No pagas suscripciones adeudadas
 - Detectamos uso fraudulento o abusivo
+- **Detectamos uso de Cuadra como sistema fiscal o intento de hacer pasar sus documentos como fiscalmente válidos**
+- **Detectamos que estás engañando a clientes/proveedores sobre la validez fiscal de los documentos generados**
 
 ---
 

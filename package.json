@@ -1,7 +1,8 @@
 {
-  "name": "pwa",
+  "name": "cuadra",
   "version": "0.1.0",
   "private": true,
+  "description": "SaaS de gestión comercial para emprendedores latinoamericanos. Herramienta interna no fiscal.",
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
