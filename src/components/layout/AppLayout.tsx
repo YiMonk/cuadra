@@ -80,6 +80,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const [sidebarExpanded, setSidebarExpanded] = useState(false);
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+    const [mobileSelectedMenu, setMobileSelectedMenu] = useState<string | null>(null);
 
     const toggleSubmenu = (name: string) => {
         if (!sidebarExpanded) {
@@ -626,7 +627,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             item.children ? (
                                 <button
                                     key={item.name}
-                                    onClick={() => setMobileMoreOpen(true)}
+                                    onClick={() => {
+                                        setMobileSelectedMenu(item.name);
+                                        setMobileMoreOpen(true);
+                                    }}
                                     aria-label={item.name}
                                     className="flex-1 h-full"
                                 >
@@ -656,20 +660,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <>
                     <div
                         className="md:hidden fixed inset-0 z-[95] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
-                        onClick={() => setMobileMoreOpen(false)}
+                        onClick={() => {
+                            setMobileMoreOpen(false);
+                            setMobileSelectedMenu(null);
+                        }}
                     />
                     <div className="md:hidden fixed z-[96] left-3 right-3 bottom-3 bg-ui-surface border border-ui-border rounded-[2rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-ui-border/50">
-                            <h2 className="text-sm font-black uppercase tracking-wider text-foreground">Más opciones</h2>
+                            <h2 className="text-sm font-black uppercase tracking-wider text-foreground">
+                                {mobileSelectedMenu || 'Menú'}
+                            </h2>
                             <button
-                                onClick={() => setMobileMoreOpen(false)}
+                                onClick={() => {
+                                    setMobileMoreOpen(false);
+                                    setMobileSelectedMenu(null);
+                                }}
                                 className="p-1.5 hover:bg-ui-bg rounded-lg transition-colors"
                             >
                                 <ChevronLeft size={18} className="text-foreground/60 rotate-90" />
                             </button>
                         </div>
                         <div className="p-3 max-h-[70vh] overflow-y-auto">
-                            {navItems.find(i => i.children)?.children?.map((sub) => {
+                            {navItems.find(i => i.name === mobileSelectedMenu)?.children?.map((sub) => {
                                 const SubIcon = sub.icon;
                                 const isSubActive = pathname === sub.href || pathname.startsWith(sub.href + '/');
                                 return (
@@ -678,6 +690,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                         onClick={() => {
                                             router.push(sub.href);
                                             setMobileMoreOpen(false);
+                                            setMobileSelectedMenu(null);
                                         }}
                                         className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${isSubActive ? 'bg-foreground text-background' : 'text-foreground hover:bg-ui-bg'}`}
                                     >
@@ -695,6 +708,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     onClick={() => {
                                         toggleTheme();
                                         setMobileMoreOpen(false);
+                                        setMobileSelectedMenu(null);
                                     }}
                                     className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all text-foreground hover:bg-ui-bg"
                                 >
@@ -707,6 +721,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <button
                                     onClick={() => {
                                         setMobileMoreOpen(false);
+                                        setMobileSelectedMenu(null);
                                         handleLogout();
                                     }}
                                     className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all text-red-500 hover:bg-red-500/10"
