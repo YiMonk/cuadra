@@ -180,5 +180,59 @@ service cloud.firestore {
       allow read: if docId == 'version' || isAdminGod();
       allow write: if isAdminGod();
     }
+
+    match /expenses/{expenseId} {
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null));
+      allow delete: if isAdminGod()
+        || (isOwner() && request.auth.uid == resource.data.get('ownerId', null));
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null));
+      allow delete: if isAdminGod()
+        || (isOwner() && request.auth.uid == resource.data.get('ownerId', null));
+    }
+
+    match /promotions/{promotionId} {
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null));
+      allow delete: if isAdminGod()
+        || (isOwner() && request.auth.uid == resource.data.get('ownerId', null));
+    }
+
+    match /priceLists/{priceListId} {
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null));
+      allow delete: if isAdminGod()
+        || (isOwner() && request.auth.uid == resource.data.get('ownerId', null));
+    }
+
+    match /coupons/{couponId} {
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null));
+      allow delete: if isAdminGod()
+        || (isOwner() && request.auth.uid == resource.data.get('ownerId', null));
+    }
+
+    match /stockTransfers/{transferId} {
+      allow read: if ownerIdMatches(resource.data.get('ownerId', null)) || isAdminGod();
+      allow create: if isAuthenticated()
+        && ownerIdMatches(request.resource.data.get('ownerId', null));
+      allow update: if ownerIdMatches(resource.data.get('ownerId', null));
+      allow delete: if isAdminGod()
+        || (isOwner() && request.auth.uid == resource.data.get('ownerId', null));
+    }
   }
 }
