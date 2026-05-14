@@ -9,7 +9,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Introducción a Cuadra',
     description: 'Conoce qué es Cuadra y cómo puede ayudarte a gestionar tu negocio de forma más eficiente',
     tags: ['introducción', 'bienvenida', 'conceptos básicos'],
-    href: '/wiki/primeros-pasos/introduccion',
+    href: '/wiki/primeros-pasos/intro',
   },
   {
     id: 'primeros-pasos-login',
@@ -18,7 +18,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Iniciar Sesión y Configuración',
     description: 'Pasos para registrarte y configurar tu cuenta por primera vez',
     tags: ['login', 'registro', 'autenticación', 'cuenta'],
-    href: '/wiki/primeros-pasos/login-configuracion',
+    href: '/wiki/primeros-pasos/login',
   },
   {
     id: 'primeros-pasos-nav',
@@ -27,7 +27,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Navegar por la Aplicación',
     description: 'Aprende a navegar por los menús y acceder a todas las funciones de Cuadra',
     tags: ['navegación', 'interfaz', 'menús', 'mobile', 'desktop'],
-    href: '/wiki/primeros-pasos/navegacion',
+    href: '/wiki/primeros-pasos/nav',
   },
 
   // POS (4)
@@ -85,7 +85,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Control de Stock',
     description: 'Monitorea niveles de stock y recibe alertas de producto bajo',
     tags: ['stock', 'inventario', 'cantidad', 'alerta', 'nivel mínimo'],
-    href: '/wiki/inventario/control-stock',
+    href: '/wiki/inventario/stock',
   },
   {
     id: 'inventario-transferencias',
@@ -114,7 +114,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Agregar Clientes',
     description: 'Crea registros de clientes con su información de contacto y datos relevantes',
     tags: ['cliente', 'crear', 'contacto', 'información'],
-    href: '/wiki/clientes/crear-cliente',
+    href: '/wiki/clientes/crear',
   },
   {
     id: 'clientes-deudas',
@@ -152,7 +152,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Arqueos de Caja',
     description: 'Realiza arqueos de caja para verificar que el efectivo coincida con los registros',
     tags: ['arqueo', 'caja', 'verificación', 'efectivo', 'cuadre'],
-    href: '/wiki/caja/arqueos',
+    href: '/wiki/caja/arqueo',
   },
   {
     id: 'caja-movimientos',
@@ -210,7 +210,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Registrar Gastos',
     description: 'Cómo registrar los gastos operacionales y administrativos de tu negocio',
     tags: ['gasto', 'operacional', 'costo', 'administrativo'],
-    href: '/wiki/gastos/registrar-gastos',
+    href: '/wiki/gastos/crear',
   },
   {
     id: 'gastos-categorias',
@@ -228,7 +228,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Análisis de Gastos',
     description: 'Genera reportes detallados de tus gastos y tendencias',
     tags: ['gasto', 'reporte', 'análisis', 'tendencia', 'costo'],
-    href: '/wiki/gastos/analisis',
+    href: '/wiki/gastos/reporte',
   },
 
   // Proveedores (3)
@@ -239,7 +239,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Agregar Proveedores',
     description: 'Crea y gestiona registros de tus proveedores',
     tags: ['proveedor', 'crear', 'contacto', 'compra'],
-    href: '/wiki/proveedores/crear-proveedor',
+    href: '/wiki/proveedores/crear',
   },
   {
     id: 'proveedores-compras',
@@ -297,7 +297,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Crear Sucursales',
     description: 'Agrega y gestiona múltiples ubicaciones o sucursales de tu negocio',
     tags: ['sucursal', 'ubicación', 'local', 'crear'],
-    href: '/wiki/sucursales/crear-sucursal',
+    href: '/wiki/sucursales/crear',
   },
   {
     id: 'sucursales-admin',
@@ -306,21 +306,21 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: 'Administrar Sucursales',
     description: 'Gestiona el inventario y operaciones de cada sucursal de forma independiente',
     tags: ['sucursal', 'ubicación', 'inventario', 'operación', 'multi-sucursal'],
-    href: '/wiki/sucursales/administrar',
+    href: '/wiki/sucursales/admin',
   },
 
   // Precios & Promos (2)
   {
-    id: 'precios-listas',
+    id: 'precios-promos-listas',
     categorySlug: 'precios-promos',
     categoryTitle: 'Precios & Promos',
     title: 'Listas de Precios',
     description: 'Crea y gestiona diferentes listas de precios para tus productos',
     tags: ['precio', 'lista', 'descuento', 'producto'],
-    href: '/wiki/precios-promos/listas-precios',
+    href: '/wiki/precios-promos/listas',
   },
   {
-    id: 'precios-promociones',
+    id: 'precios-promos-promociones',
     categorySlug: 'precios-promos',
     categoryTitle: 'Precios & Promos',
     title: 'Crear Promociones',
@@ -366,7 +366,7 @@ export const wikiSearchIndex: WikiSearchItem[] = [
     title: '¿Es seguro usar Cuadra con mi información?',
     description: 'Conoce cómo Cuadra protege tus datos y la seguridad de tu negocio',
     tags: ['faq', 'seguridad', 'privacidad', 'datos', 'confianza'],
-    href: '/wiki/faq/seguridad',
+    href: '/wiki/faq/technical',
   },
   {
     id: 'faq-soporte',
