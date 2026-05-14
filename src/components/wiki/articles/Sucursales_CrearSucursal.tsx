@@ -1,63 +1,88 @@
 import React from 'react';
-import { Step, Tip, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
+import { Step, Tip, Warning, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
 
 export default function Sucursales_CrearSucursalArticle() {
   return (
     <>
       <p className="text-lg text-slate-700 dark:text-slate-300 mb-6">
-        Aprende sobre Crear Sucursal en Cuadra y cómo usarlo en tu negocio.
+        Si tu negocio tiene más de un local, Cuadra te permite crear y gestionar múltiples
+        sucursales desde una sola cuenta. Cada sucursal tiene su propio inventario, ventas
+        y equipo, pero puedes verlas todas en un solo dashboard.
       </p>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Crear Sucursal
+        Crear una Nueva Sucursal
       </h2>
 
-      <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Esta guía te enseña a usar crear sucursal de forma eficiente en Cuadra.
-      </p>
-
-      <h3 className="text-xl font-semibold text-slate-900 dark:text-white my-4">
-        ¿Qué es?
-      </h3>
-
-      <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Crear Sucursal es una característica importante que te permite gestionar mejor tu negocio.
-      </p>
-
-      <List
-        items={[
-          'Ventaja 1',
-          'Ventaja 2',
-          'Ventaja 3',
-        ]}
-      />
-
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Cómo usar
-      </h2>
-
-      <Step number={1} title="Accede al módulo">
-        Desde el menú principal, busca la sección correspondiente.
+      <Step number={1} title="Ve a Configuración → Sucursales">
+        En el menú de configuración, busca la sección <strong>"Sucursales"</strong> o{' '}
+        <strong>"Locales"</strong>.
       </Step>
 
-      <Step number={2} title="Busca la opción">
-        Encuentra la opción para crear sucursal en la pantalla.
+      <Step number={2} title="Haz clic en 'Nueva Sucursal'">
+        Busca el botón <strong>"+ Nueva Sucursal"</strong> o <strong>"Agregar Local"</strong>.
       </Step>
 
-      <Step number={3} title="Completa y guarda">
-        Llena la información necesaria y guarda tus cambios.
+      <Step number={3} title="Completa los datos de la sucursal">
+        Ingresa:
+        <List
+          items={[
+            'Nombre de la sucursal (ej: "Local Centro", "Sucursal Norte")',
+            'Dirección completa',
+            'Teléfono de la sucursal',
+            'Horario de atención (opcional)',
+          ]}
+        />
+      </Step>
+
+      <Step number={4} title="Configura el inventario inicial">
+        Decide si esta sucursal comparte inventario con la principal o tiene su propio stock
+        independiente.
+      </Step>
+
+      <Step number={5} title="Guarda la sucursal">
+        Haz clic en <strong>"Crear Sucursal"</strong>. La nueva sucursal aparecerá en el
+        selector de sucursales en toda la app.
       </Step>
 
       <Tip>
-        <strong>Consejo:</strong> Cuadra guarda automáticamente tus cambios, así que no necesitas hacer clic en un botón adicional.
+        <strong>Stock independiente por sucursal:</strong> Cuadra maneja el stock por sucursal
+        de forma separada. Una transferencia entre sucursales mueve físicamente unidades de
+        una a otra, lo que se refleja en el inventario de cada una.
       </Tip>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Detalles importantes
+        Configurar el Equipo por Sucursal
       </h2>
 
+      <p className="text-slate-700 dark:text-slate-300 mb-4">
+        Después de crear la sucursal, asigna los usuarios que trabajarán en ella:
+      </p>
+
+      <Step number={1} title="Ve a Equipo → [nombre del usuario]">
+        Abre el perfil del usuario que quieres asignar.
+      </Step>
+
+      <Step number={2} title="Asigna la sucursal">
+        En la configuración del usuario, selecciona la sucursal o sucursales a las que
+        tiene acceso.
+      </Step>
+
+      <Step number={3} title="Guarda">
+        El usuario solo verá datos de las sucursales asignadas al iniciar sesión.
+      </Step>
+
+      <Warning>
+        <strong>Datos separados:</strong> Las ventas, reportes y sesiones de caja de cada
+        sucursal son independientes. Un reporte de ventas puede verse por sucursal individual
+        o consolidado (todas las sucursales).
+      </Warning>
+
       <InfoBox>
-        <strong>Recuerda:</strong> Todos los cambios en Cuadra se sincronizan en tiempo real, así que verás las actualizaciones inmediatamente.
+        <strong>Dashboard multi-sucursal:</strong> Los propietarios y administradores
+        pueden ver el dashboard comparativo de todas las sucursales en{' '}
+        <strong>Reportes → Comparativo Sucursales</strong>, que muestra ventas, stock
+        y métricas clave de cada local lado a lado.
       </InfoBox>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
@@ -65,17 +90,19 @@ export default function Sucursales_CrearSucursalArticle() {
       </h2>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Puedo deshacer cambios?
+        ¿Puedo tener precios diferentes por sucursal?
       </h3>
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Sí, dependiendo del tipo de cambio. Contacta a soporte si necesitas ayuda.
+        Sí. Puedes crear listas de precios específicas y asignarlas a una sucursal,
+        de modo que los mismos productos tengan precios distintos según el local.
       </p>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Hay limitaciones?
+        ¿El inventario de cada sucursal es independiente?
       </h3>
       <p className="text-slate-700 dark:text-slate-300">
-        No hay limitaciones prácticas para usar crear sucursal en Cuadra.
+        Sí. Cada sucursal tiene su propio conteo de stock. Para mover mercadería entre
+        sucursales debes usar el módulo de Transferencias en Inventario.
       </p>
     </>
   );

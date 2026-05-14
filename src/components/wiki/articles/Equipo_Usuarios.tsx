@@ -1,63 +1,98 @@
 import React from 'react';
-import { Step, Tip, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
+import { Step, Tip, Warning, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
 
 export default function Equipo_UsuariosArticle() {
   return (
     <>
       <p className="text-lg text-slate-700 dark:text-slate-300 mb-6">
-        Aprende sobre Usuarios en Cuadra y cómo usarlo en tu negocio.
+        El módulo de Equipo te permite agregar a las personas que trabajan en tu negocio
+        como usuarios de Cuadra: cajeros, vendedores, administradores. Cada usuario tiene
+        sus propias credenciales y permisos según su rol.
       </p>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Usuarios
+        Invitar a un Nuevo Usuario
+      </h2>
+
+      <Step number={1} title="Ve a Equipo">
+        En el menú lateral, haz clic en <strong>Equipo</strong> o ve a{' '}
+        <strong>Configuración → Usuarios</strong>.
+      </Step>
+
+      <Step number={2} title="Haz clic en 'Invitar Usuario'">
+        Busca el botón <strong>"+ Invitar"</strong> o <strong>"Agregar Miembro"</strong>.
+      </Step>
+
+      <Step number={3} title="Completa los datos del nuevo usuario">
+        Ingresa:
+        <List
+          items={[
+            'Nombre completo del usuario',
+            'Correo electrónico (será su usuario de acceso)',
+            'Rol que tendrá en el sistema',
+          ]}
+        />
+      </Step>
+
+      <Step number={4} title="Envía la invitación">
+        Haz clic en <strong>"Enviar Invitación"</strong>. El usuario recibirá un correo
+        con un enlace para crear su contraseña y acceder a Cuadra.
+      </Step>
+
+      <Tip>
+        <strong>Roles disponibles:</strong> Al invitar un usuario, asígnale el rol mínimo
+        necesario para su función. Un cajero no necesita ver reportes financieros ni
+        acceso a configuración del negocio.
+      </Tip>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Roles de Usuario
       </h2>
 
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Esta guía te enseña a usar usuarios de forma eficiente en Cuadra.
-      </p>
-
-      <h3 className="text-xl font-semibold text-slate-900 dark:text-white my-4">
-        ¿Qué es?
-      </h3>
-
-      <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Usuarios es una característica importante que te permite gestionar mejor tu negocio.
+        Cuadra tiene varios roles predefinidos:
       </p>
 
       <List
         items={[
-          'Ventaja 1',
-          'Ventaja 2',
-          'Ventaja 3',
+          'Propietario (Owner): acceso completo a todo, incluyendo configuración y facturación',
+          'Administrador: acceso a todo excepto configuración de plan/pago',
+          'Staff / Cajero: puede hacer ventas, ver clientes y básicos del inventario',
         ]}
       />
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Cómo usar
-      </h2>
+      <p className="text-slate-700 dark:text-slate-300 mt-4">
+        Consulta la sección de <strong>Permisos</strong> para ver exactamente qué puede
+        hacer cada rol.
+      </p>
 
-      <Step number={1} title="Accede al módulo">
-        Desde el menú principal, busca la sección correspondiente.
-      </Step>
-
-      <Step number={2} title="Busca la opción">
-        Encuentra la opción para usuarios en la pantalla.
-      </Step>
-
-      <Step number={3} title="Completa y guarda">
-        Llena la información necesaria y guarda tus cambios.
-      </Step>
-
-      <Tip>
-        <strong>Consejo:</strong> Cuadra guarda automáticamente tus cambios, así que no necesitas hacer clic en un botón adicional.
-      </Tip>
+      <Warning>
+        <strong>Solo una cuenta por persona:</strong> Cada miembro del equipo debe tener
+        su propio usuario. No compartas credenciales entre empleados, ya que no podrás
+        rastrear quién hizo qué en el historial de actividad.
+      </Warning>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Detalles importantes
+        Gestionar Usuarios Existentes
       </h2>
+
+      <p className="text-slate-700 dark:text-slate-300 mb-4">
+        Desde la lista de usuarios puedes:
+      </p>
+
+      <List
+        items={[
+          'Ver todos los miembros activos del equipo',
+          'Cambiar el rol de un usuario',
+          'Desactivar un usuario que ya no trabaja contigo (sin borrar su historial)',
+          'Reenviar la invitación si el usuario no la recibió',
+        ]}
+      />
 
       <InfoBox>
-        <strong>Recuerda:</strong> Todos los cambios en Cuadra se sincronizan en tiempo real, así que verás las actualizaciones inmediatamente.
+        <strong>Usuarios por sucursal:</strong> Si tienes múltiples sucursales, puedes
+        configurar qué sucursal(es) puede ver cada usuario. Un cajero de la sucursal
+        norte no necesita acceso a los datos de la sucursal sur.
       </InfoBox>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
@@ -65,17 +100,19 @@ export default function Equipo_UsuariosArticle() {
       </h2>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Puedo deshacer cambios?
+        ¿Cuántos usuarios puedo tener?
       </h3>
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Sí, dependiendo del tipo de cambio. Contacta a soporte si necesitas ayuda.
+        Depende del plan contratado. Revisa tu plan actual en Configuración → Suscripción
+        para ver el límite de usuarios incluidos.
       </p>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Hay limitaciones?
+        ¿Qué pasa con las ventas de un usuario desactivado?
       </h3>
       <p className="text-slate-700 dark:text-slate-300">
-        No hay limitaciones prácticas para usar usuarios en Cuadra.
+        Las ventas y actividad registrada por ese usuario se mantienen en el historial.
+        Desactivar un usuario no borra sus registros, solo le impide iniciar sesión.
       </p>
     </>
   );

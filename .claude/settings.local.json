@@ -56,7 +56,8 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in {**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}.items\\(\\)}, indent=2\\)\\)\")",
       "Bash(npm list *)",
       "Bash(curl -s http://localhost:3000/wiki)",
-      "Bash(pkill -f \"node.*next dev\")"
+      "Bash(pkill -f \"node.*next dev\")",
+      "Bash(xargs '-I{}' bash -c 'f=\"{}\"; if grep -q \"Ventaja 1\" \"$f\"; then echo \"$f\"; fi')"
     ]
   }
 }

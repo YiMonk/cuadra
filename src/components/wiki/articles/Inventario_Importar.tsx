@@ -1,63 +1,122 @@
 import React from 'react';
-import { Step, Tip, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
+import { Step, Tip, Warning, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
 
 export default function Inventario_ImportarArticle() {
   return (
     <>
       <p className="text-lg text-slate-700 dark:text-slate-300 mb-6">
-        Aprende sobre Importar Productos en Cuadra y cómo usarlo en tu negocio.
+        La importación masiva de productos te permite cargar cientos o miles de productos
+        en Cuadra de una sola vez usando un archivo CSV o Excel, en lugar de crearlos uno
+        por uno. Ideal cuando estás comenzando con Cuadra o cuando recibes listas de
+        productos de tus proveedores.
       </p>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Importar Productos
+        Preparar el Archivo de Importación
       </h2>
 
-      <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Esta guía te enseña a usar importar productos de forma eficiente en Cuadra.
-      </p>
+      <Step number={1} title="Descarga la plantilla">
+        Ve a <strong>Inventario → Importar</strong> y descarga la plantilla CSV de Cuadra.
+        Esta plantilla tiene las columnas en el formato correcto.
+      </Step>
 
-      <h3 className="text-xl font-semibold text-slate-900 dark:text-white my-4">
-        ¿Qué es?
-      </h3>
+      <Step number={2} title="Completa la plantilla">
+        Llena la plantilla con tus productos. Las columnas principales son:
+        <List
+          items={[
+            'nombre: nombre del producto (obligatorio)',
+            'precio_venta: precio al público (obligatorio)',
+            'costo: precio de compra al proveedor',
+            'stock: cantidad inicial en inventario',
+            'stock_minimo: umbral de alerta de reposición',
+            'codigo_barras: código EAN o interno',
+            'categoria: nombre de la categoría',
+          ]}
+        />
+      </Step>
 
-      <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Importar Productos es una característica importante que te permite gestionar mejor tu negocio.
-      </p>
+      <Step number={3} title="Guarda como CSV">
+        Guarda el archivo en formato CSV con codificación UTF-8 para que los caracteres
+        especiales (tildes, ñ) se muestren correctamente.
+      </Step>
+
+      <Tip>
+        <strong>Usa la plantilla original:</strong> No cambies los nombres de las columnas
+        en la plantilla. Cuadra las reconoce por nombre exacto. Si agregas columnas extra,
+        serán ignoradas.
+      </Tip>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Importar el Archivo
+      </h2>
+
+      <Step number={1} title="Ve a Inventario → Importar">
+        Busca la sección de importación en el módulo de inventario.
+      </Step>
+
+      <Step number={2} title="Sube el archivo">
+        Arrastra el archivo CSV o haz clic en <strong>"Seleccionar archivo"</strong>
+        para subirlo.
+      </Step>
+
+      <Step number={3} title="Previsualiza los datos">
+        Cuadra mostrará una vista previa de los primeros registros para que verifiques
+        que los datos se leyeron correctamente antes de importar.
+      </Step>
+
+      <Step number={4} title="Confirma la importación">
+        Si todo se ve bien, haz clic en <strong>"Importar"</strong>. El proceso puede
+        tomar unos segundos dependiendo de la cantidad de productos.
+      </Step>
+
+      <Step number={5} title="Revisa el resultado">
+        Al terminar, Cuadra mostrará cuántos productos se importaron exitosamente y
+        si hubo errores en alguna fila (con el motivo).
+      </Step>
+
+      <Warning>
+        <strong>Productos duplicados:</strong> Si importas un producto con el mismo
+        nombre o código de barras que uno ya existente, Cuadra puede duplicarlo o
+        actualizar el existente según la configuración. Verifica las opciones de
+        "Actualizar si existe" antes de confirmar la importación.
+      </Warning>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Errores Comunes en la Importación
+      </h2>
 
       <List
         items={[
-          'Ventaja 1',
-          'Ventaja 2',
-          'Ventaja 3',
+          'Formato de número incorrecto: usa punto (.) para decimales, no coma',
+          'Caracteres especiales: asegúrate de guardar como UTF-8',
+          'Columnas faltantes: el campo "nombre" y "precio_venta" son obligatorios',
+          'Categoría no existente: crea la categoría primero o déjala vacía',
+          'Stock negativo: el stock inicial no puede ser negativo',
         ]}
       />
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Cómo usar
+        Exportar el Inventario Actual
       </h2>
 
-      <Step number={1} title="Accede al módulo">
-        Desde el menú principal, busca la sección correspondiente.
-      </Step>
+      <p className="text-slate-700 dark:text-slate-300 mb-4">
+        También puedes exportar tu inventario actual a CSV desde{' '}
+        <strong>Inventario → Exportar</strong>. Útil para:
+      </p>
 
-      <Step number={2} title="Busca la opción">
-        Encuentra la opción para importar productos en la pantalla.
-      </Step>
-
-      <Step number={3} title="Completa y guarda">
-        Llena la información necesaria y guarda tus cambios.
-      </Step>
-
-      <Tip>
-        <strong>Consejo:</strong> Cuadra guarda automáticamente tus cambios, así que no necesitas hacer clic en un botón adicional.
-      </Tip>
-
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Detalles importantes
-      </h2>
+      <List
+        items={[
+          'Tener un respaldo del catálogo completo',
+          'Editar precios masivamente y reimportar',
+          'Compartir el catálogo con proveedores',
+          'Hacer análisis en Excel o Google Sheets',
+        ]}
+      />
 
       <InfoBox>
-        <strong>Recuerda:</strong> Todos los cambios en Cuadra se sincronizan en tiempo real, así que verás las actualizaciones inmediatamente.
+        <strong>Importación masiva de stock:</strong> Si ya tienes los productos creados
+        y solo quieres actualizar el stock de todos (después de un conteo físico), también
+        puedes usar la importación con solo las columnas de nombre/código y stock nuevo.
       </InfoBox>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
@@ -65,17 +124,21 @@ export default function Inventario_ImportarArticle() {
       </h2>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Puedo deshacer cambios?
+        ¿Cuántos productos puedo importar a la vez?
       </h3>
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Sí, dependiendo del tipo de cambio. Contacta a soporte si necesitas ayuda.
+        No hay un límite estricto, pero archivos con más de 5.000 filas pueden tardar
+        más en procesarse. Para catálogos muy grandes, considera dividir la importación
+        en varios archivos más pequeños.
       </p>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Hay limitaciones?
+        ¿Puedo importar solo actualizaciones de precio?
       </h3>
       <p className="text-slate-700 dark:text-slate-300">
-        No hay limitaciones prácticas para usar importar productos en Cuadra.
+        Sí. Si el archivo tiene la columna de código de barras o nombre exacto y el campo
+        de precio, puedes hacer una importación de actualización que solo modifique los
+        precios sin tocar el stock ni otros datos.
       </p>
     </>
   );

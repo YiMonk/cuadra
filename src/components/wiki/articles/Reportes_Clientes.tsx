@@ -1,63 +1,113 @@
 import React from 'react';
-import { Step, Tip, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
+import { Tip, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
 
 export default function Reportes_ClientesArticle() {
   return (
     <>
       <p className="text-lg text-slate-700 dark:text-slate-300 mb-6">
-        Aprende sobre Reporte Clientes en Cuadra y cómo usarlo en tu negocio.
+        El reporte de clientes te ayuda a entender quiénes son tus mejores compradores,
+        cuánto han gastado, con qué frecuencia visitan tu negocio y cuánto te deben.
+        Con esta información puedes fidelizar a los mejores y recuperar a los que dejaron
+        de venir.
       </p>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Reporte Clientes
+        Acceder al Reporte de Clientes
       </h2>
 
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Esta guía te enseña a usar reporte clientes de forma eficiente en Cuadra.
+        Ve a <strong>Reportes → Clientes</strong>. Encontrarás varias sub-vistas con
+        diferentes análisis del comportamiento de tus clientes.
       </p>
 
-      <h3 className="text-xl font-semibold text-slate-900 dark:text-white my-4">
-        ¿Qué es?
-      </h3>
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Ranking de Mejores Clientes
+      </h2>
 
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Reporte Clientes es una característica importante que te permite gestionar mejor tu negocio.
+        Lista de clientes ordenados por monto total gastado en el período. Para cada uno verás:
       </p>
 
       <List
         items={[
-          'Ventaja 1',
-          'Ventaja 2',
-          'Ventaja 3',
+          'Nombre del cliente',
+          'Total gastado en el período',
+          'Número de compras realizadas',
+          'Ticket promedio',
+          'Última fecha de visita',
+        ]}
+      />
+
+      <Tip>
+        <strong>Programa de fidelización:</strong> Con este ranking puedes identificar tus
+        clientes VIP y ofrecerles descuentos especiales, precios de mayorista o simplemente
+        reconocimiento. Retener a un cliente existente cuesta 5 veces menos que conseguir
+        uno nuevo.
+      </Tip>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Clientes con Deudas Pendientes
+      </h2>
+
+      <p className="text-slate-700 dark:text-slate-300 mb-4">
+        Vista específica de cuentas por cobrar, ordenada de mayor a menor deuda. Muestra:
+      </p>
+
+      <List
+        items={[
+          'Cliente y monto total adeudado',
+          'Número de compras a crédito pendientes',
+          'Fecha de la deuda más antigua',
+          'Última fecha de pago o abono',
+        ]}
+      />
+
+      <p className="text-slate-700 dark:text-slate-300 mt-4">
+        Usa este reporte para priorizar los cobros y hacer seguimiento a clientes
+        con deudas antiguas.
+      </p>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Clientes Nuevos vs Recurrentes
+      </h2>
+
+      <p className="text-slate-700 dark:text-slate-300 mb-4">
+        Este análisis muestra cuántos clientes compraron por primera vez vs cuántos ya
+        habían comprado antes. Una proporción saludable depende del tipo de negocio, pero
+        en general:
+      </p>
+
+      <List
+        items={[
+          'Alta recurrencia = clientes fieles, buen producto y servicio',
+          'Alta proporción de nuevos = buen marketing de captación',
+          'Caída en recurrencia = señal de alerta, los clientes no vuelven',
         ]}
       />
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Cómo usar
+        Clientes Inactivos
       </h2>
 
-      <Step number={1} title="Accede al módulo">
-        Desde el menú principal, busca la sección correspondiente.
-      </Step>
+      <p className="text-slate-700 dark:text-slate-300 mb-4">
+        Identifica clientes que compraban con frecuencia pero llevan más de X días sin
+        comprar. Puedes configurar el umbral (ej: clientes que no compran hace más de 30 días).
+        Útil para:
+      </p>
 
-      <Step number={2} title="Busca la opción">
-        Encuentra la opción para reporte clientes en la pantalla.
-      </Step>
-
-      <Step number={3} title="Completa y guarda">
-        Llena la información necesaria y guarda tus cambios.
-      </Step>
-
-      <Tip>
-        <strong>Consejo:</strong> Cuadra guarda automáticamente tus cambios, así que no necesitas hacer clic en un botón adicional.
-      </Tip>
-
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Detalles importantes
-      </h2>
+      <List
+        items={[
+          'Llamarlos o enviarles un mensaje recordándoles tu negocio',
+          'Ofrecerles una promoción de "regreso" para reactivarlos',
+          'Entender si hay un patrón en la pérdida de clientes',
+        ]}
+      />
 
       <InfoBox>
-        <strong>Recuerda:</strong> Todos los cambios en Cuadra se sincronizan en tiempo real, así que verás las actualizaciones inmediatamente.
+        <strong>Exportar para marketing:</strong> Desde este reporte puedes exportar la
+        lista de clientes (con nombre, teléfono, email) para campañas de WhatsApp o correo.
+        Filtra por clientes activos, inactivos o por monto gastado para segmentar mejor
+        tus comunicaciones.
       </InfoBox>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
@@ -65,17 +115,19 @@ export default function Reportes_ClientesArticle() {
       </h2>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Puedo deshacer cambios?
+        ¿Aparecen las ventas sin cliente asignado?
       </h3>
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Sí, dependiendo del tipo de cambio. Contacta a soporte si necesitas ayuda.
+        No en el reporte de clientes. Las ventas sin cliente asignado aparecen en el reporte
+        de ventas general. Por eso es importante asignar cliente cuando vendes a crédito.
       </p>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Hay limitaciones?
+        ¿El reporte incluye los pagos de deudas?
       </h3>
       <p className="text-slate-700 dark:text-slate-300">
-        No hay limitaciones prácticas para usar reporte clientes en Cuadra.
+        Los pagos de deudas no se cuentan como nueva venta. Aparecen en el historial
+        del cliente como "Pago de cuenta", separados de las compras.
       </p>
     </>
   );

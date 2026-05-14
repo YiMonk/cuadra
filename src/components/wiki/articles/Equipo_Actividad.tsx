@@ -1,63 +1,94 @@
 import React from 'react';
-import { Step, Tip, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
+import { Tip, InfoBox, List } from '@/components/wiki/WikiArticleRenderer';
 
 export default function Equipo_ActividadArticle() {
   return (
     <>
       <p className="text-lg text-slate-700 dark:text-slate-300 mb-6">
-        Aprende sobre Actividad en Cuadra y cómo usarlo en tu negocio.
+        El registro de actividad muestra un historial de las acciones realizadas por cada
+        miembro del equipo: ventas registradas, ajustes de inventario, cambios de precios,
+        devoluciones y más. Es la herramienta de auditoría para entender qué pasó y quién
+        lo hizo.
       </p>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Actividad
+        Acceder al Registro de Actividad
       </h2>
 
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Esta guía te enseña a usar actividad de forma eficiente en Cuadra.
+        Ve a <strong>Equipo → Actividad</strong> o desde el perfil de un usuario específico
+        en la pestaña <strong>"Actividad"</strong>. Los administradores ven la actividad
+        de todo el equipo; el personal solo ve la propia.
       </p>
 
-      <h3 className="text-xl font-semibold text-slate-900 dark:text-white my-4">
-        ¿Qué es?
-      </h3>
-
-      <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Actividad es una característica importante que te permite gestionar mejor tu negocio.
-      </p>
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Qué se Registra Automáticamente
+      </h2>
 
       <List
         items={[
-          'Ventaja 1',
-          'Ventaja 2',
-          'Ventaja 3',
+          'Ventas realizadas (número de venta, monto, productos)',
+          'Devoluciones procesadas',
+          'Apertura y cierre de sesiones de caja',
+          'Movimientos manuales de caja (entradas/salidas)',
+          'Ajustes de stock en inventario',
+          'Creación o edición de productos',
+          'Cambios de precios',
+          'Registros de gastos',
+          'Login y logout del sistema',
         ]}
       />
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Cómo usar
+        Filtrar la Actividad
       </h2>
 
-      <Step number={1} title="Accede al módulo">
-        Desde el menú principal, busca la sección correspondiente.
-      </Step>
+      <p className="text-slate-700 dark:text-slate-300 mb-4">
+        Puedes filtrar el registro de actividad por:
+      </p>
 
-      <Step number={2} title="Busca la opción">
-        Encuentra la opción para actividad en la pantalla.
-      </Step>
-
-      <Step number={3} title="Completa y guarda">
-        Llena la información necesaria y guarda tus cambios.
-      </Step>
+      <List
+        items={[
+          'Usuario específico (ver solo las acciones de un cajero determinado)',
+          'Tipo de acción (solo ventas, solo ajustes, solo devoluciones)',
+          'Rango de fechas',
+          'Sucursal (si tienes múltiples locales)',
+        ]}
+      />
 
       <Tip>
-        <strong>Consejo:</strong> Cuadra guarda automáticamente tus cambios, así que no necesitas hacer clic en un botón adicional.
+        <strong>Investigar discrepancias:</strong> Si hay una diferencia en el arqueo de caja
+        o un ajuste de inventario inexplicable, el registro de actividad te permite ver exactamente
+        quién hizo qué y cuándo, con marca de tiempo precisa.
       </Tip>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Detalles importantes
+        Actividad por Usuario
       </h2>
 
+      <p className="text-slate-700 dark:text-slate-300 mb-4">
+        Desde el perfil de cada miembro del equipo puedes ver:
+      </p>
+
+      <List
+        items={[
+          'Total de ventas realizadas en un período',
+          'Ticket promedio de sus ventas',
+          'Número de devoluciones procesadas',
+          'Sesiones de caja abiertas y cerradas',
+          'Últimas acciones realizadas (log cronológico)',
+        ]}
+      />
+
+      <p className="text-slate-700 dark:text-slate-300 mt-4">
+        Esto es útil para evaluar el desempeño individual y también para calcular comisiones
+        si tienes ese sistema configurado.
+      </p>
+
       <InfoBox>
-        <strong>Recuerda:</strong> Todos los cambios en Cuadra se sincronizan en tiempo real, así que verás las actualizaciones inmediatamente.
+        <strong>Privacidad del equipo:</strong> El personal solo puede ver su propia actividad.
+        Un cajero no puede ver las ventas de sus compañeros. Solo los administradores y
+        propietarios tienen visibilidad de la actividad de todo el equipo.
       </InfoBox>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
@@ -65,17 +96,19 @@ export default function Equipo_ActividadArticle() {
       </h2>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Puedo deshacer cambios?
+        ¿Por cuánto tiempo se conserva el historial de actividad?
       </h3>
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Sí, dependiendo del tipo de cambio. Contacta a soporte si necesitas ayuda.
+        Cuadra mantiene el historial completo de actividad sin límite de tiempo mientras
+        la cuenta esté activa. Nada se borra automáticamente.
       </p>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Hay limitaciones?
+        ¿Se puede eliminar una entrada del registro de actividad?
       </h3>
       <p className="text-slate-700 dark:text-slate-300">
-        No hay limitaciones prácticas para usar actividad en Cuadra.
+        No. El registro de actividad es inmutable para garantizar integridad en la auditoría.
+        Esto protege tanto al negocio como al personal de disputas sobre quién realizó qué acción.
       </p>
     </>
   );

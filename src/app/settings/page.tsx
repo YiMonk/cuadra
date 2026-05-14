@@ -9,12 +9,13 @@ import { auth } from '@/config/firebaseConfig';
 import { AuthService } from '@/services/auth.service';
 import { LegalModal } from '@/components/legal/LegalModal';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
-import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight, Users, FileText, AlertCircle } from 'lucide-react';
+import { User, LogOut, Moon, Sun, Shield, Settings2, Edit3, X, Mail, Lock, ChevronRight, Users, FileText, AlertCircle, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 const CountdownCircle = ({ seconds: initialSeconds }: { seconds: number }) => {
     const [timeLeft, setTimeLeft] = React.useState(initialSeconds);
@@ -205,8 +206,28 @@ export default function SettingsScreen() {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-start">
+                {/* Left column: Wiki Button + Perfil */}
+                <div className="md:col-span-12 lg:col-span-5 xl:col-span-4 flex flex-col gap-4">
+
+                {/* Wiki / Centro de Ayuda */}
+                <Link href="/wiki">
+                    <div className="ui-card border border-ui-border/50 p-5 flex items-center justify-between group cursor-pointer hover:border-blue-500/50 transition-all shadow-lg shadow-black/5 bg-ui-surface backdrop-blur-xl hover:-translate-y-0.5 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/15 transition-colors duration-500" />
+                        <div className="flex items-center gap-4 relative z-10">
+                            <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-inner">
+                                <BookOpen size={22} />
+                            </div>
+                            <div>
+                                <p className="font-black text-ui-text uppercase tracking-tight text-sm">Centro de Ayuda</p>
+                                <p className="text-[10px] text-ui-text-muted font-bold uppercase tracking-widest">Wiki · Tutoriales · FAQ</p>
+                            </div>
+                        </div>
+                        <ChevronRight size={18} className="text-ui-text-muted group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300 relative z-10" />
+                    </div>
+                </Link>
+
                 {/* Perfil Header - Bento Style */}
-                <div className="md:col-span-12 lg:col-span-5 xl:col-span-4 ui-card border border-ui-border/50 p-8 md:p-10 flex flex-col items-center text-center relative overflow-hidden group shadow-2xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
+                <div className="ui-card border border-ui-border/50 p-8 md:p-10 flex flex-col items-center text-center relative overflow-hidden group shadow-2xl shadow-black/5 bg-ui-surface backdrop-blur-xl">
                     <div className="absolute inset-0 bg-linear-to-b from-accent-primary/10 to-transparent opacity-50 pointer-events-none" />
                     <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-accent-primary via-accent-secondary to-accent-primary shadow-[0_0_20px_rgba(124,58,237,0.5)]" />
                     
@@ -251,6 +272,7 @@ export default function SettingsScreen() {
                         <div className="absolute inset-0 bg-linear-to-r from-accent-primary to-accent-secondary opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 -z-10" />
                     </button>
                 </div>
+                </div>{/* end left column wrapper */}
 
                 <div className="md:col-span-12 lg:col-span-7 xl:col-span-8 space-y-6">
                     {/* Preferencias */}

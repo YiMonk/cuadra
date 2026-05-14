@@ -5,59 +5,81 @@ export default function Configuracion_TemasArticle() {
   return (
     <>
       <p className="text-lg text-slate-700 dark:text-slate-300 mb-6">
-        Aprende sobre Temas en Cuadra y cómo usarlo en tu negocio.
+        Cuadra te permite personalizar la apariencia de la aplicación. Puedes elegir entre
+        modo claro, modo oscuro o seguir automáticamente la preferencia del sistema operativo.
+        La apariencia se guarda por usuario y dispositivo.
       </p>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Temas
+        Cambiar el Tema de la Aplicación
+      </h2>
+
+      <Step number={1} title="Accede a la configuración de apariencia">
+        Haz clic en tu nombre o foto de perfil en la parte inferior del menú lateral,
+        o ve a <strong>Configuración → Apariencia</strong>.
+      </Step>
+
+      <Step number={2} title="Selecciona el tema">
+        Elige entre las opciones disponibles:
+        <List
+          items={[
+            'Modo claro: fondo blanco, ideal para ambientes con buena iluminación',
+            'Modo oscuro: fondo oscuro, reduce la fatiga visual en ambientes con poca luz',
+            'Automático: sigue la configuración de tu dispositivo (cambia según la hora del día si el sistema lo tiene configurado)',
+          ]}
+        />
+      </Step>
+
+      <Step number={3} title="El cambio aplica inmediatamente">
+        No necesitas guardar ni recargar la página. El tema cambia al instante.
+      </Step>
+
+      <Tip>
+        <strong>Modo oscuro en caja:</strong> Si tienes el POS en una tienda con iluminación
+        tenue o en la noche, el modo oscuro reduce significativamente el cansancio visual
+        para los cajeros durante largas jornadas.
+      </Tip>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Preferencia por Usuario
       </h2>
 
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Esta guía te enseña a usar temas de forma eficiente en Cuadra.
+        Cada usuario puede tener su propio tema configurado. Si tienes varios cajeros
+        usando el mismo dispositivo con distintas cuentas, cada uno verá la aplicación
+        con el tema que prefiere.
       </p>
 
-      <h3 className="text-xl font-semibold text-slate-900 dark:text-white my-4">
-        ¿Qué es?
-      </h3>
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Preferencia por Dispositivo
+      </h2>
 
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Temas es una característica importante que te permite gestionar mejor tu negocio.
+        La preferencia de tema se sincroniza con tu cuenta de usuario y aplica en todos
+        los dispositivos donde usas Cuadra. Si cambias el tema en el celular, también
+        cambiará en la computadora al iniciar sesión.
+      </p>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
+        Configuraciones de Accesibilidad
+      </h2>
+
+      <p className="text-slate-700 dark:text-slate-300 mb-4">
+        Además del tema, en la sección de apariencia puedes encontrar:
       </p>
 
       <List
         items={[
-          'Ventaja 1',
-          'Ventaja 2',
-          'Ventaja 3',
+          'Tamaño del texto: ajusta si el texto se ve muy pequeño en tu pantalla',
+          'Contraste alto: aumenta el contraste para mayor legibilidad',
+          'Reducir animaciones: útil en dispositivos lentos o para usuarios sensibles al movimiento',
         ]}
       />
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Cómo usar
-      </h2>
-
-      <Step number={1} title="Accede al módulo">
-        Desde el menú principal, busca la sección correspondiente.
-      </Step>
-
-      <Step number={2} title="Busca la opción">
-        Encuentra la opción para temas en la pantalla.
-      </Step>
-
-      <Step number={3} title="Completa y guarda">
-        Llena la información necesaria y guarda tus cambios.
-      </Step>
-
-      <Tip>
-        <strong>Consejo:</strong> Cuadra guarda automáticamente tus cambios, así que no necesitas hacer clic en un botón adicional.
-      </Tip>
-
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
-        Detalles importantes
-      </h2>
-
       <InfoBox>
-        <strong>Recuerda:</strong> Todos los cambios en Cuadra se sincronizan en tiempo real, así que verás las actualizaciones inmediatamente.
+        <strong>Modo oscuro en comprobantes:</strong> Los tickets impresos siempre
+        se generan con fondo blanco, independientemente del tema seleccionado.
+        El tema solo afecta la interfaz de la aplicación, no los documentos generados.
       </InfoBox>
 
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white my-6">
@@ -65,17 +87,20 @@ export default function Configuracion_TemasArticle() {
       </h2>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Puedo deshacer cambios?
+        ¿El administrador puede forzar un tema para todos los usuarios?
       </h3>
       <p className="text-slate-700 dark:text-slate-300 mb-4">
-        Sí, dependiendo del tipo de cambio. Contacta a soporte si necesitas ayuda.
+        No actualmente. Cada usuario elige su propio tema. El administrador puede recomendar
+        un tema pero no puede imponerlo a los demás.
       </p>
 
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white my-3">
-        ¿Hay limitaciones?
+        ¿El tema "Automático" funciona en todos los dispositivos?
       </h3>
       <p className="text-slate-700 dark:text-slate-300">
-        No hay limitaciones prácticas para usar temas en Cuadra.
+        Sí. El modo automático detecta la preferencia del sistema operativo (Windows, macOS,
+        iOS, Android) y aplica claro u oscuro según corresponda. En sistemas que no tienen
+        esta preferencia configurada, se usa el modo claro por defecto.
       </p>
     </>
   );
