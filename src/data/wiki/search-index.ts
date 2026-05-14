@@ -1,0 +1,388 @@
+import { WikiSearchItem } from '@/types/wiki';
+
+export const wikiSearchIndex: WikiSearchItem[] = [
+  // Primeros Pasos (3)
+  {
+    id: 'primeros-pasos-intro',
+    categorySlug: 'primeros-pasos',
+    categoryTitle: 'Primeros Pasos',
+    title: 'Introducción a Cuadra',
+    description: 'Conoce qué es Cuadra y cómo puede ayudarte a gestionar tu negocio de forma más eficiente',
+    tags: ['introducción', 'bienvenida', 'conceptos básicos'],
+    href: '/wiki/primeros-pasos/introduccion',
+  },
+  {
+    id: 'primeros-pasos-login',
+    categorySlug: 'primeros-pasos',
+    categoryTitle: 'Primeros Pasos',
+    title: 'Iniciar Sesión y Configuración',
+    description: 'Pasos para registrarte y configurar tu cuenta por primera vez',
+    tags: ['login', 'registro', 'autenticación', 'cuenta'],
+    href: '/wiki/primeros-pasos/login-configuracion',
+  },
+  {
+    id: 'primeros-pasos-nav',
+    categorySlug: 'primeros-pasos',
+    categoryTitle: 'Primeros Pasos',
+    title: 'Navegar por la Aplicación',
+    description: 'Aprende a navegar por los menús y acceder a todas las funciones de Cuadra',
+    tags: ['navegación', 'interfaz', 'menús', 'mobile', 'desktop'],
+    href: '/wiki/primeros-pasos/navegacion',
+  },
+
+  // POS (4)
+  {
+    id: 'pos-crear-venta',
+    categorySlug: 'pos',
+    categoryTitle: 'Punto de Venta',
+    title: 'Crear una Venta',
+    description: 'Paso a paso para registrar una venta desde el punto de venta',
+    tags: ['venta', 'pos', 'cliente', 'producto'],
+    href: '/wiki/pos/crear-venta',
+  },
+  {
+    id: 'pos-metodos-pago',
+    categorySlug: 'pos',
+    categoryTitle: 'Punto de Venta',
+    title: 'Métodos de Pago',
+    description: 'Conoce los diferentes métodos de pago disponibles: efectivo, transferencia, tarjeta, billeteras',
+    tags: ['pago', 'efectivo', 'tarjeta', 'transferencia', 'mobile pay'],
+    href: '/wiki/pos/metodos-pago',
+  },
+  {
+    id: 'pos-descuentos-cupones',
+    categorySlug: 'pos',
+    categoryTitle: 'Punto de Venta',
+    title: 'Aplicar Descuentos y Cupones',
+    description: 'Cómo aplicar descuentos y códigos de cupones en tus ventas',
+    tags: ['descuento', 'cupón', 'oferta', 'promoción'],
+    href: '/wiki/pos/descuentos-cupones',
+  },
+  {
+    id: 'pos-devoluciones',
+    categorySlug: 'pos',
+    categoryTitle: 'Punto de Venta',
+    title: 'Gestionar Devoluciones',
+    description: 'Cómo procesar devoluciones de productos de clientes',
+    tags: ['devolución', 'reembolso', 'cancelación', 'rembolso'],
+    href: '/wiki/pos/devoluciones',
+  },
+
+  // Inventario (4)
+  {
+    id: 'inventario-productos',
+    categorySlug: 'inventario',
+    categoryTitle: 'Inventario',
+    title: 'Gestionar Productos',
+    description: 'Cómo crear, editar y eliminar productos en tu inventario',
+    tags: ['producto', 'inventario', 'stock', 'crear', 'editar'],
+    href: '/wiki/inventario/productos',
+  },
+  {
+    id: 'inventario-stock',
+    categorySlug: 'inventario',
+    categoryTitle: 'Inventario',
+    title: 'Control de Stock',
+    description: 'Monitorea niveles de stock y recibe alertas de producto bajo',
+    tags: ['stock', 'inventario', 'cantidad', 'alerta', 'nivel mínimo'],
+    href: '/wiki/inventario/control-stock',
+  },
+  {
+    id: 'inventario-transferencias',
+    categorySlug: 'inventario',
+    categoryTitle: 'Inventario',
+    title: 'Transferencias de Stock',
+    description: 'Transfiere productos entre sucursales o ubicaciones',
+    tags: ['transferencia', 'stock', 'movimiento', 'sucursal', 'ubicación'],
+    href: '/wiki/inventario/transferencias',
+  },
+  {
+    id: 'inventario-importar',
+    categorySlug: 'inventario',
+    categoryTitle: 'Inventario',
+    title: 'Importar Productos',
+    description: 'Importa un lote de productos desde un archivo CSV o Excel',
+    tags: ['importar', 'csv', 'excel', 'masivo', 'productos'],
+    href: '/wiki/inventario/importar',
+  },
+
+  // Clientes (3)
+  {
+    id: 'clientes-crear',
+    categorySlug: 'clientes',
+    categoryTitle: 'Clientes',
+    title: 'Agregar Clientes',
+    description: 'Crea registros de clientes con su información de contacto y datos relevantes',
+    tags: ['cliente', 'crear', 'contacto', 'información'],
+    href: '/wiki/clientes/crear-cliente',
+  },
+  {
+    id: 'clientes-deudas',
+    categorySlug: 'clientes',
+    categoryTitle: 'Clientes',
+    title: 'Gestionar Deudas',
+    description: 'Registra y controla deudas de clientes, pagos parciales y saldos pendientes',
+    tags: ['deuda', 'crédito', 'pago', 'saldo', 'cliente'],
+    href: '/wiki/clientes/deudas',
+  },
+  {
+    id: 'clientes-historial',
+    categorySlug: 'clientes',
+    categoryTitle: 'Clientes',
+    title: 'Historial de Compras',
+    description: 'Visualiza el historial completo de compras y transacciones de un cliente',
+    tags: ['historial', 'compras', 'transacciones', 'cliente'],
+    href: '/wiki/clientes/historial',
+  },
+
+  // Caja (3)
+  {
+    id: 'caja-sesiones',
+    categorySlug: 'caja',
+    categoryTitle: 'Caja',
+    title: 'Sesiones de Caja',
+    description: 'Abre y cierra sesiones de caja para controlar el efectivo diario',
+    tags: ['caja', 'sesión', 'apertura', 'cierre', 'efectivo'],
+    href: '/wiki/caja/sesiones',
+  },
+  {
+    id: 'caja-arqueo',
+    categorySlug: 'caja',
+    categoryTitle: 'Caja',
+    title: 'Arqueos de Caja',
+    description: 'Realiza arqueos de caja para verificar que el efectivo coincida con los registros',
+    tags: ['arqueo', 'caja', 'verificación', 'efectivo', 'cuadre'],
+    href: '/wiki/caja/arqueos',
+  },
+  {
+    id: 'caja-movimientos',
+    categorySlug: 'caja',
+    categoryTitle: 'Caja',
+    title: 'Movimientos de Caja',
+    description: 'Registra entradas y salidas de dinero en caja (cambio, gastos, etc.)',
+    tags: ['movimiento', 'caja', 'entrada', 'salida', 'dinero'],
+    href: '/wiki/caja/movimientos',
+  },
+
+  // Reportes (4)
+  {
+    id: 'reportes-ventas',
+    categorySlug: 'reportes',
+    categoryTitle: 'Reportes',
+    title: 'Reporte de Ventas',
+    description: 'Analiza tus ventas por período, producto, cliente o método de pago',
+    tags: ['reporte', 'ventas', 'análisis', 'período', 'estadísticas'],
+    href: '/wiki/reportes/ventas',
+  },
+  {
+    id: 'reportes-ganancias',
+    categorySlug: 'reportes',
+    categoryTitle: 'Reportes',
+    title: 'Reporte de Ganancias',
+    description: 'Visualiza ganancias, márgenes y rentabilidad de tu negocio',
+    tags: ['ganancia', 'rentabilidad', 'margen', 'beneficio', 'reporte'],
+    href: '/wiki/reportes/ganancias',
+  },
+  {
+    id: 'reportes-clientes',
+    categorySlug: 'reportes',
+    categoryTitle: 'Reportes',
+    title: 'Reporte de Clientes',
+    description: 'Obtén insights sobre tus clientes, sus patrones de compra y deudas',
+    tags: ['cliente', 'reporte', 'deuda', 'compra', 'análisis'],
+    href: '/wiki/reportes/clientes',
+  },
+  {
+    id: 'reportes-inventario',
+    categorySlug: 'reportes',
+    categoryTitle: 'Reportes',
+    title: 'Reporte de Inventario',
+    description: 'Analiza el estado de tu inventario, rotación y valorización',
+    tags: ['inventario', 'reporte', 'stock', 'rotación', 'valorización'],
+    href: '/wiki/reportes/inventario',
+  },
+
+  // Gastos (3)
+  {
+    id: 'gastos-crear',
+    categorySlug: 'gastos',
+    categoryTitle: 'Gastos',
+    title: 'Registrar Gastos',
+    description: 'Cómo registrar los gastos operacionales y administrativos de tu negocio',
+    tags: ['gasto', 'operacional', 'costo', 'administrativo'],
+    href: '/wiki/gastos/registrar-gastos',
+  },
+  {
+    id: 'gastos-categorias',
+    categorySlug: 'gastos',
+    categoryTitle: 'Gastos',
+    title: 'Categorías de Gastos',
+    description: 'Organiza tus gastos en categorías para mejor análisis y control',
+    tags: ['gasto', 'categoría', 'clasificación', 'organización'],
+    href: '/wiki/gastos/categorias',
+  },
+  {
+    id: 'gastos-reporte',
+    categorySlug: 'gastos',
+    categoryTitle: 'Gastos',
+    title: 'Análisis de Gastos',
+    description: 'Genera reportes detallados de tus gastos y tendencias',
+    tags: ['gasto', 'reporte', 'análisis', 'tendencia', 'costo'],
+    href: '/wiki/gastos/analisis',
+  },
+
+  // Proveedores (3)
+  {
+    id: 'proveedores-crear',
+    categorySlug: 'proveedores',
+    categoryTitle: 'Proveedores',
+    title: 'Agregar Proveedores',
+    description: 'Crea y gestiona registros de tus proveedores',
+    tags: ['proveedor', 'crear', 'contacto', 'compra'],
+    href: '/wiki/proveedores/crear-proveedor',
+  },
+  {
+    id: 'proveedores-compras',
+    categorySlug: 'proveedores',
+    categoryTitle: 'Proveedores',
+    title: 'Gestionar Compras',
+    description: 'Realiza compras a proveedores y gestiona pedidos',
+    tags: ['compra', 'proveedor', 'pedido', 'orden'],
+    href: '/wiki/proveedores/compras',
+  },
+  {
+    id: 'proveedores-pagos',
+    categorySlug: 'proveedores',
+    categoryTitle: 'Proveedores',
+    title: 'Pagos a Proveedores',
+    description: 'Registra y controla pagos a tus proveedores',
+    tags: ['pago', 'proveedor', 'deuda', 'saldo'],
+    href: '/wiki/proveedores/pagos',
+  },
+
+  // Equipo (3)
+  {
+    id: 'equipo-usuarios',
+    categorySlug: 'equipo',
+    categoryTitle: 'Equipo',
+    title: 'Gestionar Usuarios',
+    description: 'Crea y administra cuentas de usuarios en tu equipo',
+    tags: ['usuario', 'equipo', 'cuenta', 'crear'],
+    href: '/wiki/equipo/usuarios',
+  },
+  {
+    id: 'equipo-permisos',
+    categorySlug: 'equipo',
+    categoryTitle: 'Equipo',
+    title: 'Asignar Permisos',
+    description: 'Controla qué puede hacer cada usuario según su rol y permisos',
+    tags: ['permiso', 'rol', 'acceso', 'seguridad'],
+    href: '/wiki/equipo/permisos',
+  },
+  {
+    id: 'equipo-actividad',
+    categorySlug: 'equipo',
+    categoryTitle: 'Equipo',
+    title: 'Monitorear Actividad',
+    description: 'Visualiza un registro de actividades de todos los usuarios',
+    tags: ['actividad', 'usuario', 'log', 'historial', 'auditoría'],
+    href: '/wiki/equipo/actividad',
+  },
+
+  // Sucursales (2)
+  {
+    id: 'sucursales-crear',
+    categorySlug: 'sucursales',
+    categoryTitle: 'Sucursales',
+    title: 'Crear Sucursales',
+    description: 'Agrega y gestiona múltiples ubicaciones o sucursales de tu negocio',
+    tags: ['sucursal', 'ubicación', 'local', 'crear'],
+    href: '/wiki/sucursales/crear-sucursal',
+  },
+  {
+    id: 'sucursales-admin',
+    categorySlug: 'sucursales',
+    categoryTitle: 'Sucursales',
+    title: 'Administrar Sucursales',
+    description: 'Gestiona el inventario y operaciones de cada sucursal de forma independiente',
+    tags: ['sucursal', 'ubicación', 'inventario', 'operación', 'multi-sucursal'],
+    href: '/wiki/sucursales/administrar',
+  },
+
+  // Precios & Promos (2)
+  {
+    id: 'precios-listas',
+    categorySlug: 'precios-promos',
+    categoryTitle: 'Precios & Promos',
+    title: 'Listas de Precios',
+    description: 'Crea y gestiona diferentes listas de precios para tus productos',
+    tags: ['precio', 'lista', 'descuento', 'producto'],
+    href: '/wiki/precios-promos/listas-precios',
+  },
+  {
+    id: 'precios-promociones',
+    categorySlug: 'precios-promos',
+    categoryTitle: 'Precios & Promos',
+    title: 'Crear Promociones',
+    description: 'Diseña y aplica promociones especiales para impulsar tus ventas',
+    tags: ['promoción', 'oferta', 'descuento', 'campaña'],
+    href: '/wiki/precios-promos/promociones',
+  },
+
+  // Configuración (2)
+  {
+    id: 'configuracion-general',
+    categorySlug: 'configuracion',
+    categoryTitle: 'Configuración',
+    title: 'Configuración General',
+    description: 'Ajusta los parámetros generales de tu negocio y aplicación',
+    tags: ['configuración', 'ajustes', 'negocio', 'moneda', 'idioma'],
+    href: '/wiki/configuracion/general',
+  },
+  {
+    id: 'configuracion-temas',
+    categorySlug: 'configuracion',
+    categoryTitle: 'Configuración',
+    title: 'Temas y Apariencia',
+    description: 'Personaliza el aspecto visual de Cuadra con temas claros u oscuros',
+    tags: ['tema', 'apariencia', 'oscuro', 'claro', 'personalización'],
+    href: '/wiki/configuracion/temas',
+  },
+
+  // FAQ (3)
+  {
+    id: 'faq-basicas',
+    categorySlug: 'faq',
+    categoryTitle: 'Preguntas Frecuentes',
+    title: '¿Por qué una tienda necesita software POS?',
+    description: 'Entiende los beneficios de usar un sistema de punto de venta digital',
+    tags: ['faq', 'pos', 'tienda', 'beneficio', 'software'],
+    href: '/wiki/faq/basicas',
+  },
+  {
+    id: 'faq-technical',
+    categorySlug: 'faq',
+    categoryTitle: 'Preguntas Frecuentes',
+    title: '¿Es seguro usar Cuadra con mi información?',
+    description: 'Conoce cómo Cuadra protege tus datos y la seguridad de tu negocio',
+    tags: ['faq', 'seguridad', 'privacidad', 'datos', 'confianza'],
+    href: '/wiki/faq/seguridad',
+  },
+  {
+    id: 'faq-soporte',
+    categorySlug: 'faq',
+    categoryTitle: 'Preguntas Frecuentes',
+    title: '¿Cómo obtengo soporte si tengo problemas?',
+    description: 'Encuentra las mejores formas de contactarnos y obtener ayuda rápida',
+    tags: ['faq', 'soporte', 'ayuda', 'contacto', 'problema'],
+    href: '/wiki/faq/soporte',
+  },
+];
+
+export function getSearchIndexForCategory(categorySlug: string): WikiSearchItem[] {
+  return wikiSearchIndex.filter((item) => item.categorySlug === categorySlug);
+}
+
+export function getAllSearchIndexItems(): WikiSearchItem[] {
+  return wikiSearchIndex;
+}

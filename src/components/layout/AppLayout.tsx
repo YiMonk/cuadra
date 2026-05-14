@@ -41,6 +41,7 @@ import { BRAND_ASSETS } from '@/config/brand';
 import { DisclaimerBanner } from '@/components/DisclaimerBanner';
 import { TermsAcceptanceModal } from '@/components/legal/TermsAcceptanceModal';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { WikiSearchModal } from '@/components/wiki/WikiSearchModal';
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -280,6 +281,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex h-screen bg-ui-bg transition-colors duration-500 font-sans overflow-hidden md:overflow-visible">
+            <WikiSearchModal />
             <TermsAcceptanceModal isOpen={showTermsModal} onAccept={handleAcceptTerms} />
             {showOnboarding && <OnboardingWizard onClose={() => setShowOnboarding(false)} forced />}
 

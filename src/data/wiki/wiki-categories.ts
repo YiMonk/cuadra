@@ -1,0 +1,112 @@
+import { WikiCategory, WikiCategorySlug } from '@/types/wiki';
+
+export const wikiCategories: WikiCategory[] = [
+  {
+    slug: 'primeros-pasos',
+    title: 'Primeros Pasos',
+    description: 'Conoce los conceptos básicos y comienza a usar Cuadra',
+    icon: 'BookOpen',
+    accentColor: 'from-blue-500 to-blue-600',
+    articleCount: 3,
+  },
+  {
+    slug: 'pos',
+    title: 'Punto de Venta',
+    description: 'Registra y gestiona ventas desde el POS',
+    icon: 'ShoppingCart',
+    accentColor: 'from-emerald-500 to-emerald-600',
+    articleCount: 4,
+  },
+  {
+    slug: 'inventario',
+    title: 'Inventario',
+    description: 'Gestión completa de stock y productos',
+    icon: 'Package',
+    accentColor: 'from-orange-500 to-orange-600',
+    articleCount: 4,
+  },
+  {
+    slug: 'clientes',
+    title: 'Clientes',
+    description: 'Administra información y deudas de clientes',
+    icon: 'Users',
+    accentColor: 'from-pink-500 to-pink-600',
+    articleCount: 3,
+  },
+  {
+    slug: 'caja',
+    title: 'Caja',
+    description: 'Gestión de caja y sesiones de efectivo',
+    icon: 'Wallet',
+    accentColor: 'from-yellow-500 to-yellow-600',
+    articleCount: 3,
+  },
+  {
+    slug: 'reportes',
+    title: 'Reportes',
+    description: 'Análisis e informes de tu negocio',
+    icon: 'BarChart3',
+    accentColor: 'from-purple-500 to-purple-600',
+    articleCount: 4,
+  },
+  {
+    slug: 'gastos',
+    title: 'Gastos',
+    description: 'Registro y control de gastos operacionales',
+    icon: 'TrendingDown',
+    accentColor: 'from-red-500 to-red-600',
+    articleCount: 3,
+  },
+  {
+    slug: 'proveedores',
+    title: 'Proveedores',
+    description: 'Gestión de proveedores y compras',
+    icon: 'Truck',
+    accentColor: 'from-cyan-500 to-cyan-600',
+    articleCount: 3,
+  },
+  {
+    slug: 'equipo',
+    title: 'Equipo',
+    description: 'Administración de usuarios y permisos',
+    icon: 'Users2',
+    accentColor: 'from-indigo-500 to-indigo-600',
+    articleCount: 3,
+  },
+  {
+    slug: 'sucursales',
+    title: 'Sucursales',
+    description: 'Gestión de múltiples locales y ubicaciones',
+    icon: 'MapPin',
+    accentColor: 'from-teal-500 to-teal-600',
+    articleCount: 2,
+  },
+  {
+    slug: 'precios-promos',
+    title: 'Precios & Promos',
+    description: 'Listas de precios y promociones',
+    icon: 'Tag',
+    accentColor: 'from-violet-500 to-violet-600',
+    articleCount: 2,
+  },
+  {
+    slug: 'configuracion',
+    title: 'Configuración',
+    description: 'Ajustes y preferencias de la aplicación',
+    icon: 'Settings',
+    accentColor: 'from-slate-500 to-slate-600',
+    articleCount: 2,
+  },
+  {
+    slug: 'faq',
+    title: 'Preguntas Frecuentes',
+    description: 'Respuestas rápidas a dudas comunes',
+    icon: 'HelpCircle',
+    accentColor: 'from-lime-500 to-lime-600',
+    articleCount: 3,
+  },
+];
+
+export function getCategoryBySlug(slug: WikiCategorySlug): WikiCategory | undefined {
+  return wikiCategories.find((cat) => cat.slug === slug);
+}
