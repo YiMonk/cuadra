@@ -10,6 +10,7 @@ import { SubscriptionService } from '../services/subscription.service';
 interface AuthContextType extends AuthState {
     signOut: () => Promise<void>;
     reloadUser: () => Promise<void>;
+    patchUser: (updates: Partial<UserProfile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,6 +126,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const patchUser = (updates: Partial<UserProfile>) => {
+        setUser(prev => prev ? { ...prev, ...updates } : null);
+    };
+
     const reloadUser = async () => {
         const currentUser = auth.currentUser;
         if (!currentUser) return;
@@ -156,6 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         signOut,
         reloadUser,
+        patchUser,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

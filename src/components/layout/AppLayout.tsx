@@ -62,7 +62,7 @@ type NavItem = {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { user, isLoading, signOut, reloadUser } = useAuth();
+    const { user, isLoading, signOut, reloadUser, patchUser } = useAuth();
     const { isGlobalAdmin, isStaff, isOwner } = useRole();
     const { isDarkTheme, toggleTheme } = useAppTheme();
     const { items } = useCart();
@@ -184,11 +184,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         });
     }, [pendingCollectionsCount]);
 
-    // Show terms modal if user hasn't accepted them yet
+    // Show/hide terms modal based on acceptance state
     useEffect(() => {
-        if (user && !isAuthRoute && !user.termsAccepted) {
-            setShowTermsModal(true);
-        }
+        if (!user || isAuthRoute) return;
+        setShowTermsModal(!user.termsAccepted);
     }, [user, isAuthRoute]);
 
     // First-login onboarding (después de aceptar términos, solo owners no admin)
@@ -209,17 +208,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }, [user, isAuthRoute]);
 
     const handleAcceptTerms = async () => {
-        if (user) {
-            try {
-                await UserService.updateUser(user.uid, {
-                    termsAccepted: true,
-                });
-                // Update user context to reflect the change
-                await reloadUser();
-                setShowTermsModal(false);
-            } catch (error) {
-                console.error('Error accepting terms:', error);
-            }
+        if (!user) return;
+        try {
+            await UserService.updateUser(user.uid, { termsAccepted: true });
+            // Update state immediately to avoid race condition with reloadUser
+            patchUser({ termsAccepted: true });
+        } catch (error) {
+            console.error('Error accepting terms:', error);
+            throw error;
         }
     };
 
