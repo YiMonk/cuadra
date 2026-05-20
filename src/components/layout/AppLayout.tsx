@@ -276,7 +276,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }));
 
     return (
-        <div className="flex h-screen bg-ui-bg transition-colors duration-500 font-sans overflow-hidden md:overflow-visible">
+        <div className="flex h-dvh bg-ui-bg transition-colors duration-500 font-sans overflow-hidden md:overflow-visible">
             <WikiSearchModal />
             <TermsAcceptanceModal isOpen={showTermsModal} onAccept={handleAcceptTerms} />
             {showOnboarding && <OnboardingWizard onClose={() => setShowOnboarding(false)} forced />}
@@ -441,10 +441,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </aside>
 
             {/* Main Content Area: The Bento Canvas */}
-            <main className="flex-1 h-full overflow-y-auto relative custom-scrollbar flex flex-col">
+            <main className="flex-1 h-full overflow-y-auto overscroll-y-contain relative custom-scrollbar flex flex-col">
                 
                 {/* Global Sticky Header */}
-                <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-ui-bg/80 border-b border-ui-border/30 transition-all duration-300">
+                <header className="sticky top-0 z-40 w-full md:backdrop-blur-xl bg-ui-bg md:bg-ui-bg/80 border-b border-ui-border/30 transition-all duration-300">
                     <div className="w-full max-w-[1400px] mx-auto px-4 md:px-12 h-20 md:h-24 flex items-center justify-between">
                         
                         {/* Left Side: Mobile Logo & Page Context */}
@@ -593,7 +593,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Mobile Floating Bottom Pill */}
             <nav className="md:hidden fixed z-[90] left-4 right-4 bottom-6 transition-all duration-500">
-                <div className="ui-card backdrop-blur-3xl bg-white/80 dark:bg-black/80 px-2 flex justify-around items-center h-[72px] rounded-[36px] border border-black/5 dark:border-white/10 shadow-float">
+                <div className="bg-white dark:bg-[#16142C] px-2 flex justify-around items-center h-[72px] rounded-[36px] border border-black/5 dark:border-white/10 shadow-float">
                     {mobileNavItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = item.href ? (pathname === item.href || pathname.startsWith(item.href + '/')) : false;

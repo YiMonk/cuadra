@@ -29,6 +29,7 @@
   --shadow-glow-green: 0 0 15px rgba(16, 185, 129, 0.4);
   --shadow-glow-red: 0 0 15px rgba(239, 68, 68, 0.4);
 
+  --ui-surface-solid: #FFFFFF;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 
   /* Bento Standards - Large Radius */
@@ -42,7 +43,8 @@
 
 .dark {
   /* Dark Palette - Deep Midnight Violet */
-  --ui-bg: #0D0B1F; 
+  --ui-bg: #0D0B1F;
+  --ui-surface-solid: #16142C;
   --ui-surface: rgba(22, 20, 44, 0.85); 
   --ui-surface-hover: rgba(32, 28, 64, 0.9);
   --ui-border: rgba(139, 92, 246, 0.2); /* Violet border */
@@ -261,20 +263,49 @@ input.liquid-glass, .ui-input-box.liquid-glass {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* ─── MOBILE SCROLL FIXES ─────────────────────────────────────────── */
+/* Prevent body background from bleeding during overscroll bounce */
+html {
+  background: var(--ui-bg);
+  height: 100%;
+}
+
 /* Mobile Optimizations */
 @media (max-width: 768px) {
+  /* Kill ALL backdrop-filter on mobile — multiple blur layers cause GPU
+     compositing artifacts (white/colored stripes, missing textures/images).
+     Mobile GPUs can't composite 5+ blur layers during scroll. */
+  .ui-card,
+  .ui-glass-card,
+  .ui-glass-sidebar,
+  .liquid-glass,
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Make surfaces opaque since backdrop-filter is disabled */
+  .ui-card {
+    background: var(--ui-surface-solid) !important;
+  }
+  .ui-glass-card {
+    background: var(--ui-surface-solid) !important;
+  }
+  .ui-glass-sidebar {
+    background: var(--ui-surface-solid) !important;
+  }
+
   .container-mobile-fix {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
-    padding-bottom: 120px; /* Safe space for floating nav */
+    padding-bottom: 120px;
   }
 
-  /* Floating Bottom Nav - 'Pill' style */
   .mobile-nav-pill {
-    background: var(--ui-surface);
+    background: var(--ui-surface-solid);
     border-radius: var(--radius-pill);
     box-shadow: var(--shadow-float);
-    margin: 0 1rem; /* Float above edges */
+    margin: 0 1rem;
     bottom: calc(1rem + var(--safe-area-bottom));
     padding: 0.5rem;
     border: 1px solid var(--ui-border);
