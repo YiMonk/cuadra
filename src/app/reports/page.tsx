@@ -1175,10 +1175,10 @@ function ReportsScreen() {
                                         }}
                                         itemStyle={{ color: '#F3F4F6', fontWeight: 'bold', fontSize: '12px' }}
                                         labelStyle={{ color: '#9CA3AF', fontWeight: '900', marginBottom: '4px', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.1em' }}
-                                        formatter={(value: any, name: string | undefined) => {
+                                        formatter={(value: any, name: string | number) => {
                                             if (name === 'qty') return [value, 'Cantidad'];
                                             if (name === 'revenue') return [formatPrice(value), 'Total'];
-                                            return [value, name || ''];
+                                            return [value, String(name)];
                                         }}
                                     />
                                     <Bar 
