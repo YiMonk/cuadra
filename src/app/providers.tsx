@@ -11,15 +11,15 @@ import { Toaster } from 'sonner';
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <ThemeProvider>
-            <AuthProvider>
-                <CartProvider>
-                    <CurrencyProvider>
+            <CurrencyProvider>
+                <AuthProvider>
+                    <CartProvider>
                         {children}
                         <UpdateDetector />
                         <Toaster position="top-right" richColors closeButton />
-                    </CurrencyProvider>
-                </CartProvider>
-            </AuthProvider>
+                    </CartProvider>
+                </AuthProvider>
+            </CurrencyProvider>
         </ThemeProvider>
     );
 }

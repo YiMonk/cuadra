@@ -102,6 +102,14 @@ function ReportsScreen() {
     // Share buttons state
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        setIsMobile(window.innerWidth < 768);
+        const handler = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handler, { passive: true });
+        return () => window.removeEventListener('resize', handler);
+    }, []);
+
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
@@ -845,6 +853,7 @@ function ReportsScreen() {
                                             strokeWidth={4}
                                             dot={{ fill: '#7C3AED', strokeWidth: 2, r: 6, stroke: '#fff' }}
                                             activeDot={{ r: 8, strokeWidth: 0 }}
+                                            isAnimationActive={!isMobile}
                                         />
                                     </LineChart>
                                 </ResponsiveContainer>
@@ -870,6 +879,7 @@ function ReportsScreen() {
                                             outerRadius={80}
                                             paddingAngle={5}
                                             dataKey="value"
+                                            isAnimationActive={!isMobile}
                                         >
                                             {pieData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color} />
@@ -1117,8 +1127,8 @@ function ReportsScreen() {
                     <div style={{ height: Math.max(250, topProductsData.length * 45) }} className="w-full transition-all duration-500">
                         {topProductsData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart 
-                                    data={topProductsData} 
+                                <BarChart
+                                    data={topProductsData}
                                     layout="vertical"
                                     margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
                                 >
@@ -1181,11 +1191,12 @@ function ReportsScreen() {
                                             return [value, name != null ? String(name) : ''];
                                         }) as any}
                                     />
-                                    <Bar 
-                                        dataKey="qty" 
-                                        fill="url(#barGradient)" 
-                                        radius={[0, 6, 6, 0]} 
+                                    <Bar
+                                        dataKey="qty"
+                                        fill="url(#barGradient)"
+                                        radius={[0, 6, 6, 0]}
                                         barSize={window.innerWidth < 768 ? 16 : 24}
+                                        isAnimationActive={!isMobile}
                                     />
                                 </BarChart>
                             </ResponsiveContainer>

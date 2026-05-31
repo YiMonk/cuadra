@@ -57,7 +57,15 @@
       "Bash(npm list *)",
       "Bash(curl -s http://localhost:3000/wiki)",
       "Bash(pkill -f \"node.*next dev\")",
-      "Bash(xargs '-I{}' bash -c 'f=\"{}\"; if grep -q \"Ventaja 1\" \"$f\"; then echo \"$f\"; fi')"
+      "Bash(xargs '-I{}' bash -c 'f=\"{}\"; if grep -q \"Ventaja 1\" \"$f\"; then echo \"$f\"; fi')",
+      "Bash(mkdir -p /home/yimonk/Documentos/cuadra/docs)",
+      "Bash(mv /home/yimonk/Documentos/cuadra/AUDITORIA_Y_ROADMAP.md /home/yimonk/Documentos/cuadra/docs/)",
+      "Bash(mv /home/yimonk/Documentos/cuadra/DISCLAIMER.md /home/yimonk/Documentos/cuadra/docs/)",
+      "Bash(mv /home/yimonk/Documentos/cuadra/LEGAL_COMPLIANCE_GUIDE.md /home/yimonk/Documentos/cuadra/docs/)",
+      "Bash(mv /home/yimonk/Documentos/cuadra/PRIVACY_POLICY.md /home/yimonk/Documentos/cuadra/docs/)",
+      "Bash(rm -rf /home/yimonk/Documentos/cuadra/graphify-out)",
+      "Bash(rm /home/yimonk/Documentos/cuadra/src/components/wiki/articles/batch_create.ps1)",
+      "Bash(git -C /home/yimonk/Documentos/cuadra status --short)"
     ]
   }
 }

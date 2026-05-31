@@ -125,7 +125,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     };
 
     useEffect(() => {
-        // Notification outside click handler
+        if (!notificationsOpen) return;
         const handleClickOutside = (event: MouseEvent) => {
             if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
                 setNotificationsOpen(false);
@@ -133,7 +133,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [notificationsOpen]);
 
     useEffect(() => {
         if (!user || isAuthRoute) return;

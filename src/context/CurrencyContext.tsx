@@ -35,9 +35,8 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const CACHE_KEY = 'bcv-rate-cache';
   const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
-  const fetchRate = async () => {
+  const fetchRate = useCallback(async () => {
     try {
-      // Check sessionStorage cache first
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
         const { rate, timestamp } = JSON.parse(cached);
@@ -47,20 +46,28 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
           return;
         }
       }
-      const response = await fetch('/api/bcv');
-      const data = await response.json();
-      if (data.rate && typeof data.rate === 'number') {
-        setExchangeRate(data.rate);
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ rate: data.rate, timestamp: Date.now() }));
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      try {
+        const response = await fetch('/api/bcv', { signal: controller.signal });
+        const data = await response.json();
+        if (data.rate && typeof data.rate === 'number') {
+          setExchangeRate(data.rate);
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify({ rate: data.rate, timestamp: Date.now() }));
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
+      if ((error as Error)?.name === 'AbortError') {
+        console.warn('BCV rate fetch timeout');
+      } else if (process.env.NODE_ENV === 'development') {
         console.error('Error fetching BCV rate:', error);
       }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const toggleCurrency = useCallback(() => {
     setCurrencyState(prev => {

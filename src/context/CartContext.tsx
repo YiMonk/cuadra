@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { CartItem } from '@/types/sales';
 import { Product, ProductVariant } from '@/types/inventory';
 import { Client } from '@/types/client';
@@ -28,13 +28,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         [items]
     );
 
-    const addToCart = (product: Product, variant?: ProductVariant) => {
+    const addToCart = useCallback((product: Product, variant?: ProductVariant) => {
         setItems(prev => {
             const existingIndex = prev.findIndex(i =>
                 i.id === product.id && i.variantId === variant?.id
             );
 
-            // Determine stock limit: use variant stock if variant selected
             const stockLimit = variant ? variant.stock : product.stock;
 
             if (existingIndex >= 0) {
@@ -49,7 +48,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (stockLimit <= 0) return prev;
 
-            // finalPrice = base price + variant modifier (if any)
             const finalPrice = product.price + (variant?.priceModifier || 0);
 
             const newItem: CartItem = {
@@ -57,16 +55,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 quantity: 1,
                 variantId: variant?.id,
                 variantName: variant?.name,
-                // Use variant stock as the effective stock limit for this cart line
                 stock: stockLimit,
                 finalPrice,
             };
 
             return [...prev, newItem];
         });
-    };
+    }, []);
 
-    const updateQuantity = (productId: string, quantity: number, variantId?: string) => {
+    const updateQuantity = useCallback((productId: string, quantity: number, variantId?: string) => {
         setItems(prev => {
             if (quantity <= 0) {
                 return prev.filter(i => !(i.id === productId && i.variantId === variantId));
@@ -79,28 +76,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return i;
             });
         });
-    };
+    }, []);
 
-    const removeFromCart = (productId: string, variantId?: string) => {
+    const removeFromCart = useCallback((productId: string, variantId?: string) => {
         setItems(prev => prev.filter(i => !(i.id === productId && i.variantId === variantId)));
-    };
+    }, []);
 
-    const clearCart = () => {
+    const clearCart = useCallback(() => {
         setItems([]);
         setSelectedClient(null);
-    };
+    }, []);
+
+    const value = useMemo(() => ({
+        items,
+        total,
+        selectedClient,
+        setSelectedClient,
+        addToCart,
+        updateQuantity,
+        removeFromCart,
+        clearCart,
+    }), [items, total, selectedClient, addToCart, updateQuantity, removeFromCart, clearCart]);
 
     return (
-        <CartContext.Provider value={{
-            items,
-            total,
-            selectedClient,
-            setSelectedClient,
-            addToCart,
-            updateQuantity,
-            removeFromCart,
-            clearCart,
-        }}>
+        <CartContext.Provider value={value}>
             {children}
         </CartContext.Provider>
     );
