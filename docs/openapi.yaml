@@ -1,0 +1,1303 @@
+openapi: "3.1.0"
+
+info:
+  title: Cuadra API
+  version: "1.0.0"
+  description: |
+    REST API del backend de Cuadra POS.
+    Multi-tenant: todos los endpoints filtran por `ownerId` del JWT.
+    Auth: Bearer JWT en header `Authorization`.
+
+servers:
+  - url: http://localhost:4000
+    description: Desarrollo local
+  - url: https://cuadra-backend.railway.app
+    description: Producción (Railway)
+
+# ─── SECURITY ─────────────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── Shared ──────────────────────────────────────────────────────────────
+    Error:
+      type: object
+      properties:
+        detail: { type: string }
+
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        page_size: { type: integer }
+        total: { type: integer }
+        total_pages: { type: integer }
+
+    # ── Auth ────────────────────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+
+    RegisterRequest:
+      type: object
+      required: [email, password, name]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+        name: { type: string }
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, example: bearer }
+        expires_in: { type: integer, example: 604800 }
+
+    UserProfile:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        name: { type: string }
+        role: { type: string, enum: [owner, admin, cashier, viewer] }
+        owner_id: { type: string, nullable: true }
+        location_id: { type: string, nullable: true }
+        commission_pct: { type: number, nullable: true }
+        avatar_url: { type: string, nullable: true }
+
+    # ── Products ────────────────────────────────────────────────────────────
+    ProductVariant:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        stock: { type: integer }
+        price_modifier: { type: number, nullable: true }
+        sku: { type: string, nullable: true }
+
+    ProductCreate:
+      type: object
+      required: [name, price]
+      properties:
+        name: { type: string }
+        price: { type: number }
+        cost_price: { type: number, nullable: true }
+        stock: { type: integer, default: 0 }
+        stock_by_location:
+          type: object
+          additionalProperties: { type: integer }
+          nullable: true
+        min_stock_alert: { type: integer, default: 0 }
+        image_url: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        sub_category: { type: string, nullable: true }
+        unit: { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+          nullable: true
+        barcode: { type: string, nullable: true }
+        location_id: { type: string, nullable: true }
+        variants:
+          type: array
+          items: { $ref: "#/components/schemas/ProductVariant" }
+          nullable: true
+
+    ProductResponse:
+      allOf:
+        - $ref: "#/components/schemas/ProductCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+            active: { type: boolean }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+
+    StockAdjustRequest:
+      type: object
+      required: [adjustment, reason]
+      properties:
+        adjustment: { type: integer }
+        reason: { type: string, enum: [restock, waste, correction] }
+        notes: { type: string, nullable: true }
+
+    # ── Sales ───────────────────────────────────────────────────────────────
+    SaleItemCreate:
+      type: object
+      required: [product_id, product_name, quantity, price, final_price]
+      properties:
+        product_id: { type: string }
+        product_name: { type: string }
+        quantity: { type: integer, minimum: 1 }
+        price: { type: number }
+        cost_price: { type: number, nullable: true }
+        variant_id: { type: string, nullable: true }
+        variant_name: { type: string, nullable: true }
+        final_price: { type: number }
+        discount_applied: { type: string, nullable: true }
+
+    SaleItemResponse:
+      allOf:
+        - $ref: "#/components/schemas/SaleItemCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            sale_id: { type: string }
+
+    SaleCreate:
+      type: object
+      required: [items, total, payment_method]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SaleItemCreate" }
+        total: { type: number }
+        payment_method:
+          type: string
+          enum: [cash, transfer, mobile_pay, credit]
+        client_id: { type: string, nullable: true }
+        client_name: { type: string, nullable: true }
+        cashbox_id: { type: string, nullable: true }
+        cashbox_name: { type: string, nullable: true }
+        location_id: { type: string, nullable: true }
+        location_name: { type: string, nullable: true }
+        exchange_rate_at_sale: { type: number, nullable: true }
+        notes: { type: string, nullable: true }
+        discount_amount: { type: number, nullable: true }
+        discount_reason: { type: string, nullable: true }
+        promotion_savings: { type: number, nullable: true }
+        coupon_code: { type: string, nullable: true }
+        evidence_url: { type: string, nullable: true }
+        payment_data:
+          type: object
+          nullable: true
+          properties:
+            reference: { type: string }
+            bank: { type: string }
+            date: { type: string }
+
+    SaleResponse:
+      allOf:
+        - $ref: "#/components/schemas/SaleCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+            status: { type: string, enum: [paid, pending, cancelled] }
+            created_by: { type: string, nullable: true }
+            creator_name: { type: string, nullable: true }
+            created_at: { type: string, format: date-time }
+            paid_at: { type: string, format: date-time, nullable: true }
+            commission_pct: { type: number, nullable: true }
+            commission_amount: { type: number, nullable: true }
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/SaleItemResponse" }
+
+    CancelSaleRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string }
+
+    PayDebtsRequest:
+      type: object
+      required: [payment_method]
+      properties:
+        payment_method: { type: string, enum: [cash, transfer, mobile_pay] }
+        cashbox_id: { type: string, nullable: true }
+
+    # ── Clients ─────────────────────────────────────────────────────────────
+    ClientCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+
+    ClientResponse:
+      allOf:
+        - $ref: "#/components/schemas/ClientCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+            total_debt: { type: number }
+            active: { type: boolean }
+            created_at: { type: string, format: date-time }
+
+    # ── Expenses ─────────────────────────────────────────────────────────────
+    ExpenseCreate:
+      type: object
+      required: [description, amount]
+      properties:
+        description: { type: string }
+        amount: { type: number }
+        category: { type: string, nullable: true }
+        cashbox_id: { type: string, nullable: true }
+        cashbox_name: { type: string, nullable: true }
+        location_id: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        evidence_url: { type: string, nullable: true }
+
+    ExpenseResponse:
+      allOf:
+        - $ref: "#/components/schemas/ExpenseCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+            created_at: { type: string, format: date-time }
+
+    # ── Cashboxes ────────────────────────────────────────────────────────────
+    CashboxCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        location_id: { type: string, nullable: true }
+        assigned_user_id: { type: string, nullable: true }
+
+    CashboxResponse:
+      allOf:
+        - $ref: "#/components/schemas/CashboxCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+            balance: { type: number }
+            active: { type: boolean }
+
+    # ── Cash Sessions ────────────────────────────────────────────────────────
+    OpenSessionRequest:
+      type: object
+      properties:
+        cashbox_id: { type: string, nullable: true }
+        cashbox_name: { type: string, nullable: true }
+
+    CloseSessionRequest:
+      type: object
+      properties:
+        notes: { type: string, nullable: true }
+        discrepancies: { type: string, nullable: true }
+
+    CashSessionResponse:
+      type: object
+      properties:
+        id: { type: string }
+        owner_id: { type: string }
+        cashier_id: { type: string }
+        cashier_name: { type: string }
+        cashbox_id: { type: string, nullable: true }
+        status: { type: string, enum: [open, closed] }
+        opened_at: { type: string, format: date-time }
+        closed_at: { type: string, format: date-time, nullable: true }
+        total_sales: { type: number }
+        total_by_method:
+          type: object
+          properties:
+            cash: { type: number }
+            transfer: { type: number }
+            mobile_pay: { type: number }
+            credit: { type: number }
+        debt_collected: { type: number }
+        debt_pending_at_open: { type: number }
+        debt_pending_at_close: { type: number }
+
+    # ── Locations ────────────────────────────────────────────────────────────
+    LocationCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        address: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+
+    LocationResponse:
+      allOf:
+        - $ref: "#/components/schemas/LocationCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+            active: { type: boolean }
+
+    # ── Suppliers ────────────────────────────────────────────────────────────
+    SupplierCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        contact_name: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+
+    SupplierResponse:
+      allOf:
+        - $ref: "#/components/schemas/SupplierCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+            active: { type: boolean }
+
+    # ── Categories ───────────────────────────────────────────────────────────
+    CategoryCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        parent_id: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        icon: { type: string, nullable: true }
+
+    CategoryResponse:
+      allOf:
+        - $ref: "#/components/schemas/CategoryCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+
+    # ── Promotions ───────────────────────────────────────────────────────────
+    PromotionCreate:
+      type: object
+      required: [name, type]
+      properties:
+        name: { type: string }
+        description: { type: string, nullable: true }
+        type: { type: string, enum: [percentage, fixed, buy_x_get_y] }
+        value: { type: number, nullable: true }
+        applicable_to:
+          type: array
+          items: { type: string }
+          nullable: true
+        min_purchase: { type: number, nullable: true }
+        coupon_code: { type: string, nullable: true }
+        starts_at: { type: string, format: date-time, nullable: true }
+        ends_at: { type: string, format: date-time, nullable: true }
+
+    PromotionResponse:
+      allOf:
+        - $ref: "#/components/schemas/PromotionCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+            active: { type: boolean }
+
+    # ── Stock Transfers ──────────────────────────────────────────────────────
+    StockTransferCreate:
+      type: object
+      required: [from_location_id, to_location_id, product_id, product_name, quantity]
+      properties:
+        from_location_id: { type: string }
+        to_location_id: { type: string }
+        product_id: { type: string }
+        product_name: { type: string }
+        quantity: { type: integer, minimum: 1 }
+        variant_id: { type: string, nullable: true }
+        variant_name: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+
+    StockTransferResponse:
+      allOf:
+        - $ref: "#/components/schemas/StockTransferCreate"
+        - type: object
+          properties:
+            id: { type: string }
+            owner_id: { type: string }
+            status: { type: string, enum: [pending, completed, cancelled] }
+            created_at: { type: string, format: date-time }
+
+    # ── Reports ──────────────────────────────────────────────────────────────
+    SalesSummaryResponse:
+      type: object
+      properties:
+        count: { type: integer }
+        revenue: { type: number }
+        average: { type: number }
+        pending: { type: number }
+
+    InventoryReportResponse:
+      type: object
+      properties:
+        total_products: { type: integer }
+        low_stock_count: { type: integer }
+        low_stock:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+              stock: { type: integer }
+        total_inventory_value: { type: number }
+
+    ProfitReportResponse:
+      type: object
+      properties:
+        revenue: { type: number }
+        expenses: { type: number }
+        gross_profit: { type: number }
+
+    BcvRateResponse:
+      type: object
+      properties:
+        rate: { type: number, example: 36.5 }
+        cached: { type: boolean }
+
+
+security:
+  - bearerAuth: []
+
+# ─── PATHS ────────────────────────────────────────────────────────────────────
+paths:
+
+  # ── Health ──────────────────────────────────────────────────────────────────
+  /health:
+    get:
+      summary: Health check
+      security: []
+      tags: [meta]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+  # ── Auth ────────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      summary: Registrar nuevo owner
+      security: []
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Usuario creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+        "400":
+          description: Email ya registrado
+
+  /auth/login:
+    post:
+      summary: Login — devuelve JWT
+      security: []
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Token JWT
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401":
+          description: Credenciales inválidas
+
+  /auth/me:
+    get:
+      summary: Perfil del usuario autenticado
+      tags: [auth]
+      responses:
+        "200":
+          description: Perfil
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+
+  # ── Products ────────────────────────────────────────────────────────────────
+  /products:
+    get:
+      summary: Listar productos activos
+      tags: [products]
+      parameters:
+        - name: location_id
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ProductResponse" }
+          description: OK
+    post:
+      summary: Crear producto
+      tags: [products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductResponse" }
+          description: Producto creado
+
+  /products/{productId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      summary: Obtener producto por ID
+      tags: [products]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductResponse" }
+          description: OK
+        "404":
+          description: No encontrado
+    patch:
+      summary: Actualizar producto
+      tags: [products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductCreate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductResponse" }
+          description: OK
+    delete:
+      summary: Soft-delete producto
+      tags: [products]
+      responses:
+        "204":
+          description: Eliminado
+
+  /products/{productId}/adjust-stock:
+    post:
+      summary: Ajustar stock (restock / merma / corrección)
+      tags: [products]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StockAdjustRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductResponse" }
+          description: Stock actualizado
+        "400":
+          description: Stock insuficiente
+
+  # ── Sales ───────────────────────────────────────────────────────────────────
+  /sales:
+    get:
+      summary: Listar ventas
+      tags: [sales]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [paid, pending, cancelled] }
+        - name: client_id
+          in: query
+          schema: { type: string }
+        - name: start_date
+          in: query
+          schema: { type: string, format: date-time }
+        - name: end_date
+          in: query
+          schema: { type: string, format: date-time }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SaleResponse" }
+          description: OK
+    post:
+      summary: Crear venta (descuenta stock atómicamente)
+      tags: [sales]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SaleCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SaleResponse" }
+          description: Venta creada
+        "400":
+          description: Stock insuficiente u otros errores de negocio
+
+  /sales/{saleId}:
+    parameters:
+      - name: saleId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      summary: Obtener venta por ID
+      tags: [sales]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SaleResponse" }
+          description: OK
+
+  /sales/{saleId}/status:
+    patch:
+      summary: Actualizar estado de venta (ej. pending → paid)
+      tags: [sales]
+      parameters:
+        - name: saleId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [paid, cancelled] }
+                payment_method: { type: string }
+                cashbox_id: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SaleResponse" }
+          description: OK
+
+  /sales/{saleId}/cancel:
+    post:
+      summary: Cancelar venta (restaura stock)
+      tags: [sales]
+      parameters:
+        - name: saleId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CancelSaleRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SaleResponse" }
+          description: OK
+
+  /sales/clients/{clientId}/pay-all-debts:
+    post:
+      summary: Pagar todas las deudas de un cliente
+      tags: [sales]
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PayDebtsRequest" }
+      responses:
+        "200":
+          description: Deudas saldadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated: { type: integer }
+
+  # ── Clients ─────────────────────────────────────────────────────────────────
+  /clients:
+    get:
+      summary: Listar clientes activos
+      tags: [clients]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ClientResponse" }
+          description: OK
+    post:
+      summary: Crear cliente
+      tags: [clients]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClientResponse" }
+          description: Cliente creado
+
+  /clients/{clientId}:
+    parameters:
+      - name: clientId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      summary: Obtener cliente por ID
+      tags: [clients]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClientResponse" }
+          description: OK
+    patch:
+      summary: Actualizar cliente
+      tags: [clients]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientCreate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClientResponse" }
+          description: OK
+    delete:
+      summary: Soft-delete cliente (bloquea si tiene deudas)
+      tags: [clients]
+      responses:
+        "204":
+          description: Eliminado
+        "400":
+          description: Cliente con deudas pendientes
+
+  # ── Expenses ─────────────────────────────────────────────────────────────────
+  /expenses:
+    get:
+      summary: Listar gastos
+      tags: [expenses]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExpenseResponse" }
+          description: OK
+    post:
+      summary: Registrar gasto
+      tags: [expenses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExpenseCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExpenseResponse" }
+          description: Gasto creado
+
+  /expenses/{expenseId}:
+    delete:
+      summary: Eliminar gasto
+      tags: [expenses]
+      parameters:
+        - name: expenseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Eliminado
+
+  # ── Cashboxes ─────────────────────────────────────────────────────────────────
+  /cashboxes:
+    get:
+      summary: Listar cajas
+      tags: [cashboxes]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CashboxResponse" }
+          description: OK
+    post:
+      summary: Crear caja
+      tags: [cashboxes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CashboxCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CashboxResponse" }
+          description: Caja creada
+
+  /cashboxes/{cashboxId}:
+    parameters:
+      - name: cashboxId
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      summary: Actualizar caja
+      tags: [cashboxes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CashboxCreate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CashboxResponse" }
+          description: OK
+    delete:
+      summary: Desactivar caja
+      tags: [cashboxes]
+      responses:
+        "204":
+          description: Desactivada
+
+  # ── Cash Sessions ────────────────────────────────────────────────────────────
+  /cash-sessions/open:
+    post:
+      summary: Abrir sesión de caja
+      tags: [cash-sessions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OpenSessionRequest" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CashSessionResponse" }
+          description: Sesión abierta
+        "400":
+          description: Ya existe una sesión abierta para esta caja
+
+  /cash-sessions/current:
+    get:
+      summary: Sesión activa del usuario autenticado
+      tags: [cash-sessions]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CashSessionResponse" }
+          description: Sesión activa
+        "404":
+          description: Sin sesión abierta
+
+  /cash-sessions/{sessionId}/close:
+    post:
+      summary: Cerrar sesión de caja
+      tags: [cash-sessions]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CloseSessionRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CashSessionResponse" }
+          description: Sesión cerrada
+
+  /cash-sessions/{sessionId}/report:
+    get:
+      summary: Reporte de sesión
+      tags: [cash-sessions]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Reporte de sesión
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CashSessionResponse" }
+
+  # ── Locations ─────────────────────────────────────────────────────────────────
+  /locations:
+    get:
+      summary: Listar sucursales
+      tags: [locations]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LocationResponse" }
+          description: OK
+    post:
+      summary: Crear sucursal (owner/admin)
+      tags: [locations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LocationCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LocationResponse" }
+          description: Sucursal creada
+
+  /locations/{locationId}:
+    parameters:
+      - name: locationId
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      summary: Actualizar sucursal
+      tags: [locations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LocationCreate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LocationResponse" }
+          description: OK
+    delete:
+      summary: Desactivar sucursal (owner)
+      tags: [locations]
+      responses:
+        "204":
+          description: Desactivada
+
+  # ── Suppliers ─────────────────────────────────────────────────────────────────
+  /suppliers:
+    get:
+      summary: Listar proveedores
+      tags: [suppliers]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SupplierResponse" }
+          description: OK
+    post:
+      summary: Crear proveedor
+      tags: [suppliers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplierResponse" }
+          description: Proveedor creado
+
+  /suppliers/{supplierId}:
+    parameters:
+      - name: supplierId
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      summary: Actualizar proveedor
+      tags: [suppliers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierCreate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplierResponse" }
+          description: OK
+    delete:
+      summary: Desactivar proveedor
+      tags: [suppliers]
+      responses:
+        "204":
+          description: Desactivado
+
+  # ── Categories ────────────────────────────────────────────────────────────────
+  /categories:
+    get:
+      summary: Listar categorías
+      tags: [categories]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CategoryResponse" }
+          description: OK
+    post:
+      summary: Crear categoría
+      tags: [categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryResponse" }
+          description: Categoría creada
+
+  # ── Promotions ────────────────────────────────────────────────────────────────
+  /promotions:
+    get:
+      summary: Listar promociones activas
+      tags: [promotions]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PromotionResponse" }
+          description: OK
+    post:
+      summary: Crear promoción
+      tags: [promotions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PromotionCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PromotionResponse" }
+          description: Promoción creada
+
+  /promotions/{promotionId}:
+    parameters:
+      - name: promotionId
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      summary: Actualizar promoción
+      tags: [promotions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PromotionCreate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PromotionResponse" }
+          description: OK
+    delete:
+      summary: Desactivar promoción
+      tags: [promotions]
+      responses:
+        "204":
+          description: Desactivada
+
+  # ── Stock Transfers ───────────────────────────────────────────────────────────
+  /stock-transfers:
+    get:
+      summary: Listar transferencias
+      tags: [stock-transfers]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StockTransferResponse" }
+          description: OK
+    post:
+      summary: Crear transferencia de stock
+      tags: [stock-transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StockTransferCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StockTransferResponse" }
+          description: Transferencia creada
+
+  /stock-transfers/{transferId}/complete:
+    post:
+      summary: Confirmar transferencia (mueve stock)
+      tags: [stock-transfers]
+      parameters:
+        - name: transferId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StockTransferResponse" }
+          description: Transferencia completada
+
+  # ── Reports ───────────────────────────────────────────────────────────────────
+  /reports/sales-summary:
+    get:
+      summary: Resumen de ventas (revenue, pending, count, avg)
+      tags: [reports]
+      parameters:
+        - name: start_date
+          in: query
+          schema: { type: string, format: date-time }
+        - name: end_date
+          in: query
+          schema: { type: string, format: date-time }
+        - name: location_id
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SalesSummaryResponse" }
+          description: OK
+
+  /reports/inventory:
+    get:
+      summary: Reporte de inventario (total, bajo stock, valor)
+      tags: [reports]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InventoryReportResponse" }
+          description: OK
+
+  /reports/profit:
+    get:
+      summary: Reporte de ganancias (revenue - gastos)
+      tags: [reports]
+      parameters:
+        - name: start_date
+          in: query
+          schema: { type: string, format: date-time }
+        - name: end_date
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfitReportResponse" }
+          description: OK
+
+  # ── BCV Rate ──────────────────────────────────────────────────────────────────
+  /bcv-rate:
+    get:
+      summary: Tasa BCV USD/VES (caché 30 min)
+      security: []
+      tags: [bcv]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BcvRateResponse" }
+          description: Tasa actual
+        "501":
+          description: Scraping no implementado
+        "502":
+          description: Error fetching BCV

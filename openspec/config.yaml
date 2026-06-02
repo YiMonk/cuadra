@@ -1,0 +1,13 @@
+context:
+  project: Control de inventario y movimientos de caja
+  frontend: React / Next.js
+  backend: Python FastAPI
+  database: PostgreSQL (Neon)
+  previous_backend: Firebase (Firestore + Auth)
+  migration: firebase-to-postgres
+
+rules:
+  specs: Use Given/When/Then format
+  tests: TDD mandatory for all endpoints
+  security: JWT auth, no secrets in code, env vars only
+  database: Use async SQLAlchemy + Alembic migrations
