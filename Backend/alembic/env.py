@@ -2,11 +2,10 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy import pool
 
 from app.config import settings
-from app.database import Base
+from app.database import Base, _strip_asyncpg_params
 import app.models  # noqa: F401 — registers all models
 
 config = context.config
@@ -14,7 +13,6 @@ if config.config_file_name:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", settings.async_database_url)
 
 
 def run_migrations_offline():
@@ -35,11 +33,13 @@ def do_run_migrations(connection):
 
 
 async def run_async_migrations():
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    from sqlalchemy.ext.asyncio import create_async_engine
+    raw_url = settings.async_database_url
+    if "postgresql" in raw_url:
+        clean_url, connect_args = _strip_asyncpg_params(raw_url)
+    else:
+        clean_url, connect_args = raw_url, {}
+    connectable = create_async_engine(clean_url, poolclass=pool.NullPool, connect_args=connect_args)
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()

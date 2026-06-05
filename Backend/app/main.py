@@ -16,9 +16,11 @@ from app.routers.reports import router as reports_router, bcv_router
 async def lifespan(app: FastAPI):
     if settings.is_production:
         import asyncio
+        import os
         from alembic.config import Config
         from alembic import command
-        alembic_cfg = Config("alembic.ini")
+        _backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        alembic_cfg = Config(os.path.join(_backend_dir, "alembic.ini"))
         await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
     else:
         async with engine.begin() as conn:
