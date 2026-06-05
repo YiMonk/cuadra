@@ -14,8 +14,11 @@ from app.routers.reports import router as reports_router, bcv_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as exc:
+        print(f"[cuadra] DB init error: {type(exc).__name__}: {exc}", flush=True)
     yield
     await engine.dispose()
 
