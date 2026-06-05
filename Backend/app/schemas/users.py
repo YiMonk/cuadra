@@ -15,6 +15,8 @@ class UserProfile(BaseModel):
     avatar_url: Optional[str] = None
     commission_pct: Optional[float] = None
     default_location_id: Optional[str] = None
+    terms_accepted: bool = False
+    onboarding_completed_at: Optional[datetime] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -24,6 +26,8 @@ class UpdateMeRequest(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    terms_accepted: Optional[bool] = None
+    onboarding_completed_at: Optional[datetime] = None
 
     @field_validator("name")
     @classmethod

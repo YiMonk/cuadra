@@ -31,6 +31,10 @@ class User(Base):
     avatar_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     commission_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     default_location_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    terms_accepted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    onboarding_completed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )

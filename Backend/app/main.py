@@ -14,7 +14,13 @@ from app.routers.reports import router as reports_router, bcv_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not settings.is_production:
+    if settings.is_production:
+        import asyncio
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config("alembic.ini")
+        await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
+    else:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
     yield
