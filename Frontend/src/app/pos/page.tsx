@@ -177,6 +177,13 @@ function POSScreen() {
         }
     }, [currentUser?.defaultLocationId]);
 
+    // Auto-select de caja: selecciona la primera disponible si aún no hay una elegida
+    useEffect(() => {
+        if (cashboxes.length > 0 && selectedCashbox === 'default') {
+            setSelectedCashbox(cashboxes[0].id);
+        }
+    }, [cashboxes]);
+
     const isLocationLocked = !!currentUser?.defaultLocationId
         && currentUser.role !== 'owner'
         && currentUser.role !== 'admin'

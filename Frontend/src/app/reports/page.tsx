@@ -99,6 +99,11 @@ function ReportsScreen() {
     })();
     const [commissionMonth, setCommissionMonth] = useState<string>(currentMonthIso);
 
+    // Date filter state
+    const [filterDatePreset, setFilterDatePreset] = useState<'today' | 'week' | 'month' | 'year' | 'all' | 'custom'>('month');
+    const [filterDateFrom, setFilterDateFrom] = useState('');
+    const [filterDateTo, setFilterDateTo] = useState('');
+
     // Share buttons state
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
@@ -154,7 +159,28 @@ function ReportsScreen() {
     }, [user, authLoading, router]);
 
     useEffect(() => {
+        const now = new Date();
+        let dateFrom: Date | null = null;
+        let dateTo: Date | null = null;
+
+        if (filterDatePreset === 'today') {
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            dateTo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        } else if (filterDatePreset === 'week') {
+            dateFrom = new Date(now); dateFrom.setDate(now.getDate() - 7); dateFrom.setHours(0, 0, 0, 0);
+        } else if (filterDatePreset === 'month') {
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        } else if (filterDatePreset === 'year') {
+            dateFrom = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+        } else if (filterDatePreset === 'custom') {
+            if (filterDateFrom) { dateFrom = new Date(filterDateFrom + 'T00:00:00'); }
+            if (filterDateTo) { dateTo = new Date(filterDateTo + 'T23:59:59'); }
+        }
+
         let filtered = allSales.filter(s => {
+            const ts = toMillis(s.createdAt);
+            if (dateFrom && ts < dateFrom.getTime()) return false;
+            if (dateTo && ts > dateTo.getTime()) return false;
             if (selectedCashier !== 'all' && s.cashboxId !== selectedCashier && s.createdBy !== selectedCashier) return false;
             if (selectedLocation !== 'all' && (s.locationId ?? null) !== selectedLocation) return false;
             if (filterStatus !== 'all' && s.status !== filterStatus) return false;
@@ -174,7 +200,7 @@ function ReportsScreen() {
         setFilteredSales(filtered);
         setCurrentPage(1);
         processStats(filtered);
-    }, [allSales, selectedCashier, selectedLocation, filterStatus, filterMethod, searchQuery]);
+    }, [allSales, selectedCashier, selectedLocation, filterStatus, filterMethod, searchQuery, filterDatePreset, filterDateFrom, filterDateTo]);
 
     const processStats = (data: Sale[]) => {
         const summary = SalesService.computeSummary(data);
@@ -732,7 +758,8 @@ function ReportsScreen() {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500 pb-24 md:pb-8">
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
+            {/* Header */}
+            <div className="flex items-end justify-between pb-2">
                 <div>
                     <h1 className="text-3xl md:text-[40px] font-black tracking-tighter text-ui-text uppercase leading-none">Métricas</h1>
                     <div className="flex items-center gap-2 mt-2">
@@ -740,41 +767,159 @@ function ReportsScreen() {
                         <p className="text-ui-text-muted/80 font-black uppercase tracking-[0.2em] text-[10px]">Análisis de Operaciones</p>
                     </div>
                 </div>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={exportToExcel} className="h-10 px-4 bg-white dark:bg-black/5 hover:bg-gray-50 border-ui-border/50 font-black uppercase tracking-widest text-[10px] rounded-xl flex items-center gap-2">
+                        <FileSpreadsheet size={14} /> Excel
+                    </Button>
+                    <Button variant="primary" onClick={exportToPDF} className="h-10 px-4 bg-accent-primary text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-accent-primary/20 flex items-center gap-2">
+                        <Download size={14} /> PDF
+                    </Button>
+                </div>
+            </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                    {locations.length > 0 && (
-                        <div className="w-full sm:w-56 z-30">
-                            <Select
-                                options={[
-                                    { value: 'all', label: 'Todas las sucursales' },
-                                    ...locations.map(l => ({ value: l.id, label: l.name }))
-                                ]}
-                                value={selectedLocation}
-                                onChange={(val) => setSelectedLocation(val)}
-                                icon={<UserIcon size={16} className="text-accent-primary" />}
+            {/* Filter Bar */}
+            <div className="ui-card p-4 space-y-3">
+                {/* Date Presets */}
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mr-1">Período</span>
+                    {(['today', 'week', 'month', 'year', 'all', 'custom'] as const).map(p => {
+                        const labels: Record<string, string> = { today: 'Hoy', week: '7 días', month: 'Este mes', year: 'Este año', all: 'Todo', custom: 'Rango' };
+                        return (
+                            <button
+                                key={p}
+                                onClick={() => setFilterDatePreset(p)}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                    filterDatePreset === p
+                                        ? 'bg-accent-primary text-white shadow-sm shadow-accent-primary/30'
+                                        : 'bg-ui-bg text-ui-text-muted hover:text-ui-text'
+                                }`}
+                            >
+                                {labels[p]}
+                            </button>
+                        );
+                    })}
+                    {filterDatePreset === 'custom' && (
+                        <div className="flex items-center gap-2 mt-1 w-full sm:w-auto sm:mt-0">
+                            <input
+                                type="date"
+                                value={filterDateFrom}
+                                onChange={e => setFilterDateFrom(e.target.value)}
+                                className="h-8 px-2 text-[11px] font-bold bg-ui-bg border border-ui-border rounded-lg text-ui-text outline-none focus:border-accent-primary"
+                            />
+                            <span className="text-ui-text-muted text-xs">→</span>
+                            <input
+                                type="date"
+                                value={filterDateTo}
+                                onChange={e => setFilterDateTo(e.target.value)}
+                                className="h-8 px-2 text-[11px] font-bold bg-ui-bg border border-ui-border rounded-lg text-ui-text outline-none focus:border-accent-primary"
                             />
                         </div>
                     )}
-                    <div className="w-full sm:w-64 z-30">
-                        <Select
-                            options={[
-                                { value: 'all', label: 'Todas las cajas' },
-                                ...cashiers.map(c => ({ value: c.id, label: c.displayName || c.id }))
-                            ]}
-                            value={selectedCashier}
-                            onChange={(val) => setSelectedCashier(val)}
-                            icon={<UserIcon size={16} className="text-accent-primary" />}
+                </div>
+
+                {/* Secondary Filters Row */}
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Status pills */}
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mr-0.5">Estado</span>
+                        {([['all', 'Todos'], ['paid', 'Pagado'], ['pending', 'Pendiente'], ['cancelled', 'Anulado']] as const).map(([val, label]) => (
+                            <button
+                                key={val}
+                                onClick={() => setFilterStatus(val)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                    filterStatus === val
+                                        ? val === 'paid' ? 'bg-accent-success text-white'
+                                        : val === 'pending' ? 'bg-accent-warning text-white'
+                                        : val === 'cancelled' ? 'bg-accent-danger text-white'
+                                        : 'bg-accent-primary text-white'
+                                        : 'bg-ui-bg text-ui-text-muted hover:text-ui-text'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="w-px h-5 bg-ui-border hidden sm:block" />
+
+                    {/* Method pills */}
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] font-black text-ui-text-muted uppercase tracking-widest mr-0.5">Método</span>
+                        {([['all', 'Todos'], ['cash', 'Efectivo'], ['transfer', 'Transf.'], ['mobile_pay', 'P.Móvil'], ['credit', 'Crédito']] as const).map(([val, label]) => (
+                            <button
+                                key={val}
+                                onClick={() => setFilterMethod(val)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                    filterMethod === val
+                                        ? 'bg-accent-primary text-white shadow-sm shadow-accent-primary/30'
+                                        : 'bg-ui-bg text-ui-text-muted hover:text-ui-text'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Search + Location + Cashier Row */}
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Search */}
+                    <div className="relative flex-1 min-w-[180px]">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ui-text-muted" />
+                        <input
+                            type="text"
+                            placeholder="Buscar cliente, cajero, ID..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full h-9 pl-8 pr-3 text-[11px] font-bold bg-ui-bg border border-ui-border rounded-xl text-ui-text placeholder:text-ui-text-muted/60 outline-none focus:border-accent-primary transition-colors"
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <Button variant="outline" onClick={exportToExcel} className="flex-1 sm:flex-none h-12 px-5 bg-white dark:bg-black/5 hover:bg-gray-50 border-ui-border/50 font-black uppercase tracking-widest text-[10px] rounded-xl flex items-center justify-center gap-2">
-                            <FileSpreadsheet size={16} /> Excel
-                        </Button>
-                        <Button variant="primary" onClick={exportToPDF} className="flex-1 sm:flex-none h-12 px-5 bg-accent-primary text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-accent-primary/20 flex items-center justify-center gap-2">
-                            <Download size={16} /> Export PDF
-                        </Button>
+                    {/* Location */}
+                    {locations.length > 0 && (
+                        <div className="w-44 z-30">
+                            <Select
+                                options={[{ value: 'all', label: 'Todas las suc.' }, ...locations.map(l => ({ value: l.id, label: l.name }))]}
+                                value={selectedLocation}
+                                onChange={setSelectedLocation}
+                                icon={<Filter size={14} className="text-accent-primary" />}
+                            />
+                        </div>
+                    )}
+
+                    {/* Cashier */}
+                    <div className="w-48 z-30">
+                        <Select
+                            options={[{ value: 'all', label: 'Todos los cajeros' }, ...cashiers.map(c => ({ value: c.id, label: c.displayName || c.id }))]}
+                            value={selectedCashier}
+                            onChange={setSelectedCashier}
+                            icon={<UserIcon size={14} className="text-accent-primary" />}
+                        />
                     </div>
+
+                    {/* Clear filters */}
+                    {(filterDatePreset !== 'month' || filterStatus !== 'all' || filterMethod !== 'all' || searchQuery || selectedCashier !== 'all' || selectedLocation !== 'all') && (
+                        <button
+                            onClick={() => {
+                                setFilterDatePreset('month');
+                                setFilterDateFrom('');
+                                setFilterDateTo('');
+                                setFilterStatus('all');
+                                setFilterMethod('all');
+                                setSearchQuery('');
+                                setSelectedCashier('all');
+                                setSelectedLocation('all');
+                            }}
+                            className="h-9 px-3 flex items-center gap-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider text-accent-danger bg-accent-danger/10 hover:bg-accent-danger/20 transition-all"
+                        >
+                            <X size={12} /> Limpiar
+                        </button>
+                    )}
+
+                    {/* Result count */}
+                    <span className="text-[10px] font-bold text-ui-text-muted ml-auto">
+                        {filteredSales.length} transacciones
+                    </span>
                 </div>
             </div>
 
@@ -1204,6 +1349,140 @@ function ReportsScreen() {
                             <div className="h-full flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest text-[10px] opacity-60">No hay datos de productos vendidos</div>
                         )}
                     </div>
+                </CardContent>
+            </Card>
+
+            {/* Transaction Table */}
+            <Card className="overflow-hidden border-0 shadow-xl shadow-black/5">
+                <CardContent className="p-0">
+                    <div className="p-5 border-b border-ui-border flex items-center justify-between">
+                        <h2 className="text-sm font-black text-ui-text uppercase tracking-widest">Transacciones</h2>
+                        <span className="text-[10px] font-bold text-ui-text-muted">
+                            Página {currentPage} de {totalPages} · {filteredSales.length} registros
+                        </span>
+                    </div>
+
+                    {displayedSales.length === 0 ? (
+                        <div className="py-16 flex flex-col items-center justify-center gap-3 text-ui-text-muted">
+                            <ShoppingCart size={32} strokeWidth={1.5} />
+                            <p className="text-sm font-bold uppercase tracking-widest">Sin resultados</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Desktop table */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-accent-primary/10 text-[10px] uppercase tracking-[0.2em] text-accent-primary font-black">
+                                            <th className="p-4 font-black">Fecha</th>
+                                            <th className="p-4 font-black">Cliente</th>
+                                            <th className="p-4 font-black">Cajero</th>
+                                            <th className="p-4 font-black">Método</th>
+                                            <th className="p-4 font-black">Estado</th>
+                                            <th className="p-4 font-black text-right">Total</th>
+                                            <th className="p-4 font-black text-center">Ver</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {displayedSales.map((sale, i) => {
+                                            const ts = toMillis(sale.createdAt);
+                                            const methodLabel: Record<string, string> = { cash: 'Efectivo', transfer: 'Transf.', mobile_pay: 'P.Móvil', credit: 'Crédito' };
+                                            const statusColor: Record<string, string> = { paid: 'text-accent-success bg-accent-success/10', pending: 'text-accent-warning bg-accent-warning/10', cancelled: 'text-accent-danger bg-accent-danger/10' };
+                                            const statusLabel: Record<string, string> = { paid: 'Pagado', pending: 'Pendiente', cancelled: 'Anulado' };
+                                            return (
+                                                <tr key={sale.id} className={`border-t border-ui-border/50 hover:bg-accent-primary/5 transition-colors ${i % 2 === 0 ? '' : 'bg-ui-bg/30'}`}>
+                                                    <td className="p-4 text-xs font-bold text-ui-text-muted">{ts ? new Date(ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+                                                    <td className="p-4 text-xs font-bold text-ui-text">{sale.clientName || '—'}</td>
+                                                    <td className="p-4 text-xs font-bold text-ui-text-muted">{sale.creatorName || '—'}</td>
+                                                    <td className="p-4 text-xs font-bold text-ui-text-muted">{methodLabel[sale.paymentMethod] || sale.paymentMethod}</td>
+                                                    <td className="p-4">
+                                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${statusColor[sale.status] || 'text-ui-text-muted bg-ui-bg'}`}>
+                                                            {statusLabel[sale.status] || sale.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4 text-xs font-black text-ui-text text-right">{formatPrice(Number(sale.total) || 0)}</td>
+                                                    <td className="p-4 text-center">
+                                                        <button
+                                                            onClick={() => { setSelectedSale(sale); setIsModalOpen(true); }}
+                                                            className="w-8 h-8 rounded-xl bg-ui-bg border border-ui-border flex items-center justify-center mx-auto text-ui-text-muted hover:text-accent-primary hover:border-accent-primary/50 transition-all"
+                                                        >
+                                                            <Eye size={14} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile cards */}
+                            <div className="md:hidden divide-y divide-ui-border/50">
+                                {displayedSales.map(sale => {
+                                    const ts = toMillis(sale.createdAt);
+                                    const methodLabel: Record<string, string> = { cash: 'Efectivo', transfer: 'Transf.', mobile_pay: 'P.Móvil', credit: 'Crédito' };
+                                    const statusColor: Record<string, string> = { paid: 'text-accent-success', pending: 'text-accent-warning', cancelled: 'text-accent-danger' };
+                                    const statusLabel: Record<string, string> = { paid: 'Pagado', pending: 'Pendiente', cancelled: 'Anulado' };
+                                    return (
+                                        <button
+                                            key={sale.id}
+                                            onClick={() => { setSelectedSale(sale); setIsModalOpen(true); }}
+                                            className="w-full p-4 flex items-center gap-4 text-left hover:bg-accent-primary/5 transition-colors active:bg-accent-primary/10"
+                                        >
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className="text-sm font-black text-ui-text truncate">{sale.clientName || 'Sin cliente'}</p>
+                                                    <p className="text-sm font-black text-ui-text shrink-0">{formatPrice(Number(sale.total) || 0)}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-[10px] font-bold text-ui-text-muted">{ts ? new Date(ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '—'}</span>
+                                                    <span className="text-[10px] text-ui-text-muted">·</span>
+                                                    <span className="text-[10px] font-bold text-ui-text-muted">{methodLabel[sale.paymentMethod] || '—'}</span>
+                                                    <span className="text-[10px] text-ui-text-muted">·</span>
+                                                    <span className={`text-[10px] font-black ${statusColor[sale.status] || 'text-ui-text-muted'}`}>{statusLabel[sale.status] || sale.status}</span>
+                                                </div>
+                                            </div>
+                                            <Eye size={16} className="text-ui-text-muted shrink-0" />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="p-4 border-t border-ui-border flex items-center justify-between gap-2">
+                                    <button
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        disabled={currentPage === 1}
+                                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-ui-bg border border-ui-border text-ui-text-muted hover:text-accent-primary hover:border-accent-primary/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        ← Anterior
+                                    </button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                            const page = totalPages <= 5 ? i + 1 : currentPage <= 3 ? i + 1 : currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i;
+                                            return (
+                                                <button
+                                                    key={page}
+                                                    onClick={() => setCurrentPage(page)}
+                                                    className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === page ? 'bg-accent-primary text-white' : 'bg-ui-bg text-ui-text-muted hover:text-accent-primary'}`}
+                                                >
+                                                    {page}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <button
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-ui-bg border border-ui-border text-ui-text-muted hover:text-accent-primary hover:border-accent-primary/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        Siguiente →
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </CardContent>
             </Card>
 
