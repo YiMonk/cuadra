@@ -27,7 +27,10 @@ import {
     Minus,
     MoreHorizontal,
     Receipt,
-    Truck
+    Truck,
+    BarChart2,
+    Briefcase,
+    Tag
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -57,6 +60,7 @@ type NavItem = {
     icon: React.ComponentType<React.SVGProps<SVGSVGElement> & { size?: number | string }>;
     onClick?: (e: React.MouseEvent) => void;
     children?: NavSubItem[];
+    separator?: boolean;
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -233,46 +237,64 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'Usuarios', href: '/admin/users', icon: Users },
         { name: 'Historial', href: '/admin/activities', icon: Clock },
     ] : isStaff ? [
-        { name: 'Ventas', href: '/pos', icon: ShoppingCart },
+        { name: 'Vender', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', href: '/inventory', icon: Package },
         { name: 'Clientes', href: '/clients', icon: Users },
     ] : [
-        // Default Owner / Manager View
-        { name: 'Ventas', href: '/pos', icon: ShoppingCart },
+        { name: 'Vender', href: '/pos', icon: ShoppingCart },
         { name: 'Inventario', icon: Package, children: [
             { name: 'Gestión', icon: Package, href: '/inventory' },
             { name: 'Transferencias', icon: Truck, href: '/inventory/transfers' },
             { name: 'Importar', icon: Archive, href: '/inventory/import' },
         ]},
         { name: 'Clientes', href: '/clients', icon: Users },
-        { name: 'Cierre de Caja', href: '/cash', icon: DollarSign },
-        {
-            name: 'Más',
-            icon: MoreHorizontal,
-            children: [
-                { name: 'Reportes', icon: FileText, href: '/reports' },
-                { name: 'Pricing & Promos', icon: DollarSign, href: '/business/pricing' },
-                { name: 'Movimientos', icon: Archive, href: '/collections' },
-                { name: 'Gastos', icon: Receipt, href: '/expenses' },
-                { name: 'Proveedores', icon: Truck, href: '/suppliers' },
-                { name: 'Mi Equipo', icon: Users, href: '/business/team' },
-            ]
-        },
+        { name: 'Cobros', href: '/collections', icon: DollarSign },
+        { name: 'Reportes', href: '/reports', icon: BarChart2 },
+        { name: '_sep', separator: true, icon: MoreHorizontal },
+        { name: 'Caja', icon: Receipt, children: [
+            { name: 'Cierre de Caja', icon: DollarSign, href: '/cash' },
+            { name: 'Sesiones de Caja', icon: Clock, href: '/cash-sessions' },
+            { name: 'Gastos', icon: Receipt, href: '/expenses' },
+        ]},
+        { name: 'Negocio', icon: Briefcase, children: [
+            { name: 'Precios & Promos', icon: Tag, href: '/business/pricing' },
+            { name: 'Proveedores', icon: Truck, href: '/suppliers' },
+            { name: 'Mi Equipo', icon: Users, href: '/business/team' },
+        ]},
     ];
 
-    // For mobile bottom nav - Same as desktop for consistency
-    const baseMobileItems = navItems;
-    const mobileNavItems: NavItem[] = baseMobileItems.map(item => ({
-        ...item,
-        onClick: item.href === '/pos' ? (e: React.MouseEvent) => {
-            if (pathname === '/pos') {
-                e.preventDefault();
-                window.dispatchEvent(new CustomEvent('toggle-cart'));
-            } else {
-                router.push('/pos');
-            }
-        } : undefined
-    }));
+    const mobileNavItems: NavItem[] = isGlobalAdmin || isStaff ? navItems : [
+        {
+            name: 'Vender',
+            href: '/pos',
+            icon: ShoppingCart,
+            onClick: (e: React.MouseEvent) => {
+                if (pathname === '/pos') {
+                    e.preventDefault();
+                    window.dispatchEvent(new CustomEvent('toggle-cart'));
+                } else {
+                    router.push('/pos');
+                }
+            },
+        },
+        { name: 'Inventario', icon: Package, children: [
+            { name: 'Gestión', icon: Package, href: '/inventory' },
+            { name: 'Transferencias', icon: Truck, href: '/inventory/transfers' },
+            { name: 'Importar', icon: Archive, href: '/inventory/import' },
+        ]},
+        { name: 'Clientes', href: '/clients', icon: Users },
+        { name: 'Reportes', href: '/reports', icon: BarChart2 },
+        { name: 'Menú', icon: Menu, children: [
+            { name: 'Cierre de Caja', icon: DollarSign, href: '/cash' },
+            { name: 'Sesiones de Caja', icon: Clock, href: '/cash-sessions' },
+            { name: 'Gastos', icon: Receipt, href: '/expenses' },
+            { name: 'Cobros', icon: DollarSign, href: '/collections' },
+            { name: 'Proveedores', icon: Truck, href: '/suppliers' },
+            { name: 'Precios & Promos', icon: Tag, href: '/business/pricing' },
+            { name: 'Mi Equipo', icon: Users, href: '/business/team' },
+            { name: 'Configuración', icon: Settings, href: '/settings' },
+        ]},
+    ];
 
     return (
         <div className="flex h-dvh bg-ui-bg transition-colors duration-500 font-sans overflow-hidden md:overflow-visible">
@@ -327,6 +349,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     {/* Navigation */}
                     <nav className="flex-1 flex flex-col gap-1 w-full overflow-y-auto overflow-x-hidden hide-scrollbar">
                         {navItems.map((item) => {
+                            if (item.separator) {
+                                return <div key={item.name} className="my-2 mx-2 border-t border-ui-border/30" />;
+                            }
                             const Icon = item.icon;
                             const isActive = item.href ? (pathname === item.href || pathname.startsWith(item.href + '/')) : false;
                             const hasChildren = !!item.children?.length;
@@ -337,12 +362,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <>
                                     <div className="relative flex-shrink-0 flex items-center justify-center w-6 h-6">
                                         <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                                        {item.name === 'Ventas' && cartItemsCount > 0 && !sidebarExpanded && (
+                                        {item.name === 'Vender' && cartItemsCount > 0 && !sidebarExpanded && (
                                             <div className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-black text-white shadow-lg border-2 border-ui-bg">
                                                 {cartItemsCount > 9 ? '9+' : cartItemsCount}
                                             </div>
                                         )}
-                                        {item.name === 'Clientes' && pendingCollectionsCount > 0 && !sidebarExpanded && (
+                                        {(item.name === 'Clientes' || item.name === 'Cobros') && pendingCollectionsCount > 0 && !sidebarExpanded && (
                                             <div className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-black text-white shadow-lg border-2 border-ui-bg animate-pulse">
                                                 {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
                                             </div>
@@ -351,12 +376,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     {sidebarExpanded && (
                                         <span className="flex-1 text-sm font-semibold text-left whitespace-nowrap">{item.name}</span>
                                     )}
-                                    {sidebarExpanded && item.name === 'Ventas' && cartItemsCount > 0 && (
+                                    {sidebarExpanded && item.name === 'Vender' && cartItemsCount > 0 && (
                                         <div className={`min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center text-[10px] font-black ${isActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
                                             {cartItemsCount > 9 ? '9+' : cartItemsCount}
                                         </div>
                                     )}
-                                    {sidebarExpanded && item.name === 'Clientes' && pendingCollectionsCount > 0 && (
+                                    {sidebarExpanded && (item.name === 'Clientes' || item.name === 'Cobros') && pendingCollectionsCount > 0 && (
                                         <div className={`min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center text-[10px] font-black animate-pulse ${isActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
                                             {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
                                         </div>
@@ -607,7 +632,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 {isActive && (
                                     <div className="absolute -bottom-1 w-1.5 h-1.5 bg-accent-primary rounded-full animate-in zoom-in" />
                                 )}
-                                {item.name === 'Ventas' && cartItemsCount > 0 && (
+                                {item.name === 'Vender' && cartItemsCount > 0 && (
                                     <div className="absolute top-2 right-2 w-4 h-4 bg-accent-primary rounded-full border-2 border-ui-bg flex items-center justify-center text-[8px] font-black text-white shadow-sm z-10 animate-in zoom-in">
                                         {cartItemsCount > 9 ? '9+' : cartItemsCount}
                                     </div>
@@ -678,7 +703,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </button>
                         </div>
                         <div className="p-3 max-h-[70vh] overflow-y-auto">
-                            {navItems.find(i => i.name === mobileSelectedMenu)?.children?.map((sub) => {
+                            {mobileNavItems.find(i => i.name === mobileSelectedMenu)?.children?.map((sub) => {
                                 const SubIcon = sub.icon;
                                 const isSubActive = pathname === sub.href || pathname.startsWith(sub.href + '/');
                                 return (
