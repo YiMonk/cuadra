@@ -25,3 +25,38 @@ export function usePermissions<T extends Action>(actions: T[]): Record<T, boolea
   }
   return result;
 }
+
+/**
+ * Hook que proporciona métodos de control de acceso a módulos.
+ * Complementa usePermission que usa la tabla de permisos granulares.
+ */
+export function useModuleAccess() {
+  const { user } = useAuth();
+
+  const canAccess = (module: string): boolean => {
+    if (!user) return false;
+
+    // Owner, admin, admingod pueden acceder a todo
+    if (user.role === 'owner' || user.role === 'admin' || user.role === 'admingod') {
+      return true;
+    }
+
+    // Para cashier/viewer, por ahora permitir hasta que module_access esté completamente en AuthContext
+    return true;
+  };
+
+  const canWrite = (module: string): boolean => {
+    if (!user) return false;
+
+    // Viewers no pueden escribir (note: 'viewer' no está en Role type, pero es posible
+    // si viene del backend)
+    if ((user.role as string) === 'viewer') {
+      return false;
+    }
+
+    // Para otros roles, verificar acceso al módulo
+    return canAccess(module);
+  };
+
+  return { canAccess, canWrite };
+}
