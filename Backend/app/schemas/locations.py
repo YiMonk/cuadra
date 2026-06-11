@@ -23,3 +23,7 @@ class LocationResponse(BaseModel):
     active: bool
 
     model_config = {"from_attributes": True}
+
+
+# Alias for backwards compatibility
+LocationOut = LocationResponse

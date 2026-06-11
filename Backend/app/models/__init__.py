@@ -1,4 +1,6 @@
 from app.models.user import User
+from app.models.company import Company
+from app.models.role import Role
 from app.models.product import Product, StockMovement
 from app.models.client import Client
 from app.models.location import Location
@@ -9,11 +11,13 @@ from app.models.sale import Sale, SaleItem
 from app.models.cashbox import Cashbox, CashSession
 from app.models.closing import CashClosing, StockTransfer, Return, Activity
 from app.models.promotion import Promotion, PriceList, Coupon
+from app.models.audit_log import AuditLog
 
 __all__ = [
-    "User", "Product", "StockMovement", "Client",
+    "User", "Company", "Role", "Product", "StockMovement", "Client",
     "Location", "Supplier", "Category", "Expense",
     "Sale", "SaleItem", "Cashbox", "CashSession",
     "CashClosing", "StockTransfer", "Return", "Activity",
     "Promotion", "PriceList", "Coupon",
+    "AuditLog",
 ]

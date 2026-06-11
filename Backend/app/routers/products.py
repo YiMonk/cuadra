@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +12,7 @@ from app.schemas.products import (
     ProductUpdate,
     StockAdjustRequest,
 )
+from app.services import audit_service
 
 router = APIRouter(prefix="/api/v1/products", tags=["products"])
 
@@ -78,12 +79,29 @@ async def update_product(
     body: ProductUpdate,
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    request: Request = None,
 ):
     product = await _get_product_or_404(product_id, user.owner_id, db)
+    before = audit_service.snapshot(product)
+    old_price = product.price
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(product, field, value)
     await db.commit()
     await db.refresh(product)
+    after = audit_service.snapshot(product)
+
+    if old_price != product.price:
+        await audit_service.log(
+            db,
+            action="product.updated",
+            entity_type="product",
+            entity_id=product_id,
+            user=user,
+            request=request,
+            before=before,
+            after=after,
+        )
+
     return product
 
 

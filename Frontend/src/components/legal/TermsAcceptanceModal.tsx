@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface TermsAcceptanceModalProps {
@@ -15,15 +15,9 @@ export const TermsAcceptanceModal: React.FC<TermsAcceptanceModalProps> = ({
   onAccept,
 }) => {
   const [currentTab, setCurrentTab] = useState<'terms' | 'privacy' | 'disclaimer'>('terms');
-  const [hasAccepted, setHasAccepted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleAccept = async () => {
-    if (!hasAccepted) {
-      toast.error('Debes aceptar los términos y condiciones para continuar');
-      return;
-    }
-
     setIsProcessing(true);
     try {
       await onAccept();
@@ -49,16 +43,13 @@ export const TermsAcceptanceModal: React.FC<TermsAcceptanceModalProps> = ({
       <div className="bg-ui-surface border border-ui-border rounded-[2.5rem] max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
         <div className="px-8 py-6 border-b border-ui-border bg-gradient-to-r from-blue-500/10 to-transparent">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-1" />
-            <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tight">
-                Aceptación Requerida
-              </h2>
-              <p className="text-gray-400 text-sm mt-1 font-medium">
-                Por favor, revisa y acepta nuestros términos y condiciones para continuar usando CUADRA
-              </p>
-            </div>
+          <div>
+            <h2 className="text-xl font-black text-white uppercase tracking-tight">
+              Términos y Condiciones
+            </h2>
+            <p className="text-gray-400 text-sm mt-1 font-medium">
+              Revisa nuestros términos antes de continuar usando CUADRA
+            </p>
           </div>
         </div>
 
@@ -194,29 +185,16 @@ export const TermsAcceptanceModal: React.FC<TermsAcceptanceModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-ui-border bg-black/20 px-8 py-6 space-y-4">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20">
-            <input
-              type="checkbox"
-              id="accept-terms"
-              checked={hasAccepted}
-              onChange={(e) => setHasAccepted(e.target.checked)}
-              className="w-5 h-5 rounded cursor-pointer accent-blue-500"
-            />
-            <label htmlFor="accept-terms" className="text-sm text-gray-300 cursor-pointer font-medium">
-              Acepto los Términos y Condiciones, Política de Privacidad y Disclaimer de CUADRA
-            </label>
-          </div>
-
+        <div className="border-t border-ui-border bg-black/20 px-8 py-6">
           <Button
             onClick={handleAccept}
-            disabled={!hasAccepted || isProcessing}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            disabled={isProcessing}
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all"
             size="lg"
             isLoading={isProcessing}
           >
             <CheckCircle2 className="w-4 h-4 mr-2" />
-            Aceptar y Continuar
+            De acuerdo
           </Button>
         </div>
       </div>

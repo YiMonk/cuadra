@@ -29,6 +29,7 @@ interface ApiUser {
   active: boolean;
   commission_pct?: number | null;
   default_location_id?: string | null;
+  subscription_ends_at?: string | null;
 }
 
 function toUserMetadata(u: ApiUser): UserMetadata {
@@ -42,6 +43,7 @@ function toUserMetadata(u: ApiUser): UserMetadata {
     createdAt: Date.now(),
     commissionPct: u.commission_pct ?? undefined,
     defaultLocationId: u.default_location_id ?? undefined,
+    subscriptionEndsAt: u.subscription_ends_at ? new Date(u.subscription_ends_at).getTime() : undefined,
   };
 }
 
@@ -111,6 +113,11 @@ export const UserService = {
     if (updates.commissionPct !== undefined) body.commission_pct = updates.commissionPct;
     if (updates.defaultLocationId !== undefined) body.default_location_id = updates.defaultLocationId;
     if (updates.termsAccepted !== undefined) body.terms_accepted = updates.termsAccepted;
+    if (updates.subscriptionEndsAt !== undefined) {
+      body.subscription_ends_at = updates.subscriptionEndsAt
+        ? new Date(updates.subscriptionEndsAt).toISOString()
+        : null;
+    }
     await api.put<ApiUser>(`/api/v1/users/team/${uid}`, body);
   },
 

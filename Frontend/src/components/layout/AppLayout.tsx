@@ -30,7 +30,14 @@ import {
     Truck,
     BarChart2,
     Briefcase,
-    Tag
+    Tag,
+    Layers,
+    ArrowLeftRight,
+    Landmark,
+    TrendingDown,
+    TrendingUp,
+    Repeat2,
+    Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -45,6 +52,8 @@ import { DisclaimerBanner } from '@/components/DisclaimerBanner';
 import { TermsAcceptanceModal } from '@/components/legal/TermsAcceptanceModal';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { WikiSearchModal } from '@/components/wiki/WikiSearchModal';
+import ModuleSwitcherModal from '@/components/layout/ModuleSwitcherModal';
+import { useActiveModule } from '@/hooks/useActiveModule';
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -73,9 +82,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { currency, exchangeRate, toggleCurrency, isLoading: currencyLoading } = useCurrency();
     const cartItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-    const isAuthRoute = pathname.startsWith('/auth');
+    const isAuthRoute = pathname.startsWith('/auth') || pathname.startsWith('/module-select');
     const ownerId = (!isAuthRoute && user) ? (user.ownerId || user.uid) : null;
     const { pendingClientsCount: pendingCollectionsCount } = useNotifications(ownerId);
+
+    const { activeModule, setActiveModule } = useActiveModule();
+    const [moduleSwitcherOpen, setModuleSwitcherOpen] = useState(false);
 
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -232,7 +244,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return <>{children}</>;
     }
 
-    const navItems: NavItem[] = isGlobalAdmin ? [
+    const operativoNavItems: NavItem[] = isGlobalAdmin ? [
         { name: 'Control', href: '/admin/dashboard', icon: ShieldAlert },
         { name: 'Usuarios', href: '/admin/users', icon: Users },
         { name: 'Historial', href: '/admin/activities', icon: Clock },
@@ -261,9 +273,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             { name: 'Proveedores', icon: Truck, href: '/suppliers' },
             { name: 'Mi Equipo', icon: Users, href: '/business/team' },
         ]},
+        { name: 'Auditoría', href: '/auditoria', icon: Shield },
     ];
 
-    const mobileNavItems: NavItem[] = isGlobalAdmin || isStaff ? navItems : [
+    const finanzasNavItems: NavItem[] = [
+        { name: 'Dashboard',     href: '/finanzas/dashboard',     icon: BarChart2 },
+        { name: 'Flujo de Caja', href: '/finanzas/flujo-de-caja', icon: ArrowLeftRight },
+        { name: 'Cuentas',       href: '/finanzas/cuentas',       icon: Landmark },
+        { name: 'Gastos',        href: '/finanzas/gastos',        icon: TrendingDown },
+        { name: 'Ingresos',      href: '/finanzas/ingresos',      icon: TrendingUp },
+        { name: 'Gastos Fijos',  href: '/finanzas/gastos-fijos',  icon: Repeat2 },
+        { name: 'Tasa BCV',      href: '/finanzas/tasa-bcv',      icon: DollarSign },
+    ];
+
+    const operativoMobileNavItems: NavItem[] = isGlobalAdmin || isStaff ? operativoNavItems : [
         {
             name: 'Vender',
             href: '/pos',
@@ -296,9 +319,33 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         ]},
     ];
 
+    const finanzasMobileNavItems: NavItem[] = [
+        { name: 'Dashboard',     href: '/finanzas/dashboard',     icon: BarChart2 },
+        { name: 'Flujo de Caja', href: '/finanzas/flujo-de-caja', icon: ArrowLeftRight },
+        { name: 'Cuentas',       href: '/finanzas/cuentas',       icon: Landmark },
+        { name: 'Gastos',        href: '/finanzas/gastos',        icon: TrendingDown },
+        { name: 'Ingresos',      href: '/finanzas/ingresos',      icon: TrendingUp },
+        { name: 'Gastos Fijos',  href: '/finanzas/gastos-fijos',  icon: Repeat2 },
+        { name: 'Tasa BCV',      href: '/finanzas/tasa-bcv',      icon: DollarSign },
+    ];
+
+    const navItems = (!isGlobalAdmin && activeModule === 'finanzas') ? finanzasNavItems : operativoNavItems;
+    const mobileNavItems = (!isGlobalAdmin && activeModule === 'finanzas') ? finanzasMobileNavItems : operativoMobileNavItems;
+
     return (
         <div className="flex h-dvh bg-ui-bg transition-colors duration-500 font-sans overflow-hidden md:overflow-visible">
             <WikiSearchModal />
+            <ModuleSwitcherModal
+                isOpen={moduleSwitcherOpen}
+                onClose={() => setModuleSwitcherOpen(false)}
+                activeModule={activeModule}
+                onSelect={(mod) => {
+                    setActiveModule(mod);
+                    setModuleSwitcherOpen(false);
+                    if (mod === 'finanzas') router.push('/finanzas/dashboard');
+                    else router.push('/pos');
+                }}
+            />
             <TermsAcceptanceModal isOpen={showTermsModal} onAccept={handleAcceptTerms} />
             {showOnboarding && <OnboardingWizard onClose={() => setShowOnboarding(false)} forced />}
 
@@ -346,8 +393,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         )}
                     </div>
 
+                    {/* Module Switcher Button — only for owners */}
+                    {isOwner && (
+                        <button
+                            onClick={() => setModuleSwitcherOpen(true)}
+                            title="Cambiar módulo"
+                            className={`w-full flex items-center gap-3 rounded-xl transition-all duration-200 mb-2 bg-accent-primary/10 border border-accent-primary/20 hover:bg-accent-primary/20 hover:border-accent-primary/40 ${sidebarExpanded ? 'px-3 py-2.5' : 'px-3 py-3 justify-center'}`}
+                        >
+                            <Layers size={18} className="text-accent-primary flex-shrink-0" />
+                            {sidebarExpanded && (
+                                <span className="flex-1 text-sm font-bold text-accent-primary text-left capitalize whitespace-nowrap">
+                                    {activeModule === 'finanzas' ? 'Finanzas' : 'Operativo'}
+                                </span>
+                            )}
+                            {sidebarExpanded && (
+                                <ChevronRight size={14} className="text-accent-primary/60 flex-shrink-0" />
+                            )}
+                        </button>
+                    )}
+
                     {/* Navigation */}
-                    <nav className="flex-1 flex flex-col gap-1 w-full overflow-y-auto overflow-x-hidden hide-scrollbar">
+                    <nav className="flex-1 flex flex-col gap-1 w-full overflow-y-auto hide-scrollbar">
                         {navItems.map((item) => {
                             if (item.separator) {
                                 return <div key={item.name} className="my-2 mx-2 border-t border-ui-border/30" />;
@@ -357,6 +423,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             const hasChildren = !!item.children?.length;
                             const isSubmenuOpen = expandedItems.has(item.name);
                             const hasActiveChild = hasChildren && item.children!.some(c => pathname === c.href || pathname.startsWith(c.href + '/'));
+                            const isItemActive = isActive || (hasActiveChild && !isSubmenuOpen);
 
                             const itemContent = (
                                 <>
@@ -377,12 +444,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                         <span className="flex-1 text-sm font-semibold text-left whitespace-nowrap">{item.name}</span>
                                     )}
                                     {sidebarExpanded && item.name === 'Vender' && cartItemsCount > 0 && (
-                                        <div className={`min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center text-[10px] font-black ${isActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
+                                        <div className={`min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center text-[10px] font-black ${isItemActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
                                             {cartItemsCount > 9 ? '9+' : cartItemsCount}
                                         </div>
                                     )}
                                     {sidebarExpanded && (item.name === 'Clientes' || item.name === 'Cobros') && pendingCollectionsCount > 0 && (
-                                        <div className={`min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center text-[10px] font-black animate-pulse ${isActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
+                                        <div className={`min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center text-[10px] font-black animate-pulse ${isItemActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
                                             {pendingCollectionsCount > 9 ? '9+' : pendingCollectionsCount}
                                         </div>
                                     )}
@@ -394,13 +461,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 </>
                             );
 
-                            const baseClasses = `w-full flex items-center gap-3 rounded-xl transition-all duration-200 group ${sidebarExpanded ? 'px-3 py-2.5' : 'px-3 py-3 justify-center'}`;
-                            const activeClasses = isActive || (hasActiveChild && !isSubmenuOpen)
-                                ? 'bg-foreground text-background shadow-lg'
+                            const baseClasses = `flex items-center gap-3 transition-all duration-200 group ${
+                                isItemActive
+                                    ? `rounded-tl-2xl rounded-bl-2xl ${sidebarExpanded ? 'w-[calc(100%+1rem)] px-3 py-2.5 pr-4' : 'w-[calc(100%+0.75rem)] px-3 py-3 pr-4 justify-center'}`
+                                    : `w-full rounded-xl ${sidebarExpanded ? 'px-3 py-2.5' : 'px-3 py-3 justify-center'}`
+                            }`;
+                            const activeClasses = isItemActive
+                                ? 'bg-ui-bg text-accent-primary font-black'
                                 : 'text-foreground/70 hover:bg-ui-bg hover:text-foreground';
 
                             return (
-                                <div key={item.name} className="w-full">
+                                <div key={item.name} className={`w-full ${isItemActive ? 'relative z-10' : ''}`}>
+                                    {/* Esquinas cóncavas solo cuando está activo */}
+                                    {isItemActive && (
+                                        <>
+                                            <div aria-hidden className={`absolute ${sidebarExpanded ? '-right-4' : '-right-3'} bottom-full w-4 h-4 pointer-events-none z-10 sidebar-corner-bg`} style={{ borderBottomRightRadius: 16 }} />
+                                            <div aria-hidden className={`absolute ${sidebarExpanded ? '-right-4' : '-right-3'} top-full w-4 h-4 pointer-events-none z-10 sidebar-corner-bg`} style={{ borderTopRightRadius: 16 }} />
+                                        </>
+                                    )}
                                     {hasChildren ? (
                                         <button
                                             onClick={() => toggleSubmenu(item.name)}
@@ -488,7 +566,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             {/* Desktop Page Info (Optional: could show breadcrumbs or active page name) */}
                             <div className="hidden md:flex items-center gap-2">
                                 <div className="h-1 w-8 bg-accent-primary rounded-full opacity-50" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-ui-text-muted">Sistema Operativo</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-ui-text-muted">
+                                    {activeModule === 'finanzas' ? 'Módulo Finanzas' : 'Sistema Operativo'}
+                                </span>
                             </div>
                         </div>
 
@@ -618,6 +698,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Mobile Floating Bottom Pill */}
             <nav className="md:hidden fixed z-[90] left-4 right-4 bottom-6 transition-all duration-500">
                 <div className="bg-white dark:bg-[#16142C] px-2 flex justify-around items-center h-[72px] rounded-[36px] border border-black/5 dark:border-white/10 shadow-float">
+                    {/* Module switcher — only for owners, always first */}
+                    {isOwner && (
+                        <button
+                            onClick={() => setModuleSwitcherOpen(true)}
+                            aria-label="Cambiar módulo"
+                            className="flex-shrink-0 flex flex-col items-center justify-center w-12 h-full gap-1 text-accent-primary active:scale-90 transition-transform"
+                        >
+                            <div className="p-1.5 rounded-2xl bg-accent-primary/15">
+                                <Layers size={20} strokeWidth={2} />
+                            </div>
+                        </button>
+                    )}
                     {mobileNavItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = item.href ? (pathname === item.href || pathname.startsWith(item.href + '/')) : false;

@@ -22,26 +22,33 @@ def _make_token(payload: dict, expire_delta: timedelta) -> str:
     return jwt.encode(data, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str, company_id: str | None = None) -> str:
+    payload = {"sub": user_id, "type": "access"}
+    if company_id is not None:
+        payload["cid"] = company_id
     return _make_token(
-        {"sub": user_id, "type": "access"},
+        payload,
         timedelta(hours=settings.jwt_expire_hours),
     )
 
 
-def create_refresh_token(user_id: str) -> str:
+def create_refresh_token(user_id: str, company_id: str | None = None) -> str:
+    payload = {"sub": user_id, "type": "refresh"}
+    if company_id is not None:
+        payload["cid"] = company_id
     return _make_token(
-        {"sub": user_id, "type": "refresh"},
+        payload,
         timedelta(days=settings.jwt_refresh_expire_days),
     )
 
 
-def decode_token(token: str, expected_type: str = "access") -> str:
-    """Returns user_id or raises JWTError."""
+def decode_token(token: str, expected_type: str = "access") -> tuple[str, str | None]:
+    """Returns (user_id, company_id) or raises JWTError."""
     payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
     if payload.get("type") != expected_type:
         raise JWTError("wrong token type")
     user_id: str = payload.get("sub")
     if not user_id:
         raise JWTError("missing sub")
-    return user_id
+    company_id: str | None = payload.get("cid")
+    return user_id, company_id

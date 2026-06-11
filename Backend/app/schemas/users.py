@@ -11,12 +11,14 @@ class UserProfile(BaseModel):
     role: str
     owner_id: Optional[str] = None
     active: bool
+    archived: bool = False
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
     commission_pct: Optional[float] = None
     default_location_id: Optional[str] = None
     terms_accepted: bool = False
     onboarding_completed_at: Optional[datetime] = None
+    subscription_ends_at: Optional[datetime] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -72,6 +74,7 @@ class UpdateTeamMemberRequest(BaseModel):
     commission_pct: Optional[float] = None
     default_location_id: Optional[str] = None
     active: Optional[bool] = None
+    subscription_ends_at: Optional[datetime] = None
 
     @field_validator("role")
     @classmethod

@@ -1,6 +1,6 @@
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +14,7 @@ from app.schemas.users import (
     UserProfile,
 )
 from app.services.auth_service import hash_password, verify_password
+from app.services import audit_service
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -67,14 +68,18 @@ async def delete_me(
     dependencies=[Depends(require_roles("owner", "admin"))],
 )
 async def list_team(
+    include_archived: bool = False,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
+    stmt = (
         select(User)
         .where(User.owner_id == user.owner_id, User.id != user.id)
         .order_by(User.created_at.desc())
     )
+    if not include_archived:
+        stmt = stmt.where(User.archived == False)
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 
@@ -88,6 +93,7 @@ async def invite_team_member(
     body: InviteTeamMemberRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    request: Request = None,
 ):
     existing = await db.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none():
@@ -106,6 +112,18 @@ async def invite_team_member(
     db.add(member)
     await db.commit()
     await db.refresh(member)
+
+    after = audit_service.snapshot(member, exclude=["password_hash"])
+    await audit_service.log(
+        db,
+        action="user.invited",
+        entity_type="user",
+        entity_id=member.id,
+        user=user,
+        request=request,
+        after=after,
+    )
+
     return member
 
 
@@ -119,10 +137,14 @@ async def update_team_member(
     body: UpdateTeamMemberRequest,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    request: Request = None,
 ):
-    result = await db.execute(
-        select(User).where(User.id == user_id, User.owner_id == user.owner_id)
-    )
+    if user.role == "admingod":
+        result = await db.execute(select(User).where(User.id == user_id))
+    else:
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.owner_id == user.owner_id)
+        )
     member = result.scalar_one_or_none()
     if not member:
         raise HTTPException(status_code=404, detail="usuario no encontrado")
@@ -131,10 +153,24 @@ async def update_team_member(
     if user.role == "admin" and member.role == "admin" and member.id != user.id:
         raise HTTPException(status_code=403, detail="sin permisos suficientes")
 
+    before = audit_service.snapshot(member)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(member, field, value)
     await db.commit()
     await db.refresh(member)
+    after = audit_service.snapshot(member)
+
+    await audit_service.log(
+        db,
+        action="user.updated",
+        entity_type="user",
+        entity_id=user_id,
+        user=user,
+        request=request,
+        before=before,
+        after=after,
+    )
+
     return member
 
 
@@ -156,3 +192,90 @@ async def deactivate_team_member(
         raise HTTPException(status_code=404, detail="usuario no encontrado")
     member.active = False
     await db.commit()
+
+
+@router.post(
+    "/team/{user_id}/archive",
+    response_model=UserProfile,
+    dependencies=[Depends(require_roles("owner"))],
+)
+async def archive_team_member(
+    user_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    request: Request = None,
+):
+    if user_id == user.id:
+        raise HTTPException(status_code=400, detail="no puedes archivarte a ti mismo")
+
+    result = await db.execute(
+        select(User).where(User.id == user_id, User.owner_id == user.owner_id)
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=404, detail="usuario no encontrado")
+
+    if member.archived:
+        raise HTTPException(status_code=409, detail="usuario ya archivado")
+
+    before = audit_service.snapshot(member)
+    member.archived = True
+    member.active = False
+    await db.commit()
+    await db.refresh(member)
+    after = audit_service.snapshot(member)
+
+    await audit_service.log(
+        db,
+        action="user.archived",
+        entity_type="user",
+        entity_id=user_id,
+        user=user,
+        request=request,
+        before=before,
+        after=after,
+    )
+
+    return member
+
+
+@router.post(
+    "/team/{user_id}/unarchive",
+    response_model=UserProfile,
+    dependencies=[Depends(require_roles("owner"))],
+)
+async def unarchive_team_member(
+    user_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    request: Request = None,
+):
+    result = await db.execute(
+        select(User).where(
+            User.id == user_id,
+            User.owner_id == user.owner_id,
+            User.archived == True,
+        )
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=404, detail="usuario no encontrado o no archivado")
+
+    before = audit_service.snapshot(member)
+    member.archived = False
+    await db.commit()
+    await db.refresh(member)
+    after = audit_service.snapshot(member)
+
+    await audit_service.log(
+        db,
+        action="user.unarchived",
+        entity_type="user",
+        entity_id=user_id,
+        user=user,
+        request=request,
+        before=before,
+        after=after,
+    )
+
+    return member

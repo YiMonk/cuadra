@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ from app.schemas.sales import (
     SaleResponse,
     SaleStatusUpdate,
 )
+from app.services import audit_service
 
 router = APIRouter(prefix="/api/v1/sales", tags=["sales"])
 
@@ -40,6 +41,7 @@ async def create_sale(
     body: SaleCreate,
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    request: Request = None,
 ):
     if not body.items:
         raise HTTPException(status_code=400, detail="la venta debe tener al menos un producto")
@@ -138,6 +140,18 @@ async def create_sale(
     await db.commit()
     await db.refresh(sale)
     sale.items = sale_items
+
+    after = audit_service.snapshot(sale)
+    await audit_service.log(
+        db,
+        action="sale.created",
+        entity_type="sale",
+        entity_id=sale.id,
+        user=user,
+        request=request,
+        after=after,
+    )
+
     return sale
 
 
@@ -255,6 +269,7 @@ async def cancel_sale(
     body: CancelRequest,
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    request: Request = None,
 ):
     sale = await _get_sale_or_404(sale_id, user.owner_id, db)
     if sale.status == "cancelled":
@@ -291,11 +306,25 @@ async def cancel_sale(
         if client:
             client.total_debt = max(0.0, round(client.total_debt - sale.total, 2))
 
+    before = audit_service.snapshot(sale)
     sale.status = "cancelled"
     sale.cancel_reason = body.reason
     await db.commit()
     await db.refresh(sale)
     sale.items = items
+    after = audit_service.snapshot(sale)
+
+    await audit_service.log(
+        db,
+        action="sale.cancelled",
+        entity_type="sale",
+        entity_id=sale_id,
+        user=user,
+        request=request,
+        before=before,
+        after=after,
+    )
+
     return sale
 
 

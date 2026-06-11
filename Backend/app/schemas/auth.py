@@ -47,6 +47,11 @@ class AuthResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int
     user: UserOut
+    companies: list | None = None  # list[CompanySummary]
+
+
+class SelectCompanyRequest(BaseModel):
+    company_id: str
 
 
 class TokenRefreshResponse(BaseModel):

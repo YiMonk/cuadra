@@ -10,6 +10,7 @@ export type Role =
   | 'manager'    // Gerente — todo menos team management
   | 'supervisor' // Supervisor — ventas, anulación, descuentos
   | 'cashier'    // Cajero — vende y procesa pagos
+  | 'viewer'     // Solo lectura — cuenta de acceso sin permisos de escritura
   | 'seller'     // Vendedor — solo vende
   | 'staff';     // Genérico legado (= cashier)
 

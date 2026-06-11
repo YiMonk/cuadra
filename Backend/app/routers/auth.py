@@ -10,6 +10,7 @@ from app.schemas.auth import (
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
+    SelectCompanyRequest,
     TokenRefreshResponse,
     UserOut,
 )
@@ -20,6 +21,8 @@ from app.services.auth_service import (
     hash_password,
     verify_password,
 )
+from app.models.company import Company
+from app.deps import get_current_user
 from jose import JWTError
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -50,6 +53,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         refresh_token=create_refresh_token(user.id),
         expires_in=_EXPIRE_SECONDS,
         user=UserOut.model_validate(user),
+        companies=[],
     )
 
 
@@ -65,9 +69,54 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     if not user.active:
         raise HTTPException(status_code=401, detail="account disabled")
 
+    # Determine company context
+    company_id = None
+    companies_list = None
+
+    # If user is an access account (has company_id), use that
+    if user.company_id is not None:
+        company_id = user.company_id
+    # If user is an owner, check how many companies they own
+    elif user.role == "owner":
+        result = await db.execute(
+            select(Company).where(Company.owner_user_id == user.id).order_by(Company.created_at)
+        )
+        companies = result.scalars().all()
+        if len(companies) == 1:
+            company_id = companies[0].id
+        elif len(companies) > 1:
+            companies_list = [{"id": c.id, "name": c.name} for c in companies]
+        else:
+            companies_list = []
+
     return AuthResponse(
-        access_token=create_access_token(user.id),
-        refresh_token=create_refresh_token(user.id),
+        access_token=create_access_token(user.id, company_id=company_id),
+        refresh_token=create_refresh_token(user.id, company_id=company_id),
+        expires_in=_EXPIRE_SECONDS,
+        user=UserOut.model_validate(user),
+        companies=companies_list,
+    )
+
+
+@router.post("/select-company", response_model=AuthResponse)
+async def select_company(
+    body: SelectCompanyRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Company).where(
+            Company.id == body.company_id,
+            Company.owner_user_id == user.id,
+        )
+    )
+    company = result.scalar_one_or_none()
+    if not company:
+        raise HTTPException(status_code=403, detail="company not found or access denied")
+
+    return AuthResponse(
+        access_token=create_access_token(user.id, company_id=body.company_id),
+        refresh_token=create_refresh_token(user.id, company_id=body.company_id),
         expires_in=_EXPIRE_SECONDS,
         user=UserOut.model_validate(user),
     )
@@ -76,7 +125,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
 @router.post("/refresh", response_model=TokenRefreshResponse)
 async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     try:
-        user_id = decode_token(body.refresh_token, expected_type="refresh")
+        user_id, company_id = decode_token(body.refresh_token, expected_type="refresh")
     except JWTError:
         raise HTTPException(status_code=401, detail="refresh token inválido o expirado")
 
@@ -85,6 +134,6 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="usuario no encontrado")
 
     return TokenRefreshResponse(
-        access_token=create_access_token(user_id),
+        access_token=create_access_token(user_id, company_id=company_id),
         expires_in=_EXPIRE_SECONDS,
     )

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,12 +9,15 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
-import { Eye, EyeOff, Mail, Lock, Zap, Shield, BarChart3 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Zap, Shield, BarChart3, X, User } from 'lucide-react';
 import { BRAND_ASSETS } from '@/config/brand';
+import { useSavedSessions } from '@/hooks/useSavedSessions';
 
 export default function LoginPage() {
     const router = useRouter();
     const { user, reloadUser } = useAuth();
+    const { sessions, addSession, removeSession } = useSavedSessions();
+    const passwordRef = useRef<HTMLInputElement>(null);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -27,7 +30,13 @@ export default function LoginPage() {
     React.useEffect(() => {
         if (user) {
             const isGlobalAdmin = user.role === 'admingod' || user.role === 'admin';
-            router.push(isGlobalAdmin ? '/admin/dashboard' : '/pos');
+            if (isGlobalAdmin) {
+                router.push('/admin/dashboard');
+            } else if (user.role === 'owner') {
+                router.push('/module-select');
+            } else {
+                router.push('/pos');
+            }
         }
     }, [user, router]);
 
@@ -44,6 +53,9 @@ export default function LoginPage() {
         try {
             await AuthService.signIn(email, password);
             await reloadUser(); // populate AuthContext → useEffect above will redirect
+            // Store session for quick access (user populated after reloadUser)
+            // We store here optimistically — displayName may be undefined yet, we use email prefix
+            addSession(email, email.split('@')[0]);
         } catch (error: any) {
             const msg = error?.message || '';
             let message = 'Ocurrió un error al iniciar sesión';
@@ -192,6 +204,7 @@ export default function LoginPage() {
 
                                         {/* Password Input */}
                                         <Input
+                                            ref={passwordRef}
                                             label="Contraseña"
                                             type={showPassword ? "text" : "password"}
                                             value={password}
@@ -284,6 +297,47 @@ export default function LoginPage() {
                                             Volver al Inicio de Sesión
                                         </button>
                                     </form>
+                                )}
+
+                                {/* Saved Sessions — Acceso Rápido */}
+                                {view === 'login' && sessions.length > 0 && (
+                                    <div className="mt-6">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">Acceso rápido</p>
+                                        <div className="space-y-2">
+                                            {sessions.map((session) => (
+                                                <div
+                                                    key={session.email}
+                                                    className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/8 hover:border-white/20 transition-all group"
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setEmail(session.email);
+                                                            setPassword('');
+                                                            setTimeout(() => passwordRef.current?.focus(), 50);
+                                                        }}
+                                                        className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-full bg-violet-500/30 border border-violet-500/50 flex items-center justify-center flex-shrink-0">
+                                                            <User size={14} className="text-violet-400" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-xs font-bold text-white truncate">{session.displayName}</p>
+                                                            <p className="text-[10px] text-gray-500 truncate">{session.email}</p>
+                                                        </div>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeSession(session.email)}
+                                                        className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-600 hover:text-gray-400 flex-shrink-0"
+                                                        aria-label={`Eliminar sesión de ${session.email}`}
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
 
                                 {/* Divider */}

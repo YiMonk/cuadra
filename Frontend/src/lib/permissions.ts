@@ -65,6 +65,7 @@ const PERMISSIONS: Record<Role, Action[]> = {
     'makeCashClosing',
   ],
   cashier: ['sell', 'processPayment', 'openCloseSession'],
+  viewer: [],
   seller: ['sell'],
   // legado: equivalente a cashier para no romper cuentas existentes
   staff: ['sell', 'processPayment', 'openCloseSession'],
@@ -86,6 +87,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   manager: 'Gerente',
   supervisor: 'Supervisor',
   cashier: 'Cajero',
+  viewer: 'Solo lectura',
   seller: 'Vendedor',
   staff: 'Personal',
 };
